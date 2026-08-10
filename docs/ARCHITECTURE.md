@@ -16,21 +16,27 @@ evaluator (later) -> evidence sources -> consensus-backed decision
 frontend (gated) -> public views and authenticated writes
 ```
 
+The production foundation now includes comparative evaluation and one bounded
+response/challenge round. Finalized settlement and evaluator-enabled Bradbury
+proof remain behind the UI stop gate.
+
 ## Trust boundaries
 
 - The caller address is the only identity used by the Stage 1 contract.
 - The current Stage 1 prototype uses a deployer-owned tender creator; this is
   explicitly not the locked production model. Phase B must make tender buyers
   public creators and remove deployer-administered procurement.
-- A tender issuer may open, close, award, or cancel that tender.
+- A tender buyer may open, close, evaluate, and advance only that buyer's
+  tender. There is no arbitrary manual winner-selection method.
 - A supplier may append evidence only to its own bid.
 - A URI is only a locator. The current evaluator now hashes the exact fetched
   response bytes with the contract's pure-Python SHA-256 routine before UTF-8
   decoding or semantic exposure. A mismatch returns a bounded rejection and
   never reaches the LLM. The production manifest validator applies the same
   exact-byte commitment check before JSON decoding and schema validation.
-  External evidence retrieval and required/optional evidence resolution remain
-  later production gates. Rationale text is not an equivalence field.
+  External evidence retrieval and required/optional evidence resolution are
+  performed inside the comparative evaluator. Rationale text is not an
+  equivalence field.
 
 ## Production bid manifest (`tendercouncil.bid.v1`)
 
@@ -72,13 +78,31 @@ and ties without a later bounded policy. The validator independently reruns the
 same bounded snapshot and requires exact agreement on all consensus-critical
 fields, including evidence states; rationale is excluded from equivalence.
 
+## Provisional award and challenge boundary
+
+An accepted evaluation cannot become payable immediately. The buyer must first
+call `begin_provisional_award`, then separately call `start_response_window`.
+The contract enforces a minimum 600-second response window. A challenge is
+sender-authenticated, limited to one per bidder and 16 per tender, and may use
+only an evidence ID already committed in the target bid's validated manifest.
+Optional challenge documents use `tendercouncil.challenge.v1`; exact-byte
+SHA-256 and schema validation occur before their claims can enter review.
+
+After the window, invalid or absent challenges advance directly to `AWARDED`.
+Valid challenges enter exactly one `REVIEWING_CHALLENGES` round. That review
+can uphold the provisional winner or select only an original valid bid, with
+the same structured output independently re-derived by validators. It cannot
+change commercial terms or add evidence.
+
 ## State machine
 
-`DRAFT -> OPEN -> CLOSED -> AWARDED`
+`DRAFT -> OPEN -> CLOSED -> EVALUATING -> PROVISIONAL_AWARD -> RESPONSE_WINDOW`
+`-> REVIEWING_CHALLENGES -> AWARDED`
 
-`DRAFT`, `OPEN`, or `CLOSED` may transition to `CANCELLED`. Bids are accepted
-only in `OPEN`; awarding marks one submitted bid `AWARDED` and all sibling bids
-`REJECTED`.
+`RESPONSE_WINDOW` may skip `REVIEWING_CHALLENGES` when no valid challenge
+exists. `NO_VALID_BID` is terminal for an empty admissible set. Funded
+cancellation and settlement are not yet enabled. Bids are accepted only in
+`OPEN`; evaluation freezes the original immutable record.
 
 ## Storage discipline
 

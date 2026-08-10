@@ -12,11 +12,11 @@
 | Exact-byte SHA-256 verification | PARTIAL | Stage 1 evaluator and production manifest validator hash exact fetched bytes; evidence-object retrieval remains |
 | Required/optional evidence policy | PARTIAL | Production evaluator records required failures and explicitly skips optional unavailable evidence; broader policy fixtures remain |
 | Comparative multi-bid evaluator | PARTIAL | `evaluate_tender` ranks one tender snapshot with bounded structured output; Bradbury proof and tolerance trials remain |
-| Provisional award / response window / bounded challenge | MISSING | Current lifecycle has direct issuer `award_bid` bypass |
+| Provisional award / response window / bounded challenge | PARTIAL | Production contract has explicit provisional/window/review states, committed-evidence challenge restrictions, and 33 local tests; finalized settlement is still separate |
 | Runtime boundary regression | PARTIAL/BLOCKED | Local probes pass; preserved Bradbury production-shaped smoke has validator `DETERMINISTIC_VIOLATION` |
 | Threat model and runtime due diligence | DONE | `docs/THREAT_MODEL.md`, `docs/RUNTIME_DUE_DILIGENCE.md` |
 | CI, release preflight, deployment script | PARTIAL | Pinned CI/runtime diagnostics are green; release preflight/deployment script remain |
-| Direct test suite | DONE locally | 29 passed; Phase 4 checkpoint pending CI |
+| Direct test suite | DONE locally | 33 passed; Phase 4 CI run `31395295040` green |
 | Final UI | STOPPED | UI stop gate remains closed by design |
 
 ## Stage 0 — repository and operating baseline
@@ -55,9 +55,9 @@ evidence without treating leader output as trusted input.
 
 ## Next gated stages
 
-1. Complete the comparative evaluator over all deterministically admissible
-   bids, then add the provisional-award response window and bounded challenge.
-2. Add finalized-safe settlement, mutation/security coverage, release preflight,
+1. Add finalized-safe settlement and broaden mutation/security coverage around
+   the comparative and challenge paths.
+2. Add release preflight, mutation/security coverage, and evaluator-enabled
    and evaluator-enabled Bradbury proof.
 3. Only after those gates are green may the UI stop gate be reviewed.
 

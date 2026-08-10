@@ -105,6 +105,72 @@ def _canonical_manifest(
     return body, "sha256:" + hashlib.sha256(body.encode("utf-8")).hexdigest(), evidence_body
 
 
+def _prepare_single_evaluation(
+    direct_vm, contract, buyer, bidder, tender_id="response-policy"
+):
+    _create(contract, direct_vm, buyer, tender_id)
+    direct_vm.deal(direct_vm._contract_address, 8000)
+    contract.open_tender(tender_id)
+    body, body_hash, evidence_body = _canonical_manifest(
+        bidder,
+        tender_id,
+        7400,
+        27,
+        120,
+        "Authenticated dashboard architecture",
+        ["authentication", "CSV export", "responsive/mobile", "dashboard/chart"],
+        "Authenticated capability evidence for dashboard delivery.",
+    )
+    direct_vm.sender = bidder
+    bid_id = "response-bid"
+    manifest_url = "https://fixture.example/response-bid.json"
+    contract.submit_bid(
+        bid_id, tender_id, 7400, 27, 120, manifest_url, body_hash
+    )
+    evidence_url = "https://fixture.example/cap-" + bidder.hex()[:8] + ".json"
+    direct_vm.mock_web(
+        manifest_url.replace(".", "\\."), {"status": 200, "body": body}
+    )
+    direct_vm.mock_web(
+        evidence_url.replace(".", "\\."), {"status": 200, "body": evidence_body}
+    )
+    direct_vm.sender = buyer
+    contract.validate_bid_manifest(bid_id)
+    direct_vm.warp("2026-01-01T02:00:00Z")
+    contract.close_tender(tender_id)
+    direct_vm.mock_web(
+        manifest_url.replace(".", "\\."), {"status": 200, "body": body}
+    )
+    direct_vm.mock_web(
+        evidence_url.replace(".", "\\."), {"status": 200, "body": evidence_body}
+    )
+    direct_vm.mock_llm(
+        r"^You are the TenderCouncil comparative procurement evaluator",
+        json.dumps({
+            "winner_bid_id": bid_id,
+            "valid_bid_ids": [bid_id],
+            "disqualified_bid_ids": [],
+            "scores": [{
+                "bid_id": bid_id,
+                "technical": 34,
+                "delivery": 19,
+                "price": 16,
+                "capability": 15,
+                "support": 10,
+                "total": 94,
+            }],
+            "winner_total_score": 94,
+            "runner_up_bid_id": "",
+            "runner_up_score": 0,
+            "confidence": "HIGH",
+            "rationale": "Authenticated bid satisfies the locked policy.",
+        }, separators=(",", ":")),
+    )
+    direct_vm.sender = buyer
+    contract.evaluate_tender(tender_id)
+    return bid_id, evidence_body
+
+
 def test_any_wallet_can_create_and_open_a_funded_tender(
     direct_vm, direct_deploy, direct_bob
 ):
@@ -559,3 +625,160 @@ def test_comparative_evaluator_fails_closed_on_impossible_model_score(
     with direct_vm.expect_revert():
         contract.evaluate_tender("malformed-evaluator")
     assert contract.get_tender("malformed-evaluator").status == "CLOSED"
+
+
+def test_provisional_award_requires_response_window_before_advancement(
+    direct_vm, direct_deploy, direct_bob, direct_charlie
+):
+    direct_vm.warp(START)
+    contract = direct_deploy(PRODUCTION)
+    bid_id, _ = _prepare_single_evaluation(
+        direct_vm, contract, direct_bob, direct_charlie
+    )
+    direct_vm.sender = direct_bob
+    contract.begin_provisional_award("response-policy")
+    assert contract.get_tender("response-policy").status == "PROVISIONAL_AWARD"
+    contract.start_response_window("response-policy")
+    tender = contract.get_tender("response-policy")
+    assert tender.status == "RESPONSE_WINDOW"
+    assert tender.provisional_winner == bid_id
+    assert tender.response_deadline > 0
+    with direct_vm.expect_revert("response window is still open"):
+        contract.advance_award("response-policy")
+    direct_vm.warp("2026-01-01T02:10:01Z")
+    contract.advance_award("response-policy")
+    assert contract.get_tender("response-policy").status == "AWARDED"
+    assert contract.get_tender("response-policy").final_winner == bid_id
+
+
+def test_only_authenticated_bidder_can_submit_one_committed_evidence_challenge(
+    direct_vm, direct_deploy, direct_bob, direct_charlie
+):
+    direct_vm.warp(START)
+    contract = direct_deploy(PRODUCTION)
+    bid_id, _ = _prepare_single_evaluation(
+        direct_vm, contract, direct_bob, direct_charlie, "challenge-policy"
+    )
+    direct_vm.sender = direct_bob
+    contract.begin_provisional_award("challenge-policy")
+    contract.start_response_window("challenge-policy")
+    with direct_vm.expect_revert("only a tender bidder"):
+        contract.submit_challenge(
+            "unauthorized-challenge",
+            "challenge-policy",
+            "RUBRIC_MISAPPLIED",
+            bid_id,
+            "",
+            "",
+            "",
+        )
+    direct_vm.sender = direct_charlie
+    contract.submit_challenge(
+        "committed-challenge",
+        "challenge-policy",
+        "COMMITTED_EVIDENCE_OVERLOOKED",
+        bid_id,
+        "cap-" + direct_charlie.hex()[:8],
+        "",
+        "",
+    )
+    direct_vm.sender = direct_bob
+    contract.validate_challenge("committed-challenge")
+    assert contract.get_challenge("committed-challenge").status == "VALID"
+    with direct_vm.expect_revert("one challenge per bidder"):
+        direct_vm.sender = direct_charlie
+        contract.submit_challenge(
+            "second-challenge",
+            "challenge-policy",
+            "RUBRIC_MISAPPLIED",
+            bid_id,
+            "",
+            "",
+            "",
+        )
+
+
+def test_mutated_external_challenge_content_is_not_reviewable(
+    direct_vm, direct_deploy, direct_bob, direct_charlie
+):
+    direct_vm.warp(START)
+    contract = direct_deploy(PRODUCTION)
+    bid_id, _ = _prepare_single_evaluation(
+        direct_vm, contract, direct_bob, direct_charlie, "challenge-mutation"
+    )
+    direct_vm.sender = direct_bob
+    contract.begin_provisional_award("challenge-mutation")
+    contract.start_response_window("challenge-mutation")
+    challenge_body = json.dumps({
+        "schema_version": "tendercouncil.challenge.v1",
+        "challenge_id": "mutated-challenge",
+        "tender_id": "challenge-mutation",
+        "challenger": "0x" + direct_charlie.hex(),
+        "reason_code": "RUBRIC_MISAPPLIED",
+        "target_bid_id": bid_id,
+        "referenced_evidence_id": "",
+        "claim": "The locked rubric was misapplied.",
+    }, separators=(",", ":"))
+    challenge_hash = "sha256:" + hashlib.sha256(challenge_body.encode("utf-8")).hexdigest()
+    direct_vm.sender = direct_charlie
+    contract.submit_challenge(
+        "mutated-challenge",
+        "challenge-mutation",
+        "RUBRIC_MISAPPLIED",
+        bid_id,
+        "",
+        "https://fixture.example/challenge.json",
+        challenge_hash,
+    )
+    direct_vm.mock_web(
+        r"https://fixture\.example/challenge\.json",
+        {"status": 200, "body": challenge_body + " changed"},
+    )
+    direct_vm.sender = direct_bob
+    contract.validate_challenge("mutated-challenge")
+    assert contract.get_challenge("mutated-challenge").status == "INVALID"
+    tender = contract.get_tender("challenge-mutation")
+    direct_vm.warp("2026-01-01T02:10:01Z")
+    contract.advance_award("challenge-mutation")
+    assert contract.get_tender("challenge-mutation").status == "AWARDED"
+
+
+def test_valid_challenge_enters_one_bounded_review_and_can_uphold_result(
+    direct_vm, direct_deploy, direct_bob, direct_charlie
+):
+    direct_vm.warp(START)
+    contract = direct_deploy(PRODUCTION)
+    bid_id, _ = _prepare_single_evaluation(
+        direct_vm, contract, direct_bob, direct_charlie, "review-policy"
+    )
+    direct_vm.sender = direct_bob
+    contract.begin_provisional_award("review-policy")
+    contract.start_response_window("review-policy")
+    direct_vm.sender = direct_charlie
+    contract.submit_challenge(
+        "review-challenge",
+        "review-policy",
+        "RUBRIC_MISAPPLIED",
+        bid_id,
+        "",
+        "",
+        "",
+    )
+    direct_vm.sender = direct_bob
+    contract.validate_challenge("review-challenge")
+    tender = contract.get_tender("review-policy")
+    direct_vm.warp("2026-01-01T02:10:01Z")
+    contract.advance_award("review-policy")
+    assert contract.get_tender("review-policy").status == "REVIEWING_CHALLENGES"
+    direct_vm.mock_llm(
+        r"You are conducting one bounded TenderCouncil challenge review",
+        json.dumps({
+            "decision": "UPHOLD",
+            "winner_bid_id": bid_id,
+            "rationale": "The challenge does not overcome the original comparative result.",
+        }, separators=(",", ":")),
+    )
+    contract.review_challenges("review-policy")
+    reviewed = contract.get_tender("review-policy")
+    assert reviewed.status == "AWARDED"
+    assert reviewed.final_winner == bid_id

@@ -24,12 +24,12 @@ genvm-lint validate contracts/tender_council_production.py
 python -m pytest
 ```
 
-The current direct suite passes locally (27 tests) and CI pins the development
-toolchain plus the resolved direct GenVM runtime. The current direct suite has
-29 passing tests, and the production comparative
-evaluator is now covered by the local suite. Bradbury evaluator smoke is
-still a release blocker because the preserved production-shaped attempt has a
-validator `DETERMINISTIC_VIOLATION`; see [docs/PROVENANCE.md](docs/PROVENANCE.md).
+The current direct suite has 33 passing tests and CI pins the development
+toolchain plus the resolved direct GenVM runtime. The production comparative
+evaluator and bounded response/challenge flow are covered locally. Bradbury
+evaluator smoke is still a release blocker because the preserved
+production-shaped attempt has a validator `DETERMINISTIC_VIOLATION`; see
+[docs/PROVENANCE.md](docs/PROVENANCE.md).
 
 The frontend remains behind the UI stop gate.
 
