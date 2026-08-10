@@ -30,7 +30,15 @@ PowerShell argument marshalling is not a release mechanism.
 
 ## Current status
 
-The repository has no repeatable deploy script yet. Local lint and semantic
-validation pass, and the direct suite is green, but the UI stop gate remains
-closed pending the production contract, preflight, and a green evaluator-enabled
-Bradbury flow.
+Repeatable tooling now exists but has not yet been used for a production
+Bradbury transaction:
+
+- `tools/release_preflight.py` compares network, chain ID, sender, source hash,
+  runner header, constructor arguments, schema version, fixture hashes,
+  artifact/source parity, and deployment transport. Any mismatch fails closed.
+- `deploy/deploy_production.py` invokes `genlayer deploy` with a list of
+  arguments, records the exact source/artifact hash and raw transport result,
+  and never performs implicit network or shell-string marshalling.
+
+The UI stop gate remains closed pending a production-shaped evaluator-enabled
+Bradbury flow, protocol-finality evidence, and release-artifact verification.

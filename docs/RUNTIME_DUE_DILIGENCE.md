@@ -57,7 +57,7 @@ The working environment currently reports:
 | Contract runner header | `py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6` |
 | Cached direct GenVM runners | v0.2.11, v0.2.11b, v0.2.11c, v0.2.16 |
 | Current local lint/semantic validation | passes for the production contract |
-| Current direct suite | 34 passed |
+| Current direct suite | 37 passed |
 
 The direct loader confirms that the pinned contract header selects a specific
 runner and standard-library dependency. It also patches nondeterministic

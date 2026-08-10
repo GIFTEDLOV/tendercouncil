@@ -24,7 +24,7 @@ genvm-lint validate contracts/tender_council_production.py
 python -m pytest
 ```
 
-The current direct suite has 34 passing tests and CI pins the development
+The current direct suite has 37 passing tests and CI pins the development
 toolchain plus the resolved direct GenVM runtime. The production comparative
 evaluator and bounded response/challenge flow are covered locally. Bradbury
 evaluator smoke is still a release blocker because the preserved

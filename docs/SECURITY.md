@@ -35,6 +35,7 @@ preserved Stage 1 prototype from the production foundation.
 - Production finalized-child transaction evidence has not yet been recorded
   on Bradbury, and direct mode reports an unsupported `EthSend` trace rather
   than simulating the external child transfer.
-- CI, release preflight, and repeatable deployment scripts are not complete.
+- The release preflight and deployment wrapper are present, but no production
+  Bradbury deployment has yet been accepted as release evidence.
 
 The UI stop gate is therefore closed.
