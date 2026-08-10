@@ -11,7 +11,8 @@ Status: complete at `bf6b542`.
 
 ## Stage 1 — deterministic procurement foundation
 
-Status: implementation in this change.
+Status: implementation complete locally; deterministic Bradbury smoke proof is
+recorded in `artifacts/bradbury-stage1-smoke.json`.
 
 The Stage 1 contract is intentionally narrow and auditable. It provides:
 
@@ -22,6 +23,8 @@ The Stage 1 contract is intentionally narrow and auditable. It provides:
 - explicit close, award, reject, and cancel transitions;
 - read methods and stable identifier lists for a future client;
 - direct-mode tests for authorization and invalid transitions.
+- consensus-backed evidence evaluator with prompt-injection boundaries and
+  stable-field comparison tests.
 
 Stage 1 does not claim that a submitted URL is truthful. It records the
 provenance anchor so a later evaluator can independently retrieve and assess
@@ -29,19 +32,17 @@ evidence without treating leader output as trusted input.
 
 ## Next gated stages
 
-1. Evidence evaluator: implement a leader/validator pair with explicit stable
-   decision fields and adversarial prompt-injection tests.
-2. Consensus and smoke proof: validate the evaluator in direct mode, then
-   against Studio/GLSim as appropriate, and finally execute a Bradbury smoke
-   flow with a recorded receipt.
-3. UI stop gate: only after the contract, evidence model, evaluator, tests, and
+1. Consensus and smoke proof: deploy the evaluator-enabled source and execute
+   a Bradbury evaluation smoke flow with a recorded receipt.
+2. UI stop gate: only after the contract, evidence model, evaluator, tests, and
    Bradbury smoke proof are all green should a frontend be started.
 
 ## UI stop gate checklist
 
-- [ ] contract lint and semantic validation pass;
-- [ ] direct tests pass, including unauthorized callers and bad transitions;
-- [ ] evaluator validator independently checks evidence and stable decisions;
+- [x] contract lint and semantic validation pass;
+- [x] direct tests pass, including unauthorized callers and bad transitions;
+- [x] evaluator validator independently checks evidence and stable decisions;
 - [ ] integration/consensus test passes in a real GenLayer environment;
-- [ ] Bradbury deployment and smoke receipt are recorded in-repository;
+- [x] deterministic Bradbury deployment and smoke receipt are recorded in-repository;
+- [ ] evaluator-enabled Bradbury deployment and smoke receipt are recorded;
 - [ ] no unresolved security or provenance exception remains.

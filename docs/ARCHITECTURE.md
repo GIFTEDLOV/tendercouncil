@@ -16,7 +16,11 @@ frontend (gated) -> public views and authenticated writes
 - A tender issuer may open, close, award, or cancel that tender.
 - A supplier may append evidence only to its own bid.
 - A URI and hash are claims about provenance, not proof of the underlying
-  document. The future evaluator must independently retrieve and assess them.
+  document. The evaluator fetches each evidence URI inside a nondeterministic
+  block, treats fetched content as untrusted data, constrains the output
+  schema, and independently reruns the task before a decision is stored.
+  Rationale text is not an equivalence field; decision, score tolerance, and
+  evidence count are.
 
 ## State machine
 

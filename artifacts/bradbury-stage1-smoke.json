@@ -1,0 +1,25 @@
+{
+  "network": "testnet-bradbury",
+  "source_commit": "c973161",
+  "contract_address": "0xC6a8FCeDF5DF63712ED6e6dea611aD9de07B715c",
+  "deployment_transaction": "0xe8189072125224fb8e3d850ee08238076a752e5af0f898256c7a43015c894273",
+  "deployment_status": "ACCEPTED",
+  "smoke_tender_id": "stage1-smoke-20260810",
+  "smoke_bid_id": "bid-smoke-20260810",
+  "smoke_evidence_id": "evidence-smoke-20260810",
+  "transactions": {
+    "create_tender": "0xc5e5691b33f99eeaa53c7d2b2399e3c37b536cf806f81bbd7183abe965d573ce",
+    "open_tender": "0x993dad9a92168eb792970e2460cfdfac81532735a12320987ff269725e7dc9f0",
+    "submit_bid": "0xbe0fe0ec75f54ee2de1f9dfe5148c730b1f8c725af7390e56ac5affb1ac352df",
+    "add_evidence": "0x086e51bec48f78dbdd9d0246233f607aff97f29b9ae57e211ecbcd1ec6a50223",
+    "close_tender": "0x80469372fd6d7dc68a87c7e1b122cc72a5855a7e6147031023dd3c7eaf433009",
+    "award_bid": "0xdda2a9e8a7ead2a17b98ee85c5779bf43655cfb09e5fd0f45ce97fe44defa21f"
+  },
+  "readback": {
+    "tender_status": "AWARDED",
+    "awarded_bid_id": "bid-smoke-20260810",
+    "bid_status": "AWARDED",
+    "evidence_uri": "https://example.com/tendercouncil-smoke.pdf",
+    "evidence_content_hash": "sha256:smoke-document"
+  }
+}

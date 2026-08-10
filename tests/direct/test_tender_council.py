@@ -4,6 +4,7 @@ STATUS_CANCELLED = "CANCELLED"
 BID_SUBMITTED = "SUBMITTED"
 BID_AWARDED = "AWARDED"
 BID_REJECTED = "REJECTED"
+EVALUATION_ACCEPT = "ACCEPT"
 
 
 def same_address(actual, expected_bytes):
@@ -105,3 +106,38 @@ def test_bid_rejected_after_tender_closes(direct_vm, direct_deploy, direct_owner
     direct_vm.sender = direct_bob
     with direct_vm.expect_revert("only while the tender is open"):
         contract.submit_bid("late", "closed", 1, "Late", "sha256:late")
+
+
+def test_evaluator_fetches_evidence_and_compares_stable_fields(
+    direct_vm, direct_deploy, direct_owner, direct_bob
+):
+    contract = direct_deploy("contracts/tender_council.py")
+    direct_vm.sender = direct_owner
+    contract.create_tender("eval-2026", "Evaluation", "Supply certified pumps", 1)
+    contract.open_tender("eval-2026")
+    direct_vm.sender = direct_bob
+    contract.submit_bid("bid-eval", "eval-2026", 9_000, "Supply certified pumps", "sha256:root")
+    contract.add_evidence(
+        "ev-eval",
+        "bid-eval",
+        "https://evidence.example/certificate.json",
+        "sha256:certificate",
+        "certificate",
+    )
+    direct_vm.sender = direct_owner
+    contract.close_tender("eval-2026")
+
+    direct_vm.mock_web(
+        r"https://evidence\.example/certificate\.json",
+        {"status": 200, "body": '{"certificate":"valid","capacity":100}'},
+    )
+    direct_vm.mock_llm(
+        r"Return JSON only with exactly these fields",
+        '{"decision":"ACCEPT","score":90,"evidence_count":1,"rationale":"Certificate supports the proposal."}',
+    )
+    contract.evaluate_bid("bid-eval")
+
+    evaluation = contract.get_evaluation("bid-eval")
+    assert evaluation.decision == EVALUATION_ACCEPT
+    assert evaluation.evidence_count == 1
+    assert evaluation.score == 90
