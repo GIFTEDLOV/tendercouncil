@@ -25,7 +25,9 @@ python -m pytest
 ```
 
 The current direct suite passes locally (27 tests) and CI pins the development
-toolchain plus the resolved direct GenVM runtime. Bradbury evaluator smoke is
+toolchain plus the resolved direct GenVM runtime. The current direct suite has
+29 passing tests, and the production comparative
+evaluator is now covered by the local suite. Bradbury evaluator smoke is
 still a release blocker because the preserved production-shaped attempt has a
 validator `DETERMINISTIC_VIOLATION`; see [docs/PROVENANCE.md](docs/PROVENANCE.md).
 

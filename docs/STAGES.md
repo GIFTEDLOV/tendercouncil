@@ -10,13 +10,13 @@
 | Funded escrow and finalized-safe settlement | PARTIAL | Exact payable award funding and aggregate locked-escrow accounting exist; refund/settlement remain |
 | Authenticated bounded bid manifest | PARTIAL | Production bid stores sender-bound commercial terms and commitments; `tendercouncil.bid.v1` schema validation is enforced, while semantic evidence retrieval remains |
 | Exact-byte SHA-256 verification | PARTIAL | Stage 1 evaluator and production manifest validator hash exact fetched bytes; evidence-object retrieval remains |
-| Required/optional evidence policy | MISSING | Current evaluator requires at least one evidence item and has no policy states |
-| Comparative multi-bid evaluator | MISSING | Current evaluator scores one bid independently |
+| Required/optional evidence policy | PARTIAL | Production evaluator records required failures and explicitly skips optional unavailable evidence; broader policy fixtures remain |
+| Comparative multi-bid evaluator | PARTIAL | `evaluate_tender` ranks one tender snapshot with bounded structured output; Bradbury proof and tolerance trials remain |
 | Provisional award / response window / bounded challenge | MISSING | Current lifecycle has direct issuer `award_bid` bypass |
 | Runtime boundary regression | PARTIAL/BLOCKED | Local probes pass; preserved Bradbury production-shaped smoke has validator `DETERMINISTIC_VIOLATION` |
 | Threat model and runtime due diligence | DONE | `docs/THREAT_MODEL.md`, `docs/RUNTIME_DUE_DILIGENCE.md` |
 | CI, release preflight, deployment script | PARTIAL | Pinned CI/runtime diagnostics are green; release preflight/deployment script remain |
-| Direct test suite | DONE locally | 27 passed; GitHub CI green on run `31389429946` |
+| Direct test suite | DONE locally | 29 passed; Phase 4 checkpoint pending CI |
 | Final UI | STOPPED | UI stop gate remains closed by design |
 
 ## Stage 0 — repository and operating baseline

@@ -66,6 +66,45 @@ def _manifest_payload(bidder, tender_id="manifest-policy", **overrides):
     return body, "sha256:" + hashlib.sha256(body.encode("utf-8")).hexdigest()
 
 
+def _canonical_manifest(
+    bidder, tender_id, price, delivery_days, support_days, technical,
+    requirements, claims,
+):
+    evidence_body = json.dumps(
+        {
+            "schema_version": "tendercouncil.evidence.v1",
+            "kind": "CAPABILITY",
+            "claims": claims,
+        },
+        separators=(",", ":"),
+    )
+    evidence_hash = "sha256:" + hashlib.sha256(evidence_body.encode("utf-8")).hexdigest()
+    manifest = {
+        "schema_version": "tendercouncil.bid.v1",
+        "tender_id": tender_id,
+        "bidder": "0x" + bidder.hex(),
+        "price": price,
+        "delivery_days": delivery_days,
+        "support_days": support_days,
+        "proposal": {
+            "technical_approach": technical,
+            "delivery_plan": "Acceptance-driven delivery plan",
+            "support_plan": "Support and warranty plan",
+            "requirements": requirements,
+        },
+        "evidence": [{
+            "evidence_id": "cap-" + bidder.hex()[:8],
+            "kind": "CAPABILITY",
+            "criterion": "capability",
+            "required": True,
+            "url": "https://fixture.example/cap-" + bidder.hex()[:8] + ".json",
+            "sha256": evidence_hash,
+        }],
+    }
+    body = json.dumps(manifest, separators=(",", ":"))
+    return body, "sha256:" + hashlib.sha256(body.encode("utf-8")).hexdigest(), evidence_body
+
+
 def test_any_wallet_can_create_and_open_a_funded_tender(
     direct_vm, direct_deploy, direct_bob
 ):
@@ -330,3 +369,193 @@ def test_manifest_hash_mismatch_and_schema_mutations_fail_closed(
     direct_vm.sender = direct_bob
     contract.validate_bid_manifest("manifest-schema-invalid")
     assert contract.get_bid("manifest-schema-invalid").manifest_status == "SCHEMA_INVALID"
+
+
+def test_canonical_five_bid_comparative_evaluator_selects_authenticated_best_bid(
+    direct_vm, direct_deploy, direct_bob, direct_charlie
+):
+    direct_vm.warp(START)
+    contract = direct_deploy(PRODUCTION)
+    _create(contract, direct_vm, direct_bob, "canonical-five")
+    direct_vm.deal(direct_vm._contract_address, 8000)
+    contract.open_tender("canonical-five")
+
+    bidder_a = bytes.fromhex("11" * 20)
+    bidder_d = bytes.fromhex("33" * 20)
+    bidder_e = bytes.fromhex("44" * 20)
+    bid_inputs = [
+        ("bid-a", bidder_a, 6200, 26, 90, "Strong but conventional dashboard architecture", ["authentication", "CSV export", "responsive/mobile"], "Authenticated delivery history and dashboard implementation."),
+        ("bid-b", direct_charlie, 7400, 27, 120, "Layered architecture with robust authentication and analytics", ["authentication", "CSV export", "responsive/mobile", "dashboard/chart"], "Authenticated capability evidence for multiple analytics dashboards and exports."),
+        ("bid-c", direct_bob, 4300, 20, 90, "Low-cost dashboard with exports but no authentication design", ["CSV export", "responsive/mobile", "dashboard/chart"], "Authenticated evidence is not supplied for the missing authentication capability."),
+        ("bid-d", bidder_d, 8700, 24, 120, "Excellent architecture", ["authentication", "CSV export", "responsive/mobile", "dashboard/chart"], "Excellent authenticated capability."),
+        ("bid-e", bidder_e, 6900, 45, 120, "Excellent architecture", ["authentication", "CSV export", "responsive/mobile", "dashboard/chart"], "Excellent authenticated capability."),
+    ]
+    prepared = []
+    for bid_id, bidder, price, delivery_days, support_days, technical, requirements, claims in bid_inputs:
+        direct_vm.sender = bidder
+        if bid_id in ("bid-a", "bid-b", "bid-c"):
+            manifest_body, manifest_hash, evidence_body = _canonical_manifest(
+                bidder,
+                "canonical-five",
+                price,
+                delivery_days,
+                support_days,
+                technical,
+                requirements,
+                claims,
+            )
+            manifest_url = "https://fixture.example/" + bid_id + ".json"
+            contract.submit_bid(
+                bid_id,
+                "canonical-five",
+                price,
+                delivery_days,
+                support_days,
+                manifest_url,
+                manifest_hash,
+            )
+            prepared.append((bid_id, manifest_url, manifest_body, evidence_body, bidder))
+        else:
+            contract.submit_bid(
+                bid_id,
+                "canonical-five",
+                price,
+                delivery_days,
+                support_days,
+                "https://fixture.example/" + bid_id + ".json",
+                PROPOSAL_HASH,
+            )
+
+    direct_vm.sender = direct_bob
+    for bid_id, manifest_url, manifest_body, evidence_body, bidder in prepared:
+        evidence_url = "https://fixture.example/cap-" + bidder.hex()[:8] + ".json"
+        direct_vm.mock_web(
+            manifest_url.replace(".", "\\."),
+            {"status": 200, "body": manifest_body},
+        )
+        direct_vm.mock_web(
+            evidence_url.replace(".", "\\."),
+            {"status": 200, "body": evidence_body},
+        )
+        contract.validate_bid_manifest(bid_id)
+
+    direct_vm.sender = direct_bob
+    direct_vm.warp("2026-01-01T02:00:00Z")
+    contract.close_tender("canonical-five")
+
+    result = {
+        "winner_bid_id": "bid-b",
+        "valid_bid_ids": ["bid-a", "bid-b"],
+        "disqualified_bid_ids": ["bid-c", "bid-d", "bid-e"],
+        "scores": [
+            {"bid_id": "bid-a", "technical": 30, "delivery": 17, "price": 14, "capability": 8, "support": 8, "total": 77},
+            {"bid_id": "bid-b", "technical": 34, "delivery": 19, "price": 16, "capability": 15, "support": 10, "total": 94},
+        ],
+        "winner_total_score": 94,
+        "runner_up_bid_id": "bid-a",
+        "runner_up_score": 77,
+        "confidence": "HIGH",
+        "rationale": "Bid B best satisfies the locked policy with authenticated capability evidence.",
+    }
+    for bid_id, manifest_url, manifest_body, evidence_body, bidder in prepared:
+        evidence_url = "https://fixture.example/cap-" + bidder.hex()[:8] + ".json"
+        direct_vm.mock_web(
+            manifest_url.replace(".", "\\."),
+            {"status": 200, "body": manifest_body},
+        )
+        direct_vm.mock_web(
+            evidence_url.replace(".", "\\."),
+            {"status": 200, "body": evidence_body},
+        )
+    direct_vm.mock_llm(
+        r"Return JSON only with exactly these fields",
+        json.dumps(result, separators=(",", ":")),
+    )
+
+    contract.evaluate_tender("canonical-five")
+    evaluation = contract.get_evaluation("canonical-five")
+    assert evaluation.winner_bid_id == "bid-b"
+    assert evaluation.valid_bid_ids == "bid-a,bid-b"
+    assert evaluation.disqualified_bid_ids == "bid-c,bid-d,bid-e"
+    assert evaluation.winner_total_score == 94
+    assert evaluation.runner_up_bid_id == "bid-a"
+    assert contract.get_tender("canonical-five").status == "EVALUATING"
+
+
+def test_comparative_evaluator_fails_closed_on_impossible_model_score(
+    direct_vm, direct_deploy, direct_bob, direct_charlie
+):
+    direct_vm.warp(START)
+    contract = direct_deploy(PRODUCTION)
+    _create(contract, direct_vm, direct_bob, "malformed-evaluator")
+    direct_vm.deal(direct_vm._contract_address, 8000)
+    contract.open_tender("malformed-evaluator")
+
+    direct_vm.sender = direct_charlie
+    body, body_hash, evidence_body = _canonical_manifest(
+        direct_charlie,
+        "malformed-evaluator",
+        7400,
+        27,
+        120,
+        "A compliant technical approach",
+        ["authentication"],
+        "Authenticated capability claim",
+    )
+    contract.submit_bid(
+        "malformed-bid",
+        "malformed-evaluator",
+        7400,
+        27,
+        120,
+        "https://fixture.example/malformed-bid.json",
+        body_hash,
+    )
+    evidence_url = "https://fixture.example/cap-" + direct_charlie.hex()[:8] + ".json"
+    direct_vm.mock_web(
+        r"https://fixture\.example/malformed-bid\.json",
+        {"status": 200, "body": body},
+    )
+    direct_vm.mock_web(
+        evidence_url.replace(".", "\\."),
+        {"status": 200, "body": evidence_body},
+    )
+    direct_vm.sender = direct_bob
+    contract.validate_bid_manifest("malformed-bid")
+    direct_vm.warp("2026-01-01T02:00:00Z")
+    contract.close_tender("malformed-evaluator")
+
+    direct_vm.mock_web(
+        r"https://fixture\.example/malformed-bid\.json",
+        {"status": 200, "body": body},
+    )
+    direct_vm.mock_web(
+        evidence_url.replace(".", "\\."),
+        {"status": 200, "body": evidence_body},
+    )
+    direct_vm.mock_llm(
+        r"Return JSON only with exactly these fields",
+        json.dumps({
+            "winner_bid_id": "malformed-bid",
+            "valid_bid_ids": ["malformed-bid"],
+            "disqualified_bid_ids": [],
+            "scores": [{
+                "bid_id": "malformed-bid",
+                "technical": 35,
+                "delivery": 20,
+                "price": 20,
+                "capability": 15,
+                "support": 10,
+                "total": 1,
+            }],
+            "winner_total_score": 1,
+            "runner_up_bid_id": "",
+            "runner_up_score": 0,
+            "confidence": "HIGH",
+            "rationale": "Impossible arithmetic",
+        }, separators=(",", ":")),
+    )
+    direct_vm.sender = direct_bob
+    with direct_vm.expect_revert():
+        contract.evaluate_tender("malformed-evaluator")
+    assert contract.get_tender("malformed-evaluator").status == "CLOSED"

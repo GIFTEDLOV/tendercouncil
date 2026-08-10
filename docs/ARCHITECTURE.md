@@ -55,6 +55,23 @@ equal the immutable onchain bid terms, and bidder/tender fields are bound to the
 onchain record. Invalid, unavailable, hash-mismatched, or schema-invalid
 manifests are recorded as non-authoritative states.
 
+## Comparative evaluator
+
+`evaluate_tender` snapshots every bid for one closed tender. Budget, delivery,
+support, deadline, manifest integrity, and manifest-schema failures are removed
+before semantic reasoning. It then retrieves each retained manifest's declared
+evidence, verifies exact bytes and the bounded evidence schema, and exposes only
+`VALID` evidence claims to the model. Required evidence failures disqualify a
+bid; optional unavailable evidence is explicitly recorded and skipped.
+
+The structured model result contains the winner, valid/disqualified sets,
+criterion scores, winner total, runner-up, confidence enum, and informational
+rationale. Deterministic normalization rejects impossible score arithmetic,
+out-of-range criterion scores, non-partitioned bid sets, non-candidate winners,
+and ties without a later bounded policy. The validator independently reruns the
+same bounded snapshot and requires exact agreement on all consensus-critical
+fields, including evidence states; rationale is excluded from equivalence.
+
 ## State machine
 
 `DRAFT -> OPEN -> CLOSED -> AWARDED`
