@@ -14,5 +14,13 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install -r requirements.txt
+      - name: Resolve and print pinned direct-test runtime
+        env:
+          TENDERCOUNCIL_DIRECT_GENVM_VERSION: v0.2.16
+        run: python tools/ci_diagnostics.py --resolve
       - run: genvm-lint check contracts/tender_council.py
-      - run: pytest
+      - run: genvm-lint validate contracts/tender_council.py
+      - name: Print resolved runtime and run all direct tests
+        run: |
+          python tools/ci_diagnostics.py
+          python -m pytest
