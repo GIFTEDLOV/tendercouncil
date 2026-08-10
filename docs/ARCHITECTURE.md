@@ -1,5 +1,9 @@
 # TenderCouncil Stage 1 architecture
 
+This is the preserved Stage 1 prototype, not the final commercial
+architecture. The production lifecycle, escrow, comparative evaluator, and
+challenge protocol remain behind the UI stop gate.
+
 TenderCouncil separates the procurement record from the later judgment step.
 
 ```text
@@ -17,13 +21,12 @@ frontend (gated) -> public views and authenticated writes
   public creators and remove deployer-administered procurement.
 - A tender issuer may open, close, award, or cancel that tender.
 - A supplier may append evidence only to its own bid.
-- A URI and hash are claims about provenance, not proof of the underlying
-  document. The prototype evaluator fetches each evidence URI inside a
-  nondeterministic block, treats fetched content as untrusted data, constrains
-  the output schema, and independently reruns the task. It does not yet verify
-  fetched bytes against the committed hash; that is a mandatory Phase B gate.
-  Rationale text is not an equivalence field; decision, score tolerance, and
-  evidence count are.
+- A URI is only a locator. The current evaluator now hashes the exact fetched
+  response bytes with the contract's pure-Python SHA-256 routine before UTF-8
+  decoding or semantic exposure. A mismatch returns a bounded rejection and
+  never reaches the LLM. Full proposal-manifest schema validation and required/
+  optional evidence policy remain production gates. Rationale text is not an
+  equivalence field; decision, score tolerance, and evidence count are.
 
 ## State machine
 
@@ -55,9 +58,10 @@ LLM calls. The installed Bradbury v0.2.11 and local v0.2.16 implementations of
 The smallest supported fix is to prepare immutable primitive tuples in the
 deterministic context, iterate those tuples directly inside the nondeterministic
 closure, and request structured LLM output with `response_format="json"`. No
-storage object, JSON-decoded container, or mutable closure state crosses the
-boundary. The regression suite cloudpickle-tests both callbacks and retains the
-full probe evidence in `artifacts/bradbury-evaluator-probes.json`.
+storage object, JSON-decoded source-context container, or mutable closure state
+crosses the boundary. The regression suite cloudpickle-tests both callbacks,
+probes installed SHA-256 behavior, and retains the full probe evidence in
+`artifacts/bradbury-evaluator-probes.json`.
 
 The first post-fix production-shaped smoke reached an accepted bounded result,
 but one of five validators still returned `DETERMINISTIC_VIOLATION`; its trace

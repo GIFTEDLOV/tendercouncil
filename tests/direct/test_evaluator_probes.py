@@ -94,3 +94,11 @@ def test_probe_f_actual_evaluator_shape(direct_vm, direct_deploy):
     }
     assert direct_vm.run_validator()
     _assert_callbacks_cloudpickle(direct_vm)
+
+
+def test_probe_sha256_runtime_behavior(direct_vm, direct_deploy):
+    contract = direct_deploy(PROBE)
+    result = contract.probe_sha256("TenderCouncil exact bytes")
+    assert result["sha256"] == "110100cb4c0c3a1658a0931ab227a1c25862aa02d63a0c2b1c4a6de9fbed1a65"
+    assert direct_vm.run_validator()
+    _assert_callbacks_cloudpickle(direct_vm)

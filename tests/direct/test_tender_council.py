@@ -47,7 +47,7 @@ def test_supplier_can_submit_bid_and_evidence(direct_vm, direct_deploy, direct_o
         "ev-bob-1",
         "bid-bob",
         "https://supplier.example/evidence.pdf",
-        "sha256:document",
+        "sha256:" + "a" * 64,
         "capacity-certificate",
     )
 
@@ -124,7 +124,7 @@ def test_evaluator_fetches_evidence_and_compares_stable_fields(
         "ev-eval",
         "bid-eval",
         "https://evidence.example/certificate.json",
-        "sha256:certificate",
+        "sha256:986319dd47917bc61fffe2c7a17bb7ae8cdc540e86551bce31a994e172fd3ad4",
         "certificate",
     )
     direct_vm.sender = direct_owner
@@ -148,3 +148,34 @@ def test_evaluator_fetches_evidence_and_compares_stable_fields(
     _, leader_fn, validator_fn = direct_vm._captured_validators[-1]
     cloudpickle.dumps(leader_fn)
     cloudpickle.dumps(validator_fn)
+
+
+def test_changed_content_is_rejected_before_semantic_evaluation(
+    direct_vm, direct_deploy, direct_owner, direct_bob
+):
+    contract = direct_deploy("contracts/tender_council.py")
+    direct_vm.sender = direct_owner
+    contract.create_tender("hash-2026", "Hash check", "Use committed bytes", 1)
+    contract.open_tender("hash-2026")
+    direct_vm.sender = direct_bob
+    contract.submit_bid("bid-hash", "hash-2026", 100, "Use committed bytes", "sha256:root")
+    contract.add_evidence(
+        "ev-hash",
+        "bid-hash",
+        "https://evidence.example/hash.json",
+        "sha256:986319dd47917bc61fffe2c7a17bb7ae8cdc540e86551bce31a994e172fd3ad4",
+        "certificate",
+    )
+    direct_vm.sender = direct_owner
+    contract.close_tender("hash-2026")
+    direct_vm.mock_web(
+        r"https://evidence\.example/hash\.json",
+        {"status": 200, "body": '{"certificate":"changed","capacity":100}'},
+    )
+
+    contract.evaluate_bid("bid-hash")
+
+    evaluation = contract.get_evaluation("bid-hash")
+    assert evaluation.decision == "REJECT"
+    assert "HASH_MISMATCH" in evaluation.rationale
+    assert direct_vm.run_validator()

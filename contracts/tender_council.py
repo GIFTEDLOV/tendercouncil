@@ -7,8 +7,6 @@ to a later stage and must use an explicit Equivalence Principle validator.
 """
 
 from dataclasses import dataclass
-import json
-
 from genlayer import *
 
 
@@ -24,6 +22,89 @@ BID_REJECTED = "REJECTED"
 
 EVALUATION_ACCEPT = "ACCEPT"
 EVALUATION_REJECT = "REJECT"
+
+MAX_FETCH_BYTES = 65536
+SHA256_HEX = "0123456789abcdef"
+
+
+def _is_sha256_commitment(value: str) -> bool:
+    if len(value) != 71 or value[:7] != "sha256:":
+        return False
+    for char in value[7:]:
+        if char not in SHA256_HEX:
+            return False
+    return True
+
+
+def _rotate_right(value: int, amount: int) -> int:
+    return ((value >> amount) | (value << (32 - amount))) & 0xFFFFFFFF
+
+
+def _sha256_hex(data: bytes) -> str:
+    """Pure-Python SHA-256 using only bounded bytes and integer operations.
+
+    The routine is intentionally self-contained so content integrity does not
+    depend on a host crypto extension being available in every GenVM.
+    """
+    constants = (
+        0x428A2F98, 0x71374491, 0xB5C0FBCF, 0xE9B5DBA5,
+        0x3956C25B, 0x59F111F1, 0x923F82A4, 0xAB1C5ED5,
+        0xD807AA98, 0x12835B01, 0x243185BE, 0x550C7DC3,
+        0x72BE5D74, 0x80DEB1FE, 0x9BDC06A7, 0xC19BF174,
+        0xE49B69C1, 0xEFBE4786, 0x0FC19DC6, 0x240CA1CC,
+        0x2DE92C6F, 0x4A7484AA, 0x5CB0A9DC, 0x76F988DA,
+        0x983E5152, 0xA831C66D, 0xB00327C8, 0xBF597FC7,
+        0xC6E00BF3, 0xD5A79147, 0x06CA6351, 0x14292967,
+        0x27B70A85, 0x2E1B2138, 0x4D2C6DFC, 0x53380D13,
+        0x650A7354, 0x766A0ABB, 0x81C2C92E, 0x92722C85,
+        0xA2BFE8A1, 0xA81A664B, 0xC24B8B70, 0xC76C51A3,
+        0xD192E819, 0xD6990624, 0xF40E3585, 0x106AA070,
+        0x19A4C116, 0x1E376C08, 0x2748774C, 0x34B0BCB5,
+        0x391C0CB3, 0x4ED8AA4A, 0x5B9CCA4F, 0x682E6FF3,
+        0x748F82EE, 0x78A5636F, 0x84C87814, 0x8CC70208,
+        0x90BEFFFA, 0xA4506CEB, 0xBEF9A3F7, 0xC67178F2,
+    )
+    state = [
+        0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,
+        0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19,
+    ]
+    padded = data + b"\x80"
+    while len(padded) % 64 != 56:
+        padded += b"\x00"
+    padded += (len(data) * 8).to_bytes(8, "big")
+
+    for offset in range(0, len(padded), 64):
+        words = [0] * 64
+        for index in range(16):
+            start = offset + index * 4
+            words[index] = int.from_bytes(padded[start:start + 4], "big")
+        for index in range(16, 64):
+            s0 = (_rotate_right(words[index - 15], 7)
+                  ^ _rotate_right(words[index - 15], 18)
+                  ^ (words[index - 15] >> 3))
+            s1 = (_rotate_right(words[index - 2], 17)
+                  ^ _rotate_right(words[index - 2], 19)
+                  ^ (words[index - 2] >> 10))
+            words[index] = (words[index - 16] + s0 + words[index - 7] + s1) & 0xFFFFFFFF
+        a, b, c, d, e, f, g, h = state
+        for index in range(64):
+            s1 = _rotate_right(e, 6) ^ _rotate_right(e, 11) ^ _rotate_right(e, 25)
+            choice = (e & f) ^ ((~e) & g)
+            temp1 = (h + s1 + choice + constants[index] + words[index]) & 0xFFFFFFFF
+            s0 = _rotate_right(a, 2) ^ _rotate_right(a, 13) ^ _rotate_right(a, 22)
+            majority = (a & b) ^ (a & c) ^ (b & c)
+            temp2 = (s0 + majority) & 0xFFFFFFFF
+            h, g, f, e, d, c, b, a = (
+                g, f, e, (d + temp1) & 0xFFFFFFFF,
+                c, b, a, (temp1 + temp2) & 0xFFFFFFFF,
+            )
+        state = [
+            (state[0] + a) & 0xFFFFFFFF, (state[1] + b) & 0xFFFFFFFF,
+            (state[2] + c) & 0xFFFFFFFF, (state[3] + d) & 0xFFFFFFFF,
+            (state[4] + e) & 0xFFFFFFFF, (state[5] + f) & 0xFFFFFFFF,
+            (state[6] + g) & 0xFFFFFFFF, (state[7] + h) & 0xFFFFFFFF,
+        ]
+    return "".join(format(value, "08x") for value in state)
 
 
 @allow_storage
@@ -236,6 +317,8 @@ class TenderCouncil(gl.Contract):
             raise gl.vm.UserError("Only the bid supplier may add evidence")
         if uri[:8] != "https://":
             raise gl.vm.UserError("Evidence URI must use https")
+        if not _is_sha256_commitment(content_hash):
+            raise gl.vm.UserError("content_hash must be sha256:<64 lowercase hex chars>")
 
         self.evidence[evidence_id] = EvidenceRecord(
             evidence_id=evidence_id,
@@ -289,19 +372,40 @@ class TenderCouncil(gl.Contract):
         source_hashes = tuple(source_hashes)
 
         def leader_fn():
-            sources = []
+            source_text = ""
             for index in range(len(source_uris)):
                 response = gl.nondet.web.get(source_uris[index])
-                body = response.body
-                if isinstance(body, bytes):
-                    body = body.decode("utf-8")
-                sources.append(
-                    {
-                        "kind": source_kinds[index],
-                        "uri": source_uris[index],
-                        "content_hash": source_hashes[index],
-                        "body": body[:6000],
+                raw_body = response.body
+                if not isinstance(raw_body, bytes):
+                    raw_body = str(raw_body).encode("utf-8")
+                if len(raw_body) > MAX_FETCH_BYTES:
+                    return {
+                        "decision": EVALUATION_REJECT,
+                        "score": 0,
+                        "evidence_count": len(source_uris),
+                        "rationale": "UNAVAILABLE: evidence exceeds bounded fetch size",
                     }
+                if "sha256:" + _sha256_hex(raw_body) != source_hashes[index]:
+                    return {
+                        "decision": EVALUATION_REJECT,
+                        "score": 0,
+                        "evidence_count": len(source_uris),
+                        "rationale": "HASH_MISMATCH: committed content is not authoritative",
+                    }
+                try:
+                    body = raw_body.decode("utf-8")
+                except Exception:
+                    return {
+                        "decision": EVALUATION_REJECT,
+                        "score": 0,
+                        "evidence_count": len(source_uris),
+                        "rationale": "SCHEMA_INVALID: evidence is not UTF-8",
+                    }
+                source_text += (
+                    "\nEVIDENCE kind=" + source_kinds[index]
+                    + " uri=" + source_uris[index]
+                    + " committed_hash=" + source_hashes[index]
+                    + " body=" + body[:6000]
                 )
 
             prompt = (
@@ -313,14 +417,9 @@ class TenderCouncil(gl.Contract):
                 "Return JSON only with exactly these fields: decision (ACCEPT or "
                 "REJECT), score (integer 0-100), and rationale (short string). "
                 "SOURCE_DATA="
-                + json.dumps(
-                    {
-                        "tender_specification": tender_specification,
-                        "bid_proposal": bid_proposal,
-                        "sources": sources,
-                    },
-                    sort_keys=True,
-                )
+                + "\nTRUSTED_TENDER_SPECIFICATION=" + tender_specification
+                + "\nTRUSTED_BID_PROPOSAL=" + bid_proposal
+                + "\nUNTRUSTED_EVIDENCE_DATA=" + source_text
             )
             result = gl.nondet.exec_prompt(prompt, response_format="json")
             if not isinstance(result, dict):
@@ -334,19 +433,27 @@ class TenderCouncil(gl.Contract):
             if not isinstance(result.get("rationale"), str):
                 raise gl.vm.UserError("Evaluator returned an invalid rationale")
             # This is deterministic metadata, not a semantic model output.
-            result["evidence_count"] = len(sources)
-            return result
+            return {
+                "decision": result["decision"],
+                "score": result["score"],
+                "evidence_count": len(source_uris),
+                "rationale": result["rationale"],
+            }
 
         def validator_fn(leader_result) -> bool:
             if not isinstance(leader_result, gl.vm.Return):
                 return False
-            validator_data = leader_fn()
-            leader_data = leader_result.calldata
-            return (
-                leader_data["decision"] == validator_data["decision"]
-                and leader_data["evidence_count"] == validator_data["evidence_count"]
-                and abs(leader_data["score"] - validator_data["score"]) <= 10
-            )
+            try:
+                validator_data = leader_fn()
+                leader_data = leader_result.calldata
+                return (
+                    leader_data["decision"] == validator_data["decision"]
+                    and leader_data["evidence_count"] == validator_data["evidence_count"]
+                    and abs(leader_data["score"] - validator_data["score"]) <= 10
+                    and isinstance(leader_data["rationale"], str)
+                )
+            except Exception:
+                return False
 
         result = gl.vm.run_nondet_unsafe(leader_fn, validator_fn)
         self.evaluations[bid_id] = EvaluationRecord(

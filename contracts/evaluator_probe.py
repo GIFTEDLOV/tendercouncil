@@ -2,6 +2,7 @@
 """Small nondeterministic-boundary probes used by the Stage 1 investigation."""
 
 import json
+import hashlib
 
 from genlayer import *
 
@@ -173,5 +174,27 @@ class EvaluatorProbe(gl.Contract):
                 "score": result.get("score"),
                 "evidence_count": len(sources),
             }
+
+        return gl.vm.run_nondet_unsafe(leader_fn, validator_fn)
+
+    @gl.public.write
+    def probe_sha256(self, text: str):
+        """Diagnostic probe for the installed Python SHA-256 implementation.
+
+        This is intentionally not the production content-commitment routine;
+        the direct test records whether the installed SDK can execute the
+        standard-library call in a nondeterministic callback.
+        """
+        stable_text = str(text)
+
+        def leader_fn():
+            digest = hashlib.sha256(stable_text.encode("utf-8")).hexdigest()
+            return {"sha256": digest}
+
+        def validator_fn(leader_result):
+            if not isinstance(leader_result, gl.vm.Return):
+                return False
+            expected = hashlib.sha256(stable_text.encode("utf-8")).hexdigest()
+            return leader_result.calldata.get("sha256") == expected
 
         return gl.vm.run_nondet_unsafe(leader_fn, validator_fn)

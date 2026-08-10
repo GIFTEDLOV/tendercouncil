@@ -1,5 +1,23 @@
 # TenderCouncil delivery stages
 
+## Current inventory (2026-08-10)
+
+| Area | Status | Evidence |
+|---|---|---|
+| Repository isolation and provenance | DONE | Dedicated `GIFTEDLOV/tendercouncil`, one `origin`, preserved Bradbury artifacts |
+| Stage 1 deterministic record | DONE for prototype | `contracts/tender_council.py`, 16 direct tests |
+| Public buyer / multiple independent tenders | MISSING | Current prototype restricts creation to deployer owner |
+| Funded escrow and finalized-safe settlement | MISSING | Current prototype stores no real custody or payment state |
+| Authenticated bounded bid manifest | PARTIAL | Sender-bound bid/evidence anchors exist; schema and commercial fields are absent |
+| Exact-byte SHA-256 verification | PARTIAL | Stage 1 evaluator verifies exact fetched bytes; production bid-manifest integration remains |
+| Required/optional evidence policy | MISSING | Current evaluator requires at least one evidence item and has no policy states |
+| Comparative multi-bid evaluator | MISSING | Current evaluator scores one bid independently |
+| Provisional award / response window / bounded challenge | MISSING | Current lifecycle has direct issuer `award_bid` bypass |
+| Runtime boundary regression | PARTIAL/BLOCKED | Local probes pass; preserved Bradbury production-shaped smoke has validator `DETERMINISTIC_VIOLATION` |
+| Threat model and runtime due diligence | DONE | `docs/THREAT_MODEL.md`, `docs/RUNTIME_DUE_DILIGENCE.md` |
+| CI, release preflight, deployment script | MISSING | Existing project has no CI/release tooling |
+| Final UI | STOPPED | UI stop gate remains closed by design |
+
 ## Stage 0 — repository and operating baseline
 
 Status: complete at `bf6b542`.
