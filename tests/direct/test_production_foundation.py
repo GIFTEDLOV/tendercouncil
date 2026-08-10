@@ -782,3 +782,31 @@ def test_valid_challenge_enters_one_bounded_review_and_can_uphold_result(
     reviewed = contract.get_tender("review-policy")
     assert reviewed.status == "AWARDED"
     assert reviewed.final_winner == bid_id
+
+
+def test_settlement_is_separate_from_award_and_replay_protected(
+    direct_vm, direct_deploy, direct_bob, direct_charlie
+):
+    direct_vm.warp(START)
+    contract = direct_deploy(PRODUCTION)
+    bid_id, _ = _prepare_single_evaluation(
+        direct_vm, contract, direct_bob, direct_charlie, "settlement-policy"
+    )
+    direct_vm.sender = direct_bob
+    with direct_vm.expect_revert("Only awarded tenders"):
+        contract.settle_award("settlement-policy")
+    contract.begin_provisional_award("settlement-policy")
+    contract.start_response_window("settlement-policy")
+    with direct_vm.expect_revert("Only awarded tenders"):
+        contract.settle_award("settlement-policy")
+    direct_vm.warp("2026-01-01T02:10:01Z")
+    contract.advance_award("settlement-policy")
+    assert contract.get_tender("settlement-policy").final_winner == bid_id
+    contract.settle_award("settlement-policy")
+    pending = contract.get_tender("settlement-policy")
+    assert pending.status == "SETTLEMENT_PENDING"
+    assert pending.settlement_state == "TRANSFER_PENDING"
+    with direct_vm.expect_revert("already been requested"):
+        contract.settle_award("settlement-policy")
+    with direct_vm.expect_revert("finalized transfer balance delta"):
+        contract.confirm_settlement("settlement-policy")

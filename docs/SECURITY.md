@@ -1,7 +1,7 @@
 # TenderCouncil security status
 
-This document records the current security posture and is deliberately honest
-about the Stage 1 prototype's missing production controls.
+This document records the current security posture and distinguishes the
+preserved Stage 1 prototype from the production foundation.
 
 ## Implemented now
 
@@ -17,18 +17,24 @@ about the Stage 1 prototype's missing production controls.
   fields; malformed validator data returns `False`.
 - Direct regression probes exercise the nondeterministic boundary and changed
   content rejection.
+- Production tenders are public-buyer, sender-authenticated, exactly funded,
+  and isolated by tender escrow accounting.
+- Production evaluation ranks all deterministically admissible bids under one
+  locked rubric; the buyer has no arbitrary winner-substitution method.
+- Provisional awards require a separate non-zero response window. Challenges
+  are bounded, sender-authenticated, and restricted to pre-close evidence
+  commitments; one validator-agreed review round is allowed.
+- `settle_award` uses an external `on="finalized"` transfer and records
+  `TRANSFER_PENDING`; `confirm_settlement` requires the expected balance delta
+  before recording `SETTLED`.
 
 ## Not yet safe for production
 
-- Tender creation is still owner-gated instead of public to any buyer.
-- Commercial fields, manifest schema, evidence policy, and hard admissibility
-  constraints are not yet complete.
-- The current evaluator scores one bid at a time rather than comparing all
-  admissible bids under one locked rubric.
-- `award_bid` is still a Stage 1 manual award method and must be removed or
-  made unreachable in the production contract.
-- There is no funded escrow, response window, bounded challenge review, or
-  finalized-safe settlement path yet.
+- The preserved Stage 1 prototype remains owner-gated and retains its manual
+  award method; it is not the production deployment artifact.
+- Production finalized-child transaction evidence has not yet been recorded
+  on Bradbury, and direct mode reports an unsupported `EthSend` trace rather
+  than simulating the external child transfer.
 - CI, release preflight, and repeatable deployment scripts are not complete.
 
 The UI stop gate is therefore closed.

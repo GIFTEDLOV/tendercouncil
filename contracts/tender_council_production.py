@@ -22,12 +22,14 @@ STATUS_PROVISIONAL_AWARD = "PROVISIONAL_AWARD"
 STATUS_RESPONSE_WINDOW = "RESPONSE_WINDOW"
 STATUS_REVIEWING_CHALLENGES = "REVIEWING_CHALLENGES"
 STATUS_AWARDED = "AWARDED"
+STATUS_SETTLEMENT_PENDING = "SETTLEMENT_PENDING"
 STATUS_SETTLED = "SETTLED"
 STATUS_NO_VALID_BID = "NO_VALID_BID"
 STATUS_CANCELLED = "CANCELLED"
 
 SETTLEMENT_ESCROWED = "ESCROWED"
 SETTLEMENT_UNSETTLED = "UNSETTLED"
+SETTLEMENT_TRANSFER_PENDING = "TRANSFER_PENDING"
 SETTLEMENT_SETTLED = "SETTLED"
 
 MANIFEST_PENDING = "MANIFEST_PENDING"
@@ -528,6 +530,7 @@ class ProductionTenderRecord:
     final_winner: str
     response_deadline: u64
     settlement_state: str
+    settlement_balance_before: u256
 
 
 @allow_storage
@@ -578,6 +581,17 @@ class ProductionChallengeRecord:
     submitted_at: u64
     status: str
     claims: str
+
+
+@gl.evm.contract_interface
+class _Recipient:
+    """EOA/EVM recipient interface used for finalized-safe native transfer."""
+
+    class View:
+        pass
+
+    class Write:
+        pass
 
 
 class TenderCouncilProduction(gl.Contract):
@@ -647,6 +661,7 @@ class TenderCouncilProduction(gl.Contract):
             "",
             u64(0),
             "",
+            u256(0),
         )
 
     def _empty_bid(self) -> ProductionBidRecord:
@@ -790,6 +805,7 @@ class TenderCouncilProduction(gl.Contract):
             "",
             u64(0),
             SETTLEMENT_ESCROWED,
+            u256(0),
         )
         self.tender_ids.append(tender_id)
         self.total_locked_escrow = self.total_locked_escrow + gl.message.value
@@ -1357,6 +1373,7 @@ class TenderCouncilProduction(gl.Contract):
                 valid_challenges += 1
         if valid_challenges == 0:
             tender.final_winner = tender.provisional_winner
+            tender.settlement_state = SETTLEMENT_UNSETTLED
             tender.status = STATUS_AWARDED
         else:
             tender.status = STATUS_REVIEWING_CHALLENGES
@@ -1442,7 +1459,66 @@ class TenderCouncilProduction(gl.Contract):
 
         result = gl.vm.run_nondet_unsafe(leader_fn, validator_fn)
         tender.final_winner = result["winner_bid_id"]
+        tender.settlement_state = SETTLEMENT_UNSETTLED
         tender.status = STATUS_AWARDED
+        self.tenders[tender_id] = tender
+
+    @gl.public.write
+    def settle_award(self, tender_id: str):
+        """Emit the winner payout as an external finalized-only message.
+
+        The parent transaction records TRANSFER_PENDING, not SETTLED. The
+        separate confirmation call is required after the finalized child
+        transfer and verifies the contract-side balance delta before the
+        application marks the tender settled.
+        """
+        tender = self.tenders.get(tender_id)
+        if tender is None:
+            raise gl.vm.UserError("Tender does not exist")
+        if (tender.status == STATUS_SETTLEMENT_PENDING
+                and tender.settlement_state == SETTLEMENT_TRANSFER_PENDING):
+            raise gl.vm.UserError("award settlement has already been requested")
+        if tender.status != STATUS_AWARDED:
+            raise gl.vm.UserError("Only awarded tenders may be settled")
+        if tender.settlement_state != SETTLEMENT_UNSETTLED:
+            raise gl.vm.UserError("award settlement has already been requested")
+        if tender.final_winner == "":
+            raise gl.vm.UserError("Tender has no final winner")
+        if self.balance < tender.award_amount:
+            raise gl.vm.UserError("contract balance cannot cover award amount")
+        if self.total_locked_escrow < tender.award_amount:
+            raise gl.vm.UserError("locked escrow accounting is stale")
+        winner_bid = self.bids.get(tender.final_winner)
+        if winner_bid is None or winner_bid.tender_id != tender_id:
+            raise gl.vm.UserError("final winner bid is invalid")
+        balance_before = self.balance
+        _Recipient(winner_bid.bidder).emit_transfer(
+            value=tender.award_amount,
+            on="finalized",
+        )
+        tender.settlement_balance_before = balance_before
+        tender.settlement_state = SETTLEMENT_TRANSFER_PENDING
+        tender.status = STATUS_SETTLEMENT_PENDING
+        self.tenders[tender_id] = tender
+
+    @gl.public.write
+    def confirm_settlement(self, tender_id: str):
+        """Finalize application settlement after the finalized child transfer."""
+        tender = self.tenders.get(tender_id)
+        if tender is None:
+            raise gl.vm.UserError("Tender does not exist")
+        if tender.status != STATUS_SETTLEMENT_PENDING:
+            raise gl.vm.UserError("award transfer is not pending")
+        if tender.settlement_state != SETTLEMENT_TRANSFER_PENDING:
+            raise gl.vm.UserError("award transfer is not pending")
+        expected_balance = tender.settlement_balance_before - tender.award_amount
+        if self.balance != expected_balance:
+            raise gl.vm.UserError("finalized transfer balance delta is unverified")
+        if self.total_locked_escrow < tender.award_amount:
+            raise gl.vm.UserError("locked escrow accounting is stale")
+        self.total_locked_escrow = self.total_locked_escrow - tender.award_amount
+        tender.settlement_state = SETTLEMENT_SETTLED
+        tender.status = STATUS_SETTLED
         self.tenders[tender_id] = tender
 
     @gl.public.write

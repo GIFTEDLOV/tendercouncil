@@ -56,8 +56,8 @@ The working environment currently reports:
 | `genlayer` CLI | 0.39.1 from the installed npm package; command startup was too slow for a short local version probe |
 | Contract runner header | `py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6` |
 | Cached direct GenVM runners | v0.2.11, v0.2.11b, v0.2.11c, v0.2.16 |
-| Current local lint/semantic validation | passes for the Stage 1 contract |
-| Current direct suite | 16 passed |
+| Current local lint/semantic validation | passes for the production contract |
+| Current direct suite | 34 passed |
 
 The direct loader confirms that the pinned contract header selects a specific
 runner and standard-library dependency. It also patches nondeterministic

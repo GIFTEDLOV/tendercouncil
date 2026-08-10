@@ -4,8 +4,8 @@
 production foundation is `contracts/tender_council_production.py`; it now
 supports public buyers, multiple tender records, exact payable award custody,
 immutable commercial bid terms, and a bounded bid-manifest schema. Comparative
-evaluation, challenges, finalized settlement, and Bradbury evaluator proof
-remain behind the UI stop gate.
+evaluation, challenges, and a finalized-only payout request are implemented;
+evaluator-enabled Bradbury proof remains behind the UI stop gate.
 
 TenderCouncil separates the procurement record from the later judgment step.
 
@@ -100,9 +100,13 @@ change commercial terms or add evidence.
 `-> REVIEWING_CHALLENGES -> AWARDED`
 
 `RESPONSE_WINDOW` may skip `REVIEWING_CHALLENGES` when no valid challenge
-exists. `NO_VALID_BID` is terminal for an empty admissible set. Funded
-cancellation and settlement are not yet enabled. Bids are accepted only in
-`OPEN`; evaluation freezes the original immutable record.
+exists. `NO_VALID_BID` is terminal for an empty admissible set. After
+`AWARDED`, `settle_award` emits an external EOA transfer with
+`on="finalized"` and enters `SETTLEMENT_PENDING`; only
+`confirm_settlement` can reach `SETTLED`, after the expected contract balance
+delta is observed. Funded cancellation remains disabled until a finalized
+refund path exists. Bids are accepted only in `OPEN`; evaluation freezes the
+original immutable record.
 
 ## Storage discipline
 
