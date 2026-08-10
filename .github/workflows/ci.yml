@@ -20,6 +20,8 @@ jobs:
         run: python tools/ci_diagnostics.py --resolve
       - run: genvm-lint check contracts/tender_council.py
       - run: genvm-lint validate contracts/tender_council.py
+      - run: genvm-lint check contracts/tender_council_production.py
+      - run: genvm-lint validate contracts/tender_council_production.py
       - name: Print resolved runtime and run all direct tests
         run: |
           python tools/ci_diagnostics.py

@@ -5,17 +5,18 @@
 | Area | Status | Evidence |
 |---|---|---|
 | Repository isolation and provenance | DONE | Dedicated `GIFTEDLOV/tendercouncil`, one `origin`, preserved Bradbury artifacts |
-| Stage 1 deterministic record | DONE for prototype | `contracts/tender_council.py`, 16 direct tests |
-| Public buyer / multiple independent tenders | MISSING | Current prototype restricts creation to deployer owner |
-| Funded escrow and finalized-safe settlement | MISSING | Current prototype stores no real custody or payment state |
-| Authenticated bounded bid manifest | PARTIAL | Sender-bound bid/evidence anchors exist; schema and commercial fields are absent |
+| Stage 1 deterministic record | DONE for prototype | `contracts/tender_council.py` |
+| Public buyer / multiple independent tenders | PARTIAL | `contracts/tender_council_production.py` allows any buyer and multiple tender records |
+| Funded escrow and finalized-safe settlement | PARTIAL | Exact payable award funding and aggregate locked-escrow accounting exist; refund/settlement remain |
+| Authenticated bounded bid manifest | PARTIAL | Production bid stores sender-bound commercial terms and SHA-256 commitments; manifest schema remains |
 | Exact-byte SHA-256 verification | PARTIAL | Stage 1 evaluator verifies exact fetched bytes; production bid-manifest integration remains |
 | Required/optional evidence policy | MISSING | Current evaluator requires at least one evidence item and has no policy states |
 | Comparative multi-bid evaluator | MISSING | Current evaluator scores one bid independently |
 | Provisional award / response window / bounded challenge | MISSING | Current lifecycle has direct issuer `award_bid` bypass |
 | Runtime boundary regression | PARTIAL/BLOCKED | Local probes pass; preserved Bradbury production-shaped smoke has validator `DETERMINISTIC_VIOLATION` |
 | Threat model and runtime due diligence | DONE | `docs/THREAT_MODEL.md`, `docs/RUNTIME_DUE_DILIGENCE.md` |
-| CI, release preflight, deployment script | MISSING | Existing project has no CI/release tooling |
+| CI, release preflight, deployment script | PARTIAL | Pinned CI/runtime diagnostics are green; release preflight/deployment script remain |
+| Direct test suite | DONE locally | 25 passed; GitHub CI was green on `1dbd0b4` before Phase 2 changes |
 | Final UI | STOPPED | UI stop gate remains closed by design |
 
 ## Stage 0 — repository and operating baseline

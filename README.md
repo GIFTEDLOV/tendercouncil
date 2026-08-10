@@ -28,5 +28,9 @@ validator `DETERMINISTIC_VIOLATION`; see [docs/PROVENANCE.md](docs/PROVENANCE.md
 
 The frontend remains behind the UI stop gate.
 
+The production foundation is being built in
+`contracts/tender_council_production.py` while the validated Stage 1 contract
+remains preserved for regression and provenance.
+
 See [docs/STAGES.md](docs/STAGES.md) for the master delivery gates and
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the Stage 1 trust model.
