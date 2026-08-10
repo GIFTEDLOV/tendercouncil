@@ -53,11 +53,11 @@ The working environment currently reports:
 | `genlayer-test` package | 0.29.2 |
 | `genlayer-py` package | 0.16.3 (the SDK is loaded into direct tests from the contract's pinned dependency) |
 | `genvm-linter` package | 0.11.0 |
-| `genlayer` CLI | 0.39.1 from the installed npm package; command startup was too slow for a short local version probe |
+| `genlayer` CLI | 0.39.1 from the installed npm package |
 | Contract runner header | `py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6` |
 | Cached direct GenVM runners | v0.2.11, v0.2.11b, v0.2.11c, v0.2.16 |
 | Current local lint/semantic validation | passes for the production contract |
-| Current direct suite | 37 passed |
+| Current direct suite | 38 passed |
 
 The direct loader confirms that the pinned contract header selects a specific
 runner and standard-library dependency. It also patches nondeterministic
@@ -67,15 +67,15 @@ callback serialization but cannot prove Bradbury validator behavior.
 ## Hashing decision
 
 The required application commitment is SHA-256 of the exact bytes returned by
-the web response. The contract must hash the response bytes before UTF-8
-decoding or semantic exposure. `hashlib.sha256` is present in the direct
-Python environment, but direct mode alone is not sufficient evidence that a
-cryptographic extension behaves identically inside every deployed GenVM.
-Therefore the production contract will keep hashing in a small, pure-Python
-SHA-256 routine using bounded bytes and integer operations, and will retain a
-runtime probe for the installed `hashlib.sha256` behavior. The pure routine is
-the consensus-critical implementation; the standard-library probe is
-diagnostic, not authoritative.
+the web response. The contract hashes response bytes before UTF-8 decoding or
+semantic exposure. The pinned direct GenVM accepted `hashlib.sha256` in both
+leader and validator callbacks; empty, short, UTF-8, binary, and multi-block
+vectors passed. The former pure-Python production routine was compared against
+`hashlib.sha256` byte-for-byte and the result is preserved in
+`artifacts/sha256-equivalence.json`. Production now uses the native routine,
+while the exact-byte and mutation tests remain unchanged. A live Bradbury
+contract must still exercise this path before release because deployment is
+currently blocked by the chain pubdata envelope.
 
 ## Boundary regression
 

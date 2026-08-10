@@ -29,11 +29,11 @@ proof remain behind the UI stop gate.
 - A tender buyer may open, close, evaluate, and advance only that buyer's
   tender. There is no arbitrary manual winner-selection method.
 - A supplier may append evidence only to its own bid.
-- A URI is only a locator. The current evaluator now hashes the exact fetched
-  response bytes with the contract's pure-Python SHA-256 routine before UTF-8
-  decoding or semantic exposure. A mismatch returns a bounded rejection and
-  never reaches the LLM. The production manifest validator applies the same
-  exact-byte commitment check before JSON decoding and schema validation.
+- A URI is only a locator. The current evaluator hashes the exact fetched
+  response bytes with pinned `hashlib.sha256` before UTF-8 decoding or semantic
+  exposure. A mismatch returns a bounded rejection and never reaches the LLM.
+  The production manifest validator applies the same exact-byte commitment
+  check before JSON decoding and schema validation.
   External evidence retrieval and required/optional evidence resolution are
   performed inside the comparative evaluator. Rationale text is not an
   equivalence field.

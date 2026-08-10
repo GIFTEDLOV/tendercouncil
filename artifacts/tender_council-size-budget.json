@@ -1,0 +1,105 @@
+{
+  "method": "UTF-8 source bytes by exclusive line regions; prompt bytes are union of matching AST string lines",
+  "source": "contracts\\tender_council_production.py",
+  "source_bytes": 64069,
+  "deployable_artifact": "artifacts\\tender_council_production_deployable.py",
+  "deployable_bytes": 54555,
+  "exclusive_regions": [
+    {
+      "component": "protocol constants/schema constants",
+      "start_line": 17,
+      "end_line": 103,
+      "source_bytes": 2715
+    },
+    {
+      "component": "rubric parsing",
+      "start_line": 104,
+      "end_line": 117,
+      "source_bytes": 593
+    },
+    {
+      "component": "native SHA-256 commitment",
+      "start_line": 120,
+      "end_line": 122,
+      "source_bytes": 155
+    },
+    {
+      "component": "web fetch/evidence integrity",
+      "start_line": 125,
+      "end_line": 189,
+      "source_bytes": 2630
+    },
+    {
+      "component": "comparative evaluator helpers",
+      "start_line": 192,
+      "end_line": 297,
+      "source_bytes": 5657
+    },
+    {
+      "component": "manifest/schema validation",
+      "start_line": 298,
+      "end_line": 409,
+      "source_bytes": 5598
+    },
+    {
+      "component": "challenge schema/review helpers",
+      "start_line": 412,
+      "end_line": 477,
+      "source_bytes": 3176
+    },
+    {
+      "component": "storage dataclasses",
+      "start_line": 482,
+      "end_line": 565,
+      "source_bytes": 1693
+    },
+    {
+      "component": "contract views/validation",
+      "start_line": 567,
+      "end_line": 702,
+      "source_bytes": 4055
+    },
+    {
+      "component": "tender/bid/policy writes",
+      "start_line": 703,
+      "end_line": 894,
+      "source_bytes": 7659
+    },
+    {
+      "component": "comparative evaluation write",
+      "start_line": 895,
+      "end_line": 1160,
+      "source_bytes": 12100
+    },
+    {
+      "component": "provisional award/challenge flow",
+      "start_line": 1163,
+      "end_line": 1453,
+      "source_bytes": 13529
+    },
+    {
+      "component": "settlement and lifecycle",
+      "start_line": 1454,
+      "end_line": 1530,
+      "source_bytes": 3908
+    }
+  ],
+  "prompt_text": {
+    "keywords": [
+      "TRUSTED",
+      "UNTRUSTED",
+      "rubric",
+      "Return JSON",
+      "proposal",
+      "evidence"
+    ],
+    "line_count": 81,
+    "source_bytes": 5491
+  },
+  "lexical_overhead": {
+    "comment_token_bytes": 83,
+    "string_token_bytes": 13207,
+    "docstring_token_bytes": 1974,
+    "whitespace_bytes_outside_token_text": 11883
+  }
+}

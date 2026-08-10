@@ -1,0 +1,43 @@
+{
+  "method": "AST-extracted former production pure-Python SHA-256 vs hashlib.sha256",
+  "source": "contracts\\tender_council_production.py",
+  "reference_commit": "230ecd0fd2df0249f3b251d8f489bf225129210c",
+  "vectors": [
+    {
+      "name": "empty",
+      "bytes": 0,
+      "pure_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "hashlib_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "equal": true
+    },
+    {
+      "name": "short",
+      "bytes": 3,
+      "pure_sha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+      "hashlib_sha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+      "equal": true
+    },
+    {
+      "name": "utf8",
+      "bytes": 29,
+      "pure_sha256": "20627c717812a07017627588a3b4205e9d8c430cc356f4cd24321091129f7242",
+      "hashlib_sha256": "20627c717812a07017627588a3b4205e9d8c430cc356f4cd24321091129f7242",
+      "equal": true
+    },
+    {
+      "name": "binary",
+      "bytes": 256,
+      "pure_sha256": "40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880",
+      "hashlib_sha256": "40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880",
+      "equal": true
+    },
+    {
+      "name": "multi_block",
+      "bytes": 6426,
+      "pure_sha256": "6aad76a256140fbb1dc6d79caa6f127673d7d392fab95af1fc346781c06d8674",
+      "hashlib_sha256": "6aad76a256140fbb1dc6d79caa6f127673d7d392fab95af1fc346781c06d8674",
+      "equal": true
+    }
+  ],
+  "all_equal": true
+}

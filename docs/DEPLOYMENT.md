@@ -43,9 +43,13 @@ preflight-verified production deployment attempts:
 The first production source submission (`66,964` bytes) and the generated,
 linted compact artifact (`56,272` bytes) were both rejected by Bradbury before
 contract creation with `BlockPubdataLimitReached` / `intrinsic gas too low`.
-The wrapper recorded both attempts under `artifacts/`; no production contract
-address or evaluator transaction exists from these attempts. This is the
-current deployment-size blocker, not a successful deployment.
+The no-broadcast envelope probe now measures a successful outer call at 53,316
+bytes and the first failure at 53,348 bytes. The current native-SHA compact
+artifact is 54,555 source bytes and 54,820 outer-call bytes, still above the
+measured limit. The wrapper recorded all historical attempts under
+`artifacts/`; no production contract address or evaluator transaction exists
+from these attempts. This remains a deployment-size blocker, not a successful
+deployment.
 
 The UI stop gate remains closed pending a production-shaped evaluator-enabled
 Bradbury flow, protocol-finality evidence, and release-artifact verification.

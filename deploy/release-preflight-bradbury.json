@@ -3,7 +3,7 @@
   "chain_id": 4221,
   "sender": "0xe0f17bef0587c3b66d2eb4bbe705dff821abdde7",
   "source": "../contracts/tender_council_production.py",
-  "source_sha256": "76503052ba34f0f0c565d01ddff1614b9f60ace90df17127fff4a10e1a1821be",
+  "source_sha256": "09e0dc5556b29b3c8d6d48fd8d1eb30edc064ce42bf6da293ae5797f50708f58",
   "artifact": "../artifacts/tender_council_production_deployable.py",
   "runner_header": "# { \"Depends\": \"py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6\" }",
   "constructor_args": [],

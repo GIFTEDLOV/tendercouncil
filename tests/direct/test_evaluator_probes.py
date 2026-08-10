@@ -102,3 +102,21 @@ def test_probe_sha256_runtime_behavior(direct_vm, direct_deploy):
     assert result["sha256"] == "110100cb4c0c3a1658a0931ab227a1c25862aa02d63a0c2b1c4a6de9fbed1a65"
     assert direct_vm.run_validator()
     _assert_callbacks_cloudpickle(direct_vm)
+
+
+def test_probe_sha256_bytes_runtime_vectors(direct_vm, direct_deploy):
+    contract = direct_deploy(PROBE)
+    vectors = [
+        b"",
+        b"abc",
+        "TenderCouncil UTF-8 ✓".encode("utf-8"),
+        bytes(range(256)),
+        (b"GenLayer exact-byte probe" * 257) + b"!",
+    ]
+    import hashlib
+
+    for vector in vectors:
+        result = contract.probe_sha256_bytes(vector)
+        assert result["sha256"] == hashlib.sha256(vector).hexdigest()
+        assert direct_vm.run_validator()
+    _assert_callbacks_cloudpickle(direct_vm)

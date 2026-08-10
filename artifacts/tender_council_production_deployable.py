@@ -1,6 +1,7 @@
 # { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }
 from dataclasses import dataclass
 import datetime
+import hashlib
 import json
 from genlayer import*
 STATUS_DRAFT='DRAFT'
@@ -69,8 +70,6 @@ MANIFEST_EVIDENCE_KEYS=('criterion','evidence_id','kind','required','sha256','ur
 ALLOWED_EVIDENCE_KINDS=('CAPABILITY','DELIVERY','SUPPORT','TECHNICAL')
 ALLOWED_CRITERIA=('capability','delivery','support','technical')
 ALLOWED_CONFIDENCE=('HIGH','MEDIUM','LOW')
-def _rotate_right(value:int,amount:int)->int:
-    return(value>>amount|value<<32-amount)&4294967295
 def _parse_rubric(rubric:str):
     values={}
     for item in rubric.split(';'):
@@ -86,25 +85,7 @@ def _parse_rubric(rubric:str):
         raise ValueError('rubric total is not 100')
     return weights
 def _sha256_hex(data:bytes)->str:
-    k=tuple((int(x,16)for x in '428a2f98 71374491 b5c0fbcf e9b5dba5 3956c25b 59f111f1 923f82a4 ab1c5ed5 d807aa98 12835b01 243185be 550c7dc3 72be5d74 80deb1fe 9bdc06a7 c19bf174 e49b69c1 efbe4786 0fc19dc6 240ca1cc 2de92c6f 4a7484aa 5cb0a9dc 76f988da 983e5152 a831c66d b00327c8 bf597fc7 c6e00bf3 d5a79147 06ca6351 14292967 27b70a85 2e1b2138 4d2c6dfc 53380d13 650a7354 766a0abb 81c2c92e 92722c85 a2bfe8a1 a81a664b c24b8b70 c76c51a3 d192e819 d6990624 f40e3585 106aa070 19a4c116 1e376c08 2748774c 34b0bcb5 391c0cb3 4ed8aa4a 5b9cca4f 682e6ff3 748f82ee 78a5636f 84c87814 8cc70208 90befffa a4506ceb bef9a3f7 c67178f2'.split()))
-    h=[1779033703,3144134277,1013904242,2773480762,1359893119,2600822924,528734635,1541459225]
-    n=len(data)
-    data+=b'\x80'+b'\x00'*((55-n)%64)+(n*8).to_bytes(8,'big')
-    for o in range(0,len(data),64):
-        w=[int.from_bytes(data[i:i+4],'big')for i in range(o,o+64,4)]
-        for i in range(16,64):
-            x=w[i-15]
-            y=w[i-2]
-            w.append(w[i-16]+(_rotate_right(x,7)^_rotate_right(x,18)^x>>3)+w[i-7]+(_rotate_right(y,17)^_rotate_right(y,19)^y>>10)&4294967295)
-        a,b,c,d,e,f,g,z=h
-        for i in range(64):
-            s=_rotate_right(e,6)^_rotate_right(e,11)^_rotate_right(e,25)
-            t=z+s+(e&f^~e&g)+k[i]+w[i]&4294967295
-            s=_rotate_right(a,2)^_rotate_right(a,13)^_rotate_right(a,22)
-            u=s+(a&b^a&c^b&c)&4294967295
-            z,g,f,e,d,c,b,a=(g,f,e,d+t&4294967295,c,b,a,t+u&4294967295)
-        h=[h[0]+a&4294967295,h[1]+b&4294967295,h[2]+c&4294967295,h[3]+d&4294967295,h[4]+e&4294967295,h[5]+f&4294967295,h[6]+g&4294967295,h[7]+z&4294967295]
-    return ''.join((f'{x:08x}'for x in h))
+    return hashlib.sha256(data).hexdigest()
 def _manifest_failure(status:str):
     return{'status':status,'evidence_count':0,'evidence_commitments':''}
 def _fetch_exact_web_bytes(url:str,maximum_bytes:int):

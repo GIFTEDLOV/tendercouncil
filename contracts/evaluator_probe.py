@@ -198,3 +198,19 @@ class EvaluatorProbe(gl.Contract):
             return leader_result.calldata.get("sha256") == expected
 
         return gl.vm.run_nondet_unsafe(leader_fn, validator_fn)
+
+    @gl.public.write
+    def probe_sha256_bytes(self, data: bytes):
+        """Probe hashlib.sha256 over exact bytes in the pinned GenVM runner."""
+        stable_data = bytes(data)
+
+        def leader_fn():
+            return {"sha256": hashlib.sha256(stable_data).hexdigest()}
+
+        def validator_fn(leader_result):
+            if not isinstance(leader_result, gl.vm.Return):
+                return False
+            expected = hashlib.sha256(stable_data).hexdigest()
+            return leader_result.calldata.get("sha256") == expected
+
+        return gl.vm.run_nondet_unsafe(leader_fn, validator_fn)
