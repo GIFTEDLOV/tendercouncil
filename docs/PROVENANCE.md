@@ -19,6 +19,9 @@ because the installed test plugin clears `artifacts/` on startup.
 ## Current changes
 
 This continuation adds runtime due diligence, a threat model, the exact-byte
-SHA-256 and evaluator-boundary hardening, a SHA-256 diagnostic probe, and a
-changed-content mutation test. The production commercial contract has not yet
-been substituted, and no frontend has been started.
+SHA-256 and evaluator-boundary hardening, public funded production tenders,
+comparative evaluation, bounded challenges, finalized-safe settlement states,
+mutation checks, and release tooling. The first production Bradbury deployment
+attempts are preserved in `artifacts/bradbury-production-deployment-*.json`;
+both were rejected before contract creation by the pubdata limit. No frontend
+has been started.

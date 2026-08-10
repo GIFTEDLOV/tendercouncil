@@ -30,8 +30,8 @@ PowerShell argument marshalling is not a release mechanism.
 
 ## Current status
 
-Repeatable tooling now exists but has not yet been used for a production
-Bradbury transaction:
+Repeatable tooling now exists and has been exercised through failed
+preflight-verified production deployment attempts:
 
 - `tools/release_preflight.py` compares network, chain ID, sender, source hash,
   runner header, constructor arguments, schema version, fixture hashes,
@@ -39,6 +39,13 @@ Bradbury transaction:
 - `deploy/deploy_production.py` invokes `genlayer deploy` with a list of
   arguments, records the exact source/artifact hash and raw transport result,
   and never performs implicit network or shell-string marshalling.
+
+The first production source submission (`66,964` bytes) and the generated,
+linted compact artifact (`56,272` bytes) were both rejected by Bradbury before
+contract creation with `BlockPubdataLimitReached` / `intrinsic gas too low`.
+The wrapper recorded both attempts under `artifacts/`; no production contract
+address or evaluator transaction exists from these attempts. This is the
+current deployment-size blocker, not a successful deployment.
 
 The UI stop gate remains closed pending a production-shaped evaluator-enabled
 Bradbury flow, protocol-finality evidence, and release-artifact verification.

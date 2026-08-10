@@ -11,12 +11,14 @@ import argparse
 import datetime
 import hashlib
 import json
+import os
 import subprocess
+import sys
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
-
+sys.path.insert(0, str(ROOT))
+from tools.make_deployable import make_deployable
 
 def main() -> None:
     parser = argparse.ArgumentParser()
@@ -34,11 +36,12 @@ def main() -> None:
         raise SystemExit("deployment failure: contract is missing")
     if not artifact.is_file():
         raise SystemExit("deployment failure: artifact is missing")
-    if contract.read_bytes() != artifact.read_bytes():
+    if artifact.read_bytes() != make_deployable(contract.read_bytes()):
         raise SystemExit("deployment failure: artifact/source parity mismatch")
 
+    cli = "genlayer.cmd" if os.name == "nt" else "genlayer"
     command = [
-        "genlayer",
+        cli,
         "deploy",
         "--contract",
         str(artifact),

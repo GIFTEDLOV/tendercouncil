@@ -13,7 +13,7 @@
 | Required/optional evidence policy | PARTIAL | Production evaluator records required failures and explicitly skips optional unavailable evidence; broader policy fixtures remain |
 | Comparative multi-bid evaluator | PARTIAL | `evaluate_tender` ranks one tender snapshot with bounded structured output; Bradbury proof and tolerance trials remain |
 | Provisional award / response window / bounded challenge | PARTIAL | Production contract has explicit provisional/window/review states, committed-evidence challenge restrictions, and 37 local tests; finalized settlement proof is still separate |
-| Runtime boundary regression | PARTIAL/BLOCKED | Local probes pass; preserved Bradbury production-shaped smoke has validator `DETERMINISTIC_VIOLATION` |
+| Runtime boundary regression | PARTIAL/BLOCKED | Primitive-byte boundary passes locally; preserved old evaluator smoke has validator `DETERMINISTIC_VIOLATION`, and current production deployment is blocked before creation by Bradbury pubdata size |
 | Threat model and runtime due diligence | DONE | `docs/THREAT_MODEL.md`, `docs/RUNTIME_DUE_DILIGENCE.md` |
 | CI, release preflight, deployment script | PARTIAL | Pinned CI plus seven mutation checks are green; fail-closed preflight and list-based deployment wrapper exist, but production artifact proof remains |
 | Direct test suite | DONE locally | 37 passed locally; Phase 7 CI run `31397768174` green, including seven mutation checks |

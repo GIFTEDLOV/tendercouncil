@@ -9,6 +9,10 @@ import re
 import sys
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from tools.make_deployable import make_deployable
+
 
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 REQUIRED_FIELDS = (
@@ -109,7 +113,7 @@ def main() -> None:
             artifact_path = args.config.parent / artifact_path
         if not artifact_path.is_file():
             fail("deployable artifact is missing")
-        if artifact_path.read_bytes() != source.read_bytes():
+        if artifact_path.read_bytes() != make_deployable(source.read_bytes()):
             fail("deployable artifact/source parity mismatch")
 
     print("release_preflight=PASS")

@@ -37,5 +37,8 @@ preserved Stage 1 prototype from the production foundation.
   than simulating the external child transfer.
 - The release preflight and deployment wrapper are present, but no production
   Bradbury deployment has yet been accepted as release evidence.
+- Bradbury currently rejects both the full and generated compact production
+  artifacts before contract creation at the network pubdata limit; this is an
+  unresolved release blocker and no E2E settlement claim is made.
 
 The UI stop gate is therefore closed.

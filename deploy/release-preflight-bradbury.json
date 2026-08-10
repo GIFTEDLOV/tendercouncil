@@ -1,0 +1,13 @@
+{
+  "network": "testnet-bradbury",
+  "chain_id": 4221,
+  "sender": "0xe0f17bef0587c3b66d2eb4bbe705dff821abdde7",
+  "source": "../contracts/tender_council_production.py",
+  "source_sha256": "76503052ba34f0f0c565d01ddff1614b9f60ace90df17127fff4a10e1a1821be",
+  "artifact": "../artifacts/tender_council_production_deployable.py",
+  "runner_header": "# { \"Depends\": \"py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6\" }",
+  "constructor_args": [],
+  "schema_version": "tendercouncil.production.v1",
+  "fixture_hashes": {},
+  "deployment_transport": "genlayer-cli"
+}

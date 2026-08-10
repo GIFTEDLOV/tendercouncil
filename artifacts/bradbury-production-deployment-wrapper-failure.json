@@ -1,0 +1,7 @@
+{
+  "network": "testnet-bradbury",
+  "source_sha256": "76503052ba34f0f0c565d01ddff1614b9f60ace90df17127fff4a10e1a1821be",
+  "status": "NO_TRANSACTION",
+  "failure": "Windows Python subprocess could not resolve the npm genlayer shim when invoked as executable name genlayer; wrapper corrected to use genlayer.cmd.",
+  "preflight": "PASS"
+}
