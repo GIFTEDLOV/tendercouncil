@@ -1,3 +1,6 @@
+import cloudpickle
+
+
 STATUS_OPEN = "OPEN"
 STATUS_AWARDED = "AWARDED"
 STATUS_CANCELLED = "CANCELLED"
@@ -141,3 +144,7 @@ def test_evaluator_fetches_evidence_and_compares_stable_fields(
     assert evaluation.decision == EVALUATION_ACCEPT
     assert evaluation.evidence_count == 1
     assert evaluation.score == 90
+
+    _, leader_fn, validator_fn = direct_vm._captured_validators[-1]
+    cloudpickle.dumps(leader_fn)
+    cloudpickle.dumps(validator_fn)

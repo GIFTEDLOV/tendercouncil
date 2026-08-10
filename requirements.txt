@@ -1,3 +1,4 @@
 genlayer-test
 genvm-linter
 pytest
+cloudpickle

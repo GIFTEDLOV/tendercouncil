@@ -36,3 +36,22 @@ Persistent collections use GenLayer storage-compatible `TreeMap` and `DynArray`
 types. Structured records use `@allow_storage` dataclasses. IDs are supplied by
 callers so the records are addressable without relying on host time or a
 non-deterministic counter.
+
+## Nondeterministic boundary investigation
+
+The original evaluator failed on Bradbury because its nondeterministic closures
+called `json.loads()` inside the sub-VM to reconstruct a list of source metadata
+dictionaries, then used those reconstructed objects to drive web and LLM calls.
+The failure was isolated with a single Bradbury probe deployment: probes A-E
+(constant, web, LLM, web+LLM, and captured immutable strings) were accepted;
+the production-shaped F probe was the first failure and returned
+`DETERMINISTIC_VIOLATION` for all five validators. Its trace recorded no web or
+LLM calls. The installed Bradbury v0.2.11 and local v0.2.16 implementations of
+`run_nondet_unsafe` and the storage boundary are byte-identical.
+
+The smallest supported fix is to prepare immutable primitive tuples in the
+deterministic context, iterate those tuples directly inside the nondeterministic
+closure, and request structured LLM output with `response_format="json"`. No
+storage object, JSON-decoded container, or mutable closure state crosses the
+boundary. The regression suite cloudpickle-tests both callbacks and retains the
+full probe evidence in `artifacts/bradbury-evaluator-probes.json`.

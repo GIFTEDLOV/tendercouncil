@@ -1,0 +1,17 @@
+{
+  "network": "testnet-bradbury",
+  "contract_address": "0xb186Dee6B34766315A020E89806c74B9E36b603D",
+  "deployment_transaction": "0x52cef3ed8cec1626137ee13730bea055ede0d6b4822d0e5ab570a93195c35da0",
+  "deployment_status": "ACCEPTED",
+  "fixture_url": "https://test-server.genlayer.com/static/genvm/hello.html",
+  "probes": {
+    "A_constant": {"transaction": "0xdad8288e09b77a856edf8e24fcc3ee2055f292b414fa63dc40fcf0297d20541f", "status": "ACCEPTED", "votes": ["AGREE", "AGREE", "AGREE", "AGREE", "AGREE"]},
+    "B_web": {"transaction": "0xe1ec9e479fbbcf3c341cc167a56c21d03cd524c85047e17d5947dfafd65dc361", "status": "ACCEPTED", "votes": ["AGREE", "AGREE", "AGREE", "AGREE", "AGREE"]},
+    "C_llm": {"transaction": "0x8c94df297f1184d6ab116b455f1890a45846d752e8172d473077d71d96ae588f", "status": "ACCEPTED", "votes": ["AGREE", "AGREE", "AGREE", "TIMEOUT", "AGREE"]},
+    "D_web_llm": {"transaction": "0xdac232a44d5466c3ab058c19f42e4fa07a521e2f265a402d370e19c8533b190a", "status": "ACCEPTED", "votes": ["AGREE", "AGREE", "TIMEOUT", "AGREE", "AGREE"]},
+    "E_captured_strings": {"transaction": "0x1277f1d841301f12bb693f79137b20494655629e84e95650dd6e6e93a7e7ebb8", "status": "ACCEPTED", "votes": ["AGREE", "AGREE", "AGREE", "AGREE", "AGREE"]},
+    "F_actual_shape_bad_cli_encoding": {"transaction": "0xeeae91a7189c252e3d787ce9a01d299c402df3e1abaf69f0a3bea6047cd7b22f", "status": "ACCEPTED_WITH_ERROR", "trace_error": "probe_f received six positional arguments"},
+    "F_actual_shape": {"transaction": "0x45f0800441f78b1999ec221a8828773d627aa1152a02a83274f98316407f5404", "status": "UNDETERMINED", "votes": ["DETERMINISTIC_VIOLATION", "DETERMINISTIC_VIOLATION", "DETERMINISTIC_VIOLATION", "DETERMINISTIC_VIOLATION", "DETERMINISTIC_VIOLATION"], "trace_web_calls": 0, "trace_llm_calls": 0}
+  },
+  "root_cause": "json.loads inside the nondeterministic closure reconstructed source metadata containers before driving external calls; the first reproducing probe was F, while E with only captured immutable strings was green."
+}

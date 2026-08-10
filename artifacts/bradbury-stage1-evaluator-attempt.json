@@ -29,5 +29,5 @@
     "trace_web_calls": 0,
     "trace_llm_calls": 0
   },
-  "blocker": "Bradbury validators reject the evaluator nondeterministic execution as DETERMINISTIC_VIOLATION before web/LLM calls complete; the contract remains locally lint-clean and direct-test clean."
+  "blocker": "Bradbury validators rejected the evaluator nondeterministic execution as DETERMINISTIC_VIOLATION before web/LLM calls completed."
 }
