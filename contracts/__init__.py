@@ -1,0 +1,1 @@
+"""TenderCouncil Intelligent Contracts."""
