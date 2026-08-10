@@ -18,13 +18,7 @@
   "evaluation_result": {
     "status": "UNDETERMINED",
     "result": "DISAGREE",
-    "validator_votes": [
-      "DETERMINISTIC_VIOLATION",
-      "DETERMINISTIC_VIOLATION",
-      "AGREE",
-      "DETERMINISTIC_VIOLATION",
-      "DETERMINISTIC_VIOLATION"
-    ],
+    "validator_votes": ["DETERMINISTIC_VIOLATION", "DETERMINISTIC_VIOLATION", "AGREE", "DETERMINISTIC_VIOLATION", "DETERMINISTIC_VIOLATION"],
     "trace_genvm_version": "v0.2.11-x86_64-linux-release",
     "trace_web_calls": 0,
     "trace_llm_calls": 0
