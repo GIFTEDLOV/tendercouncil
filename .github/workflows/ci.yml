@@ -26,6 +26,10 @@ jobs:
       - run: genvm-lint validate contracts/tender_council_core.py
       - run: genvm-lint check contracts/tender_council_evaluator.py
       - run: genvm-lint validate contracts/tender_council_evaluator.py
+      - name: Enforce finalized-only cross-contract messages
+        run: |
+          python tools/check_finalized_messages.py contracts/tender_council_core.py
+          python tools/check_finalized_messages.py contracts/tender_council_evaluator.py
       - name: Generate and check split artifacts
         run: |
           python tools/make_deployable.py contracts/tender_council_core.py artifacts/tender_council_core_deployable.py

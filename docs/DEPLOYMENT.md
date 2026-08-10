@@ -11,7 +11,8 @@ The production pair is deployed in this order:
 2. Wait for finalized Core deployment and record its address.
 3. `TenderCouncilEvaluator(core_address, tendercouncil.evaluator.v1)`.
 4. Wait for finalized Evaluator deployment.
-5. One-time Core `bind_evaluator(address, version, source_hash)`.
+5. One-time Core `bind_evaluator(address, version, evaluator_code_hash)`, where
+   the hash is the exact SHA-256 of the generated Evaluator deployment artifact.
 6. Verify the finalized Core binding before opening any tender.
 
 `deploy/deploy_split.py` is the repeatable dry-run manifest generator. It

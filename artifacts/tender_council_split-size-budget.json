@@ -8,17 +8,17 @@
   "components": [
     {
       "name": "core",
-      "source_bytes": 37055,
-      "artifact_bytes": 33730,
-      "conservative_outer_bytes": 34754,
+      "source_bytes": 37344,
+      "artifact_bytes": 33969,
+      "conservative_outer_bytes": 34993,
       "target_outer_bytes": 40000,
       "within_target": true
     },
     {
       "name": "evaluator",
-      "source_bytes": 24381,
-      "artifact_bytes": 22026,
-      "conservative_outer_bytes": 23050,
+      "source_bytes": 24581,
+      "artifact_bytes": 22220,
+      "conservative_outer_bytes": 23244,
       "target_outer_bytes": 40000,
       "within_target": true
     }

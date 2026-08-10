@@ -1,5 +1,5 @@
 {
-  "created_at_utc": "2026-08-10T16:18:22.066232+00:00",
+  "created_at_utc": "2026-08-10T17:08:03.864922+00:00",
   "mode": "DRY_RUN_NO_BROADCAST",
   "network": "testnet-bradbury",
   "chain_id": 4221,
@@ -9,27 +9,27 @@
     "deploy Core and await finalized deployment",
     "deploy Evaluator with finalized Core address",
     "bind Evaluator once in Core and await finalized binding",
-    "verify Core binding address/version/source hash"
+    "verify Core binding address/version/exact evaluator artifact code hash"
   ],
   "components": [
     {
       "name": "core",
       "source": "contracts\\tender_council_core.py",
       "artifact": "artifacts\\tender_council_core_deployable.py",
-      "source_sha256": "3e05df64f56efb151321fbbaf41bee92f91f1e9aff019f55c712946e0c165808",
-      "artifact_sha256": "ff8f5f0a20cd255000e7178cf52367f8e4dd537f6911e247c9687dfd1e7c029e",
-      "source_bytes": 37055,
-      "artifact_bytes": 33730,
+      "source_sha256": "c0073feacfd6ceb2d455bf56d230a93c934d9dad2f1bfe07bf66d6d377f5b3c4",
+      "artifact_sha256": "e11be233820dceb4895a7d4246b711d2d6bcb937016eac62c2670bca51068eb7",
+      "source_bytes": 37344,
+      "artifact_bytes": 33969,
       "constructor_args": []
     },
     {
       "name": "evaluator",
       "source": "contracts\\tender_council_evaluator.py",
       "artifact": "artifacts\\tender_council_evaluator_deployable.py",
-      "source_sha256": "1e6172f09be428b58f2ea64f8119a730a268ea30aa82515ee1818713909613d3",
-      "artifact_sha256": "d9305e3fede5513ef178d8c79ac71a128f875acd3e7bcf32cac7f36973f03637",
-      "source_bytes": 24381,
-      "artifact_bytes": 22026,
+      "source_sha256": "ef0c976c5b00bd17d970d4200aee21ef2cdb952afb0cac42538a1ab3eb0f1122",
+      "artifact_sha256": "f73cbdabc9a4af3f0897df17f227671a1ac815a11de3a0d784953f11927865a8",
+      "source_bytes": 24581,
+      "artifact_bytes": 22220,
       "constructor_args": [
         "<CORE_ADDRESS>",
         "tendercouncil.evaluator.v1"
@@ -37,7 +37,8 @@
     }
   ],
   "binding": {
-    "method": "bind_evaluator(evaluator_address, evaluator_version, evaluator_source_hash)",
+    "method": "bind_evaluator(evaluator_address, evaluator_version, evaluator_code_hash)",
+    "code_hash_definition": "sha256:<exact bytes of artifacts/tender_council_evaluator_deployable.py>",
     "one_time": true,
     "core_authority": "Core bootstrapper only"
   }

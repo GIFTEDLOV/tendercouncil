@@ -176,14 +176,14 @@ class TenderCouncilCore(gl.Contract):
     bootstrapper:Address
     evaluator_address:Address
     evaluator_version:str
-    evaluator_source_hash:str
+    evaluator_code_hash:str
     evaluator_bound:bool
     total_locked_escrow:u256
     def __init__(self):
         self.bootstrapper=gl.message.sender_address
         self.evaluator_address=ZERO_ADDRESS
         self.evaluator_version=''
-        self.evaluator_source_hash=''
+        self.evaluator_code_hash=''
         self.evaluator_bound=False
         self.total_locked_escrow=u256(0)
     def _now(self)->u64:
@@ -224,7 +224,7 @@ class TenderCouncilCore(gl.Contract):
             rows.append({'challenge_id':str(challenge.challenge_id),'challenger':str(challenge.challenger),'reason_code':str(challenge.reason_code),'target_bid_id':str(challenge.target_bid_id),'referenced_evidence_id':str(challenge.referenced_evidence_id),'challenge_url':str(challenge.challenge_url),'challenge_sha256':str(challenge.challenge_sha256),'submitted_at':int(challenge.submitted_at),'status':str(challenge.status),'claims':str(challenge.claims)})
         return _sha256(_canonical({'schema_version':'tendercouncil.challenges.v1','items':rows}))
     def _validate_result(self,tender:CoreTender,result:dict,result_type:str):
-        required=('confidence','disqualified_bid_ids','runner_up_bid_id','runner_up_score','scores','valid_bid_ids','winner_bid_id','winner_total_score','status')
+        required=('confidence','disqualified_bid_ids','runner_up_bid_id','runner_up_score','rationale','scores','valid_bid_ids','winner_bid_id','winner_total_score','status')
         if not isinstance(result,dict)or tuple(sorted(result))!=tuple(sorted(required)):
             raise gl.vm.UserError('malformed evaluator result')
         if result['status']!=result_type:
@@ -240,12 +240,14 @@ class TenderCouncilCore(gl.Contract):
         if set(valid)|set(disqualified)!=all_ids or set(valid)&set(disqualified):
             raise gl.vm.UserError('result bid partition is invalid')
         if result_type=='NO_VALID_BID':
-            if result['winner_bid_id']!='' or valid or result['scores']:
+            if result['winner_bid_id']!='' or valid or result['scores']or(not isinstance(result['rationale'],str))or(len(result['rationale'])>MAX_TEXT):
                 raise gl.vm.UserError('NO_VALID_BID result contains a winner')
             return
         if result['winner_bid_id']not in valid or result['winner_bid_id']in disqualified:
             raise gl.vm.UserError('result winner is not a valid bid')
         scores=result['scores']
+        if not isinstance(result['rationale'],str)or len(result['rationale'])>MAX_TEXT:
+            raise gl.vm.UserError('result rationale is malformed')
         if not isinstance(scores,list)or len(scores)!=len(valid):
             raise gl.vm.UserError('result scores do not cover valid bids')
         score_map={}
@@ -281,7 +283,7 @@ class TenderCouncilCore(gl.Contract):
         return self.evaluator_bound
     @gl.public.view
     def get_evaluator_binding(self)->str:
-        return _canonical({'bound':self.evaluator_bound,'address':str(self.evaluator_address),'version':self.evaluator_version,'source_hash':self.evaluator_source_hash})
+        return _canonical({'bound':self.evaluator_bound,'address':str(self.evaluator_address),'version':self.evaluator_version,'evaluator_code_hash':self.evaluator_code_hash})
     @gl.public.view
     def get_contract_balance(self)->u256:
         return self.balance
@@ -325,7 +327,7 @@ class TenderCouncilCore(gl.Contract):
                 rows.append({'challenge_id':challenge.challenge_id,'tender_id':challenge.tender_id,'challenger':str(challenge.challenger),'reason_code':challenge.reason_code,'target_bid_id':challenge.target_bid_id,'referenced_evidence_id':challenge.referenced_evidence_id,'challenge_url':challenge.challenge_url,'challenge_sha256':challenge.challenge_sha256,'claims':challenge.claims})
         return _canonical({'tender_id':tender_id,'evaluation_nonce':int(tender.evaluation_nonce),'review_nonce':int(review_nonce),'snapshot_digest':tender.closed_snapshot_digest,'original_result_digest':tender.evaluation_result_digest,'challenge_set_digest':tender.challenge_set_digest,'challenges':rows})
     @gl.public.write
-    def bind_evaluator(self,evaluator_address:Address,evaluator_version:str,evaluator_source_hash:str):
+    def bind_evaluator(self,evaluator_address:Address,evaluator_version:str,evaluator_code_hash:str):
         if self.evaluator_bound:
             raise gl.vm.UserError('evaluator is already permanently bound')
         if gl.message.sender_address!=self.bootstrapper:
@@ -333,11 +335,11 @@ class TenderCouncilCore(gl.Contract):
         if evaluator_address==ZERO_ADDRESS:
             raise gl.vm.UserError('evaluator address is zero')
         self._require_length(evaluator_version,96,'evaluator_version')
-        if not _is_hash(evaluator_source_hash):
-            raise gl.vm.UserError('invalid evaluator source hash')
+        if not _is_hash(evaluator_code_hash):
+            raise gl.vm.UserError('invalid evaluator code hash')
         self.evaluator_address=evaluator_address
         self.evaluator_version=evaluator_version
-        self.evaluator_source_hash=evaluator_source_hash
+        self.evaluator_code_hash=evaluator_code_hash
         self.evaluator_bound=True
     @gl.public.write.payable
     def create_tender(self,tender_id:str,title:str,brief_url:str,brief_sha256:str,max_budget:u256,award_amount:u256,max_delivery_days:u64,min_support_days:u64,bidding_deadline:u64,response_window_seconds:u64,requirements:str,technical_weight:u8,delivery_weight:u8,price_weight:u8,capability_weight:u8,support_weight:u8,evidence_policy:str):

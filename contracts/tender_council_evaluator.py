@@ -280,6 +280,14 @@ class TenderCouncilEvaluator(gl.Contract):
         return record.result_json
 
     @gl.public.view
+    def get_core_address(self) -> Address:
+        return self.core_address
+
+    @gl.public.view
+    def get_evaluator_version(self) -> str:
+        return self.evaluator_version
+
+    @gl.public.view
     def get_review_result(self, tender_id: str, nonce: u64) -> str:
         record = self.reviews.get(self._key(tender_id, nonce))
         if record is None:

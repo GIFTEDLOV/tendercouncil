@@ -132,7 +132,8 @@ and evidence validation, required/optional resolution, comparative semantic
 evaluation, and the one bounded challenge review. It has no payable methods,
 escrow, settlement authority, or winner-substitution authority.
 
-The core binds one evaluator address plus evaluator version/source hash exactly
+The core binds one evaluator address plus evaluator version and exact deployed
+Evaluator artifact code hash exactly
 once during bootstrap before public tenders. It accepts callbacks only from
 that address and only when tender ID, evaluation nonce, closed-state snapshot
 digest, result schema, and lifecycle state match. Duplicate, stale,
@@ -151,4 +152,3 @@ independently before any Bradbury attempt.
 No new Bradbury deployment was broadcast. The monolith gate is closed, the
 split design is justified subject to callback/finality tests and independent
 size probes, and the UI stop gate remains closed.
-

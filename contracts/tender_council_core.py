@@ -221,7 +221,7 @@ class TenderCouncilCore(gl.Contract):
     bootstrapper: Address
     evaluator_address: Address
     evaluator_version: str
-    evaluator_source_hash: str
+    evaluator_code_hash: str
     evaluator_bound: bool
     total_locked_escrow: u256
 
@@ -229,7 +229,7 @@ class TenderCouncilCore(gl.Contract):
         self.bootstrapper = gl.message.sender_address
         self.evaluator_address = ZERO_ADDRESS
         self.evaluator_version = ""
-        self.evaluator_source_hash = ""
+        self.evaluator_code_hash = ""
         self.evaluator_bound = False
         self.total_locked_escrow = u256(0)
 
@@ -320,8 +320,8 @@ class TenderCouncilCore(gl.Contract):
     def _validate_result(self, tender: CoreTender, result: dict, result_type: str):
         required = (
             "confidence", "disqualified_bid_ids", "runner_up_bid_id",
-            "runner_up_score", "scores", "valid_bid_ids", "winner_bid_id",
-            "winner_total_score", "status",
+            "runner_up_score", "rationale", "scores", "valid_bid_ids",
+            "winner_bid_id", "winner_total_score", "status",
         )
         if not isinstance(result, dict) or tuple(sorted(result)) != tuple(sorted(required)):
             raise gl.vm.UserError("malformed evaluator result")
@@ -338,12 +338,16 @@ class TenderCouncilCore(gl.Contract):
         if set(valid) | set(disqualified) != all_ids or set(valid) & set(disqualified):
             raise gl.vm.UserError("result bid partition is invalid")
         if result_type == "NO_VALID_BID":
-            if result["winner_bid_id"] != "" or valid or result["scores"]:
+            if (result["winner_bid_id"] != "" or valid or result["scores"]
+                    or not isinstance(result["rationale"], str)
+                    or len(result["rationale"]) > MAX_TEXT):
                 raise gl.vm.UserError("NO_VALID_BID result contains a winner")
             return
         if result["winner_bid_id"] not in valid or result["winner_bid_id"] in disqualified:
             raise gl.vm.UserError("result winner is not a valid bid")
         scores = result["scores"]
+        if not isinstance(result["rationale"], str) or len(result["rationale"]) > MAX_TEXT:
+            raise gl.vm.UserError("result rationale is malformed")
         if not isinstance(scores, list) or len(scores) != len(valid):
             raise gl.vm.UserError("result scores do not cover valid bids")
         score_map = {}
@@ -385,7 +389,7 @@ class TenderCouncilCore(gl.Contract):
             "bound": self.evaluator_bound,
             "address": str(self.evaluator_address),
             "version": self.evaluator_version,
-            "source_hash": self.evaluator_source_hash,
+            "evaluator_code_hash": self.evaluator_code_hash,
         })
 
     @gl.public.view
@@ -463,7 +467,7 @@ class TenderCouncilCore(gl.Contract):
         })
 
     @gl.public.write
-    def bind_evaluator(self, evaluator_address: Address, evaluator_version: str, evaluator_source_hash: str):
+    def bind_evaluator(self, evaluator_address: Address, evaluator_version: str, evaluator_code_hash: str):
         if self.evaluator_bound:
             raise gl.vm.UserError("evaluator is already permanently bound")
         if gl.message.sender_address != self.bootstrapper:
@@ -471,11 +475,11 @@ class TenderCouncilCore(gl.Contract):
         if evaluator_address == ZERO_ADDRESS:
             raise gl.vm.UserError("evaluator address is zero")
         self._require_length(evaluator_version, 96, "evaluator_version")
-        if not _is_hash(evaluator_source_hash):
-            raise gl.vm.UserError("invalid evaluator source hash")
+        if not _is_hash(evaluator_code_hash):
+            raise gl.vm.UserError("invalid evaluator code hash")
         self.evaluator_address = evaluator_address
         self.evaluator_version = evaluator_version
-        self.evaluator_source_hash = evaluator_source_hash
+        self.evaluator_code_hash = evaluator_code_hash
         self.evaluator_bound = True
 
     @gl.public.write.payable
