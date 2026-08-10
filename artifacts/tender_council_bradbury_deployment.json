@@ -1,11 +1,12 @@
 {
-  "mode": "BROADCAST_TWO_CONTRACTS_STOPPED_BEFORE_BINDING",
+  "mode": "BROADCAST_TWO_CONTRACTS_BOUND_FINALIZED",
   "network": "testnet-bradbury",
   "chain_id": 4221,
   "rpc": "https://rpc-bradbury.genlayer.com",
   "sender": "0xe0f17BEf0587c3b66D2eB4BBE705dFf821AbDde7",
   "git_commit": "67ada08fd67b3f1a5f9e6fb1539fb93f0eae228f",
   "ci_run": "31414177878",
+  "binding_git_commit": "ceeed688fd859cdd9bcf3f964914d169bcaa212d",
   "canonical_core_source_sha256": "c0073feacfd6ceb2d455bf56d230a93c934d9dad2f1bfe07bf66d6d377f5b3c4",
   "deployable_core_artifact_sha256": "e11be233820dceb4895a7d4246b711d2d6bcb937016eac62c2670bca51068eb7",
   "canonical_evaluator_source_sha256": "ef0c976c5b00bd17d970d4200aee21ef2cdb952afb0cac42538a1ab3eb0f1122",
@@ -32,15 +33,57 @@
   "evaluator": {
     "address": "0x4F3c4928c91A7CEfB262fbdB8F2aaafDb9c9A55F",
     "deployment_tx": "0x0d4baf95fd66e01608c29c16b87e2b02031170326eabb769220bb12003290d89",
-    "status": "ACCEPTED",
-    "status_code": 5,
-    "finality": "NOT_FINALIZED",
+    "status": "FINALIZED",
+    "status_code": 7,
+    "finality": "FINALIZED",
+    "accepted_block": 17058744,
+    "accepted_timestamp": 1786385142,
+    "finalized_block": 17059969,
+    "finalized_timestamp": 1786386942,
+    "consensus_result": "AGREE",
+    "validator_votes": ["AGREE", "AGREE", "AGREE", "AGREE", "AGREE"],
+    "appeal_round": 0,
+    "can_appeal_readback": true,
     "constructor_core_address": "0x59dc2fd770C1598f6aCeE5335F02f0025a1f5264",
     "constructor_version": "tendercouncil.evaluator.v1",
     "outer_bytes": 22468,
     "estimate": "0x117fa82"
   },
-  "binding": null,
+  "binding": {
+    "tx": "0xfa448226d907d6b1674c09746d79afd328e9d8915236275f8e6d978b4922f8a9",
+    "evaluator_address": "0x4F3c4928c91A7CEfB262fbdB8F2aaafDb9c9A55F",
+    "version": "tendercouncil.evaluator.v1",
+    "evaluator_code_hash": "sha256:f73cbdabc9a4af3f0897df17f227671a1ac815a11de3a0d784953f11927865a8",
+    "status": "FINALIZED",
+    "status_code": 7,
+    "accepted_block": 17063679,
+    "accepted_timestamp": 1786396278,
+    "finalized_block": 17064458,
+    "finalized_timestamp": 1786398079,
+    "consensus_result": "AGREE",
+    "execution_result": "FINISHED_WITH_RETURN",
+    "validator_votes": ["AGREE", "AGREE", "AGREE", "AGREE", "AGREE"],
+    "appeal_round": 0,
+    "can_appeal_readback": true,
+    "finality_duration_seconds": 1811
+  },
+  "final_readback": {
+    "core_production_ready": true,
+    "core_balance": "0",
+    "core_binding": {
+      "address": "0x4F3c4928c91A7CEfB262fbdB8F2aaafDb9c9A55F",
+      "bound": true,
+      "evaluator_code_hash": "sha256:f73cbdabc9a4af3f0897df17f227671a1ac815a11de3a0d784953f11927865a8",
+      "version": "tendercouncil.evaluator.v1"
+    },
+    "evaluator_core_address": "0x59dc2fd770c1598f6acee5335f02f0025a1f5264",
+    "evaluator_version": "tendercouncil.evaluator.v1"
+  },
+  "current_observation": {
+    "block": 17064571,
+    "timestamp": 1786398183,
+    "rpc": "https://rpc-bradbury.genlayer.com"
+  },
   "attempts": [
     {
       "stage": "combined_script",
@@ -49,14 +92,13 @@
     },
     {
       "stage": "evaluator_finality_poll",
-      "result": "stopped_accepted_not_finalized",
+      "result": "eventually_finalized_after_extended_polling",
       "evaluator_tx": "0x0d4baf95fd66e01608c29c16b87e2b02031170326eabb769220bb12003290d89",
-      "polling": "20 polls then 60 polls at 5 second interval; status remained 5"
+      "polling": "initial poll window remained status 5; later read-only polling observed status 7"
     }
   ],
   "prohibited_follow_on_actions": [
     "no_core_redeployment",
-    "no_core_binding",
     "no_tender_creation",
     "no_five_bid_e2e",
     "no_settlement",
