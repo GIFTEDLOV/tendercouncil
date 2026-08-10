@@ -1,8 +1,11 @@
-# TenderCouncil Stage 1 architecture
+# TenderCouncil architecture
 
-This is the preserved Stage 1 prototype, not the final commercial
-architecture. The production lifecycle, escrow, comparative evaluator, and
-challenge protocol remain behind the UI stop gate.
+`contracts/tender_council.py` is the preserved Stage 1 prototype. The current
+production foundation is `contracts/tender_council_production.py`; it now
+supports public buyers, multiple tender records, exact payable award custody,
+immutable commercial bid terms, and a bounded bid-manifest schema. Comparative
+evaluation, challenges, finalized settlement, and Bradbury evaluator proof
+remain behind the UI stop gate.
 
 TenderCouncil separates the procurement record from the later judgment step.
 
@@ -24,9 +27,33 @@ frontend (gated) -> public views and authenticated writes
 - A URI is only a locator. The current evaluator now hashes the exact fetched
   response bytes with the contract's pure-Python SHA-256 routine before UTF-8
   decoding or semantic exposure. A mismatch returns a bounded rejection and
-  never reaches the LLM. Full proposal-manifest schema validation and required/
-  optional evidence policy remain production gates. Rationale text is not an
-  equivalence field; decision, score tolerance, and evidence count are.
+  never reaches the LLM. The production manifest validator applies the same
+  exact-byte commitment check before JSON decoding and schema validation.
+  External evidence retrieval and required/optional evidence resolution remain
+  later production gates. Rationale text is not an equivalence field.
+
+## Production bid manifest (`tendercouncil.bid.v1`)
+
+The proposal URL and `proposal_sha256` are committed in the bid record by the
+authenticated transaction sender. After retrieval, the exact response bytes
+must match that commitment before the manifest is decoded. The validator then
+requires exactly these top-level fields:
+
+```text
+schema_version, tender_id, bidder, price, delivery_days, support_days,
+proposal, evidence
+```
+
+`proposal` must contain exactly `technical_approach`, `delivery_plan`,
+`support_plan`, and `requirements`. `requirements` is a bounded list of
+bounded strings. `evidence` is a bounded list (maximum eight); each item must
+contain exactly `evidence_id`, `kind`, `criterion`, `required`, `url`, and
+`sha256`. Evidence IDs and URL/hash commitments must be unique, kinds and
+criterion mappings are allowlisted, URLs must be HTTPS, and all hashes are
+lowercase `sha256:<64 hex chars>` commitments. Manifest commercial fields must
+equal the immutable onchain bid terms, and bidder/tender fields are bound to the
+onchain record. Invalid, unavailable, hash-mismatched, or schema-invalid
+manifests are recorded as non-authoritative states.
 
 ## State machine
 
@@ -66,5 +93,5 @@ probes installed SHA-256 behavior, and retains the full probe evidence in
 The first post-fix production-shaped smoke reached an accepted bounded result,
 but one of five validators still returned `DETERMINISTIC_VIOLATION`; its trace
 does not identify a cause or report web/LLM calls. This is preserved in
-`artifacts/bradbury-stage1-postfix-attempt.json` and blocks Phase B and the UI
-gate until explained and fixed.
+`artifacts/bradbury-stage1-postfix-attempt.json` and blocks evaluator-enabled
+Bradbury release proof and the UI gate until explained and fixed.

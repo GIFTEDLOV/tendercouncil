@@ -1,3 +1,6 @@
+import hashlib
+import json
+
 import pytest
 
 
@@ -31,6 +34,36 @@ def _create(contract, direct_vm, buyer, tender_id, award=8000):
         "capability:required;secondary:optional",
     )
     direct_vm.value = 0
+
+
+def _manifest_payload(bidder, tender_id="manifest-policy", **overrides):
+    payload = {
+        "schema_version": "tendercouncil.bid.v1",
+        "tender_id": tender_id,
+        "bidder": "0x" + bidder.hex(),
+        "price": 7400,
+        "delivery_days": 27,
+        "support_days": 120,
+        "proposal": {
+            "technical_approach": "Bounded dashboard architecture",
+            "delivery_plan": "Iterative delivery with acceptance checks",
+            "support_plan": "Ninety day support with incident response",
+            "requirements": ["authentication", "CSV export", "responsive/mobile"],
+        },
+        "evidence": [
+            {
+                "evidence_id": "cap-1",
+                "kind": "CAPABILITY",
+                "criterion": "capability",
+                "required": True,
+                "url": "https://bidder.example/capability.json",
+                "sha256": "sha256:" + "d" * 64,
+            }
+        ],
+    }
+    payload.update(overrides)
+    body = json.dumps(payload, separators=(",", ":"))
+    return body, "sha256:" + hashlib.sha256(body.encode("utf-8")).hexdigest()
 
 
 def test_any_wallet_can_create_and_open_a_funded_tender(
@@ -203,3 +236,97 @@ def test_funded_cancellation_is_disabled_until_refund_is_finalized(
     _create(contract, direct_vm, direct_bob, "refund-policy")
     with direct_vm.expect_revert("finalized refund"):
         contract.cancel_tender("refund-policy")
+
+
+def test_bid_v1_manifest_is_hash_bound_sender_bound_and_schema_checked(
+    direct_vm, direct_deploy, direct_bob, direct_charlie
+):
+    direct_vm.warp(START)
+    contract = direct_deploy(PRODUCTION)
+    _create(contract, direct_vm, direct_bob, "manifest-policy")
+    direct_vm.deal(direct_vm._contract_address, 8000)
+    contract.open_tender("manifest-policy")
+
+    direct_vm.sender = direct_bob
+    body, manifest_hash = _manifest_payload(direct_bob)
+    contract.submit_bid(
+        "manifest-bid",
+        "manifest-policy",
+        7400,
+        27,
+        120,
+        "https://bidder.example/manifest.json",
+        manifest_hash,
+    )
+    direct_vm.mock_web(
+        r"https://bidder\.example/manifest\.json",
+        {"status": 200, "body": body},
+    )
+
+    direct_vm.sender = direct_charlie
+    with direct_vm.expect_revert("Only the tender buyer"):
+        contract.validate_bid_manifest("manifest-bid")
+
+    direct_vm.sender = direct_bob
+    contract.validate_bid_manifest("manifest-bid")
+    bid = contract.get_bid("manifest-bid")
+    assert bid.manifest_status == "MANIFEST_VALID"
+    assert bid.manifest_evidence_count == 1
+
+
+def test_manifest_hash_mismatch_and_schema_mutations_fail_closed(
+    direct_vm, direct_deploy, direct_bob, direct_charlie
+):
+    direct_vm.warp(START)
+    contract = direct_deploy(PRODUCTION)
+    _create(contract, direct_vm, direct_bob, "manifest-attacks")
+    direct_vm.deal(direct_vm._contract_address, 8000)
+    contract.open_tender("manifest-attacks")
+    direct_vm.sender = direct_bob
+
+    body, manifest_hash = _manifest_payload(direct_bob, "manifest-attacks")
+    contract.submit_bid(
+        "manifest-hash-mismatch",
+        "manifest-attacks",
+        7400,
+        27,
+        120,
+        "https://bidder.example/manifest.json",
+        manifest_hash,
+    )
+    direct_vm.mock_web(
+        r"https://bidder\.example/manifest\.json",
+        {"status": 200, "body": body + " changed"},
+    )
+    contract.validate_bid_manifest("manifest-hash-mismatch")
+    assert contract.get_bid("manifest-hash-mismatch").manifest_status == "HASH_MISMATCH"
+
+    invalid_body, invalid_hash = _manifest_payload(
+        direct_charlie,
+        "manifest-attacks",
+        evidence=[{
+            "evidence_id": "cap-1",
+            "kind": "UNSUPPORTED",
+            "criterion": "capability",
+            "required": True,
+            "url": "https://bidder.example/capability.json",
+            "sha256": "sha256:" + "d" * 64,
+        }],
+    )
+    direct_vm.sender = direct_charlie
+    contract.submit_bid(
+        "manifest-schema-invalid",
+        "manifest-attacks",
+        7400,
+        27,
+        120,
+        "https://bidder.example/invalid-manifest.json",
+        invalid_hash,
+    )
+    direct_vm.mock_web(
+        r"https://bidder\.example/invalid-manifest\.json",
+        {"status": 200, "body": invalid_body},
+    )
+    direct_vm.sender = direct_bob
+    contract.validate_bid_manifest("manifest-schema-invalid")
+    assert contract.get_bid("manifest-schema-invalid").manifest_status == "SCHEMA_INVALID"

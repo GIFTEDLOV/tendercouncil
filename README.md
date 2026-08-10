@@ -19,10 +19,13 @@ evaluator, tests, and Bradbury smoke proof are ready.
 python -m pip install -r requirements.txt
 genvm-lint check contracts/tender_council.py
 genvm-lint validate contracts/tender_council.py
+genvm-lint check contracts/tender_council_production.py
+genvm-lint validate contracts/tender_council_production.py
 python -m pytest
 ```
 
-The current Stage 1 direct suite passes locally. Bradbury evaluator smoke is
+The current direct suite passes locally (27 tests) and CI pins the development
+toolchain plus the resolved direct GenVM runtime. Bradbury evaluator smoke is
 still a release blocker because the preserved production-shaped attempt has a
 validator `DETERMINISTIC_VIOLATION`; see [docs/PROVENANCE.md](docs/PROVENANCE.md).
 
@@ -33,4 +36,5 @@ The production foundation is being built in
 remains preserved for regression and provenance.
 
 See [docs/STAGES.md](docs/STAGES.md) for the master delivery gates and
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the Stage 1 trust model.
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the trust boundaries and
+production manifest schema.

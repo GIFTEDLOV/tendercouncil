@@ -6,17 +6,17 @@
 |---|---|---|
 | Repository isolation and provenance | DONE | Dedicated `GIFTEDLOV/tendercouncil`, one `origin`, preserved Bradbury artifacts |
 | Stage 1 deterministic record | DONE for prototype | `contracts/tender_council.py` |
-| Public buyer / multiple independent tenders | PARTIAL | `contracts/tender_council_production.py` allows any buyer and multiple tender records |
+| Public buyer / multiple independent tenders | DONE for foundation | `contracts/tender_council_production.py` allows any buyer and multiple tender records |
 | Funded escrow and finalized-safe settlement | PARTIAL | Exact payable award funding and aggregate locked-escrow accounting exist; refund/settlement remain |
-| Authenticated bounded bid manifest | PARTIAL | Production bid stores sender-bound commercial terms and SHA-256 commitments; manifest schema remains |
-| Exact-byte SHA-256 verification | PARTIAL | Stage 1 evaluator verifies exact fetched bytes; production bid-manifest integration remains |
+| Authenticated bounded bid manifest | PARTIAL | Production bid stores sender-bound commercial terms and commitments; `tendercouncil.bid.v1` schema validation is enforced, while semantic evidence retrieval remains |
+| Exact-byte SHA-256 verification | PARTIAL | Stage 1 evaluator and production manifest validator hash exact fetched bytes; evidence-object retrieval remains |
 | Required/optional evidence policy | MISSING | Current evaluator requires at least one evidence item and has no policy states |
 | Comparative multi-bid evaluator | MISSING | Current evaluator scores one bid independently |
 | Provisional award / response window / bounded challenge | MISSING | Current lifecycle has direct issuer `award_bid` bypass |
 | Runtime boundary regression | PARTIAL/BLOCKED | Local probes pass; preserved Bradbury production-shaped smoke has validator `DETERMINISTIC_VIOLATION` |
 | Threat model and runtime due diligence | DONE | `docs/THREAT_MODEL.md`, `docs/RUNTIME_DUE_DILIGENCE.md` |
 | CI, release preflight, deployment script | PARTIAL | Pinned CI/runtime diagnostics are green; release preflight/deployment script remain |
-| Direct test suite | DONE locally | 25 passed; GitHub CI was green on `1dbd0b4` before Phase 2 changes |
+| Direct test suite | DONE locally | 27 passed; GitHub CI green on run `31389429946` |
 | Final UI | STOPPED | UI stop gate remains closed by design |
 
 ## Stage 0 — repository and operating baseline
@@ -55,11 +55,11 @@ evidence without treating leader output as trusted input.
 
 ## Next gated stages
 
-1. Consensus and smoke proof: explain and fix the remaining validator failure,
-   then execute one green evaluator smoke flow from the isolated boundary fix
-   before implementing the locked commercial architecture.
-2. UI stop gate: only after the contract, evidence model, evaluator, tests, and
-   Bradbury smoke proof are all green should a frontend be started.
+1. Complete the comparative evaluator over all deterministically admissible
+   bids, then add the provisional-award response window and bounded challenge.
+2. Add finalized-safe settlement, mutation/security coverage, release preflight,
+   and evaluator-enabled Bradbury proof.
+3. Only after those gates are green may the UI stop gate be reviewed.
 
 ## UI stop gate checklist
 
