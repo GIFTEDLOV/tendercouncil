@@ -1,0 +1,28 @@
+{
+  "network": "testnet-bradbury",
+  "source_commit": "0fbb9d9",
+  "contract_address": "0xA39C639E6F24fE79ceAdF92a986d8c76ed040f75",
+  "deployment_transaction": "0xca9fc8c1c073bc5ede1d8b1f24c2f5e8e6753314de432df23a3c3501eb38d70d",
+  "deployment_status": "ACCEPTED",
+  "setup_transactions": {
+    "failed_cli_setup_no_state_change": "0x6c3c99722d301d18b79bc4e85022ad3a1629130e2ba50ce1c453a2d542c986a5",
+    "create_tender": "0x2683c2ffce49a27d10799bb80745d5e37f442e1bfb842e2cfc517a5b6a9ed7c2",
+    "open_tender": "0x5132d8d408647e93f1da291e7f6f002c90ed9a7f305be9eb1231c0c3992534d6",
+    "submit_bid": "0xfb11b112875b8867a72cca1a05b5ff1980cdb51abfa4aa45845a2a8c9ee36dd7",
+    "add_evidence": "0x1df3648dacc6ef5cde46f31b131bf8f0ac5e8295bee22fbfe3219b3d7cce172c",
+    "close_tender": "0x8697bb113b96958ef3c021a059e0baa1857280b60299a915cf4aefc6697e6d76"
+  },
+  "evaluate_bid": "0xeb58002590993efc70ad4d023a59dbf9e5a7f1c0f0a88845c69b3125ed05c634",
+  "evaluation_result": {
+    "status": "ACCEPTED",
+    "result": "AGREE",
+    "execution": "FINISHED_WITH_RETURN",
+    "validator_votes": ["AGREE", "AGREE", "AGREE", "DETERMINISTIC_VIOLATION", "AGREE"],
+    "bounded_result": {"decision": "REJECT", "evidence_count": 1, "score": 5},
+    "trace_genvm_version": "v0.2.11-x86_64-linux-release",
+    "trace_web_calls": 0,
+    "trace_llm_calls": 0,
+    "trace_stderr": ""
+  },
+  "blocker": "The correction removed the reproduced json.loads boundary failure, but the required evaluator smoke is not green: one validator still reports DETERMINISTIC_VIOLATION and the trace does not identify the cause or expose web/LLM call metrics. Per the execution rule, stop before another Bradbury transaction."
+}

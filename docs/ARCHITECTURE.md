@@ -12,13 +12,16 @@ frontend (gated) -> public views and authenticated writes
 ## Trust boundaries
 
 - The caller address is the only identity used by the Stage 1 contract.
-- The owner is the deployer and is allowed to create tenders.
+- The current Stage 1 prototype uses a deployer-owned tender creator; this is
+  explicitly not the locked production model. Phase B must make tender buyers
+  public creators and remove deployer-administered procurement.
 - A tender issuer may open, close, award, or cancel that tender.
 - A supplier may append evidence only to its own bid.
 - A URI and hash are claims about provenance, not proof of the underlying
-  document. The evaluator fetches each evidence URI inside a nondeterministic
-  block, treats fetched content as untrusted data, constrains the output
-  schema, and independently reruns the task before a decision is stored.
+  document. The prototype evaluator fetches each evidence URI inside a
+  nondeterministic block, treats fetched content as untrusted data, constrains
+  the output schema, and independently reruns the task. It does not yet verify
+  fetched bytes against the committed hash; that is a mandatory Phase B gate.
   Rationale text is not an equivalence field; decision, score tolerance, and
   evidence count are.
 
@@ -55,3 +58,9 @@ closure, and request structured LLM output with `response_format="json"`. No
 storage object, JSON-decoded container, or mutable closure state crosses the
 boundary. The regression suite cloudpickle-tests both callbacks and retains the
 full probe evidence in `artifacts/bradbury-evaluator-probes.json`.
+
+The first post-fix production-shaped smoke reached an accepted bounded result,
+but one of five validators still returned `DETERMINISTIC_VIOLATION`; its trace
+does not identify a cause or report web/LLM calls. This is preserved in
+`artifacts/bradbury-stage1-postfix-attempt.json` and blocks Phase B and the UI
+gate until explained and fixed.

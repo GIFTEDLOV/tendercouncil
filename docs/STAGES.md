@@ -11,12 +11,12 @@ Status: complete at `bf6b542`.
 
 ## Stage 1 — deterministic procurement foundation
 
-Status: implementation complete locally; deterministic Bradbury smoke proof is
-recorded in `artifacts/bradbury-stage1-smoke.json`. The evaluator boundary root
+Status: deterministic foundation complete locally; the evaluator boundary root
 cause is isolated and recorded in `artifacts/bradbury-evaluator-probes.json`.
-The evaluator-enabled production smoke remains to be rerun from the minimal
-boundary fix; the failed pre-fix attempt remains in
-`artifacts/bradbury-stage1-evaluator-attempt.json`.
+The post-fix evaluator smoke is not green: four validators agreed and one
+reported `DETERMINISTIC_VIOLATION`, with no trace cause. It is preserved in
+`artifacts/bradbury-stage1-postfix-attempt.json`; the failed pre-fix attempt
+remains in `artifacts/bradbury-stage1-evaluator-attempt.json`.
 
 The Stage 1 contract is intentionally narrow and auditable. It provides:
 
@@ -36,8 +36,9 @@ evidence without treating leader output as trusted input.
 
 ## Next gated stages
 
-1. Consensus and smoke proof: execute one green evaluator smoke flow from the
-   isolated boundary fix, then implement the locked commercial architecture.
+1. Consensus and smoke proof: explain and fix the remaining validator failure,
+   then execute one green evaluator smoke flow from the isolated boundary fix
+   before implementing the locked commercial architecture.
 2. UI stop gate: only after the contract, evidence model, evaluator, tests, and
    Bradbury smoke proof are all green should a frontend be started.
 
@@ -46,7 +47,7 @@ evidence without treating leader output as trusted input.
 - [x] contract lint and semantic validation pass;
 - [x] direct tests pass, including unauthorized callers and bad transitions;
 - [x] evaluator validator independently checks evidence and stable decisions;
-- [ ] integration/consensus test passes in a real GenLayer environment;
+- [ ] integration/consensus test passes unanimously in a real GenLayer environment;
 - [x] deterministic Bradbury deployment and smoke receipt are recorded in-repository;
-- [ ] evaluator-enabled Bradbury deployment and smoke receipt are recorded;
+- [ ] evaluator-enabled Bradbury deployment and smoke receipt are green;
 - [ ] no unresolved security or provenance exception remains.
