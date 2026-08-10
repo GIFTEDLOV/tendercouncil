@@ -12,7 +12,9 @@ Status: complete at `bf6b542`.
 ## Stage 1 — deterministic procurement foundation
 
 Status: implementation complete locally; deterministic Bradbury smoke proof is
-recorded in `artifacts/bradbury-stage1-smoke.json`.
+recorded in `artifacts/bradbury-stage1-smoke.json`. The evaluator-enabled
+Bradbury attempt is recorded in `artifacts/bradbury-stage1-evaluator-attempt.json`
+and remains blocked by validator `DETERMINISTIC_VIOLATION` results.
 
 The Stage 1 contract is intentionally narrow and auditable. It provides:
 
@@ -32,8 +34,8 @@ evidence without treating leader output as trusted input.
 
 ## Next gated stages
 
-1. Consensus and smoke proof: deploy the evaluator-enabled source and execute
-   a Bradbury evaluation smoke flow with a recorded receipt.
+1. Consensus and smoke proof: resolve the Bradbury evaluator runtime blocker,
+   then execute a green evaluation smoke flow with a recorded receipt.
 2. UI stop gate: only after the contract, evidence model, evaluator, tests, and
    Bradbury smoke proof are all green should a frontend be started.
 

@@ -1,0 +1,33 @@
+{
+  "network": "testnet-bradbury",
+  "source_commit": "8e0ebc8",
+  "contract_address": "0x1a47Dfb76A1f47E80e5CA25249EB60892145B3BC",
+  "deployment_transaction": "0x4c4a291ae484461702737c966a1aa2e6428aaccd806b31e86f49906c705dff54",
+  "deployment_status": "ACCEPTED",
+  "smoke_tender_id": "eval-smoke-final-20260810",
+  "smoke_bid_id": "eval-bid-final-20260810",
+  "smoke_evidence_id": "eval-evidence-final-20260810",
+  "transactions": {
+    "create_tender": "0xbf822422c93e56aaafbcd3a25651634e2cd0449f79b16a09ac1ec56393a2f494",
+    "open_tender": "0xab3f8e2e1025c274406012c650c1fbd6ce751de93e744de1d7a49164e1d97848",
+    "submit_bid": "0x27116991cff9de97e907a20fec28d6add4b8056846fb4fee979ea2c96180f185",
+    "add_evidence": "0xe995e9d866fa6734c9dfda7a608a910d7156416973863346c8598f876148f849",
+    "close_tender": "0x8514ba5b63c2e86cca8867804109fab652d872d1ca7303dd119e101ad65d9633",
+    "evaluate_bid": "0x7ef79642282aca3016dc54edc81b57e845f63942eea04096d43ef3947ea056c5"
+  },
+  "evaluation_result": {
+    "status": "UNDETERMINED",
+    "result": "DISAGREE",
+    "validator_votes": [
+      "DETERMINISTIC_VIOLATION",
+      "DETERMINISTIC_VIOLATION",
+      "AGREE",
+      "DETERMINISTIC_VIOLATION",
+      "DETERMINISTIC_VIOLATION"
+    ],
+    "trace_genvm_version": "v0.2.11-x86_64-linux-release",
+    "trace_web_calls": 0,
+    "trace_llm_calls": 0
+  },
+  "blocker": "Bradbury validators reject the evaluator nondeterministic execution as DETERMINISTIC_VIOLATION before web/LLM calls complete; the contract remains locally lint-clean and direct-test clean."
+}
