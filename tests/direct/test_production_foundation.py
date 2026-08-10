@@ -106,7 +106,14 @@ def _canonical_manifest(
 
 
 def _prepare_single_evaluation(
-    direct_vm, contract, buyer, bidder, tender_id="response-policy"
+    direct_vm,
+    contract,
+    buyer,
+    bidder,
+    tender_id="response-policy",
+    price=7400,
+    delivery_days=27,
+    support_days=120,
 ):
     _create(contract, direct_vm, buyer, tender_id)
     direct_vm.deal(direct_vm._contract_address, 8000)
@@ -114,9 +121,9 @@ def _prepare_single_evaluation(
     body, body_hash, evidence_body = _canonical_manifest(
         bidder,
         tender_id,
-        7400,
-        27,
-        120,
+        price,
+        delivery_days,
+        support_days,
         "Authenticated dashboard architecture",
         ["authentication", "CSV export", "responsive/mobile", "dashboard/chart"],
         "Authenticated capability evidence for dashboard delivery.",
@@ -125,7 +132,13 @@ def _prepare_single_evaluation(
     bid_id = "response-bid"
     manifest_url = "https://fixture.example/response-bid.json"
     contract.submit_bid(
-        bid_id, tender_id, 7400, 27, 120, manifest_url, body_hash
+        bid_id,
+        tender_id,
+        price,
+        delivery_days,
+        support_days,
+        manifest_url,
+        body_hash,
     )
     evidence_url = "https://fixture.example/cap-" + bidder.hex()[:8] + ".json"
     direct_vm.mock_web(
@@ -459,38 +472,27 @@ def test_canonical_five_bid_comparative_evaluator_selects_authenticated_best_bid
     prepared = []
     for bid_id, bidder, price, delivery_days, support_days, technical, requirements, claims in bid_inputs:
         direct_vm.sender = bidder
-        if bid_id in ("bid-a", "bid-b", "bid-c"):
-            manifest_body, manifest_hash, evidence_body = _canonical_manifest(
-                bidder,
-                "canonical-five",
-                price,
-                delivery_days,
-                support_days,
-                technical,
-                requirements,
-                claims,
-            )
-            manifest_url = "https://fixture.example/" + bid_id + ".json"
-            contract.submit_bid(
-                bid_id,
-                "canonical-five",
-                price,
-                delivery_days,
-                support_days,
-                manifest_url,
-                manifest_hash,
-            )
-            prepared.append((bid_id, manifest_url, manifest_body, evidence_body, bidder))
-        else:
-            contract.submit_bid(
-                bid_id,
-                "canonical-five",
-                price,
-                delivery_days,
-                support_days,
-                "https://fixture.example/" + bid_id + ".json",
-                PROPOSAL_HASH,
-            )
+        manifest_body, manifest_hash, evidence_body = _canonical_manifest(
+            bidder,
+            "canonical-five",
+            price,
+            delivery_days,
+            support_days,
+            technical,
+            requirements,
+            claims,
+        )
+        manifest_url = "https://fixture.example/" + bid_id + ".json"
+        contract.submit_bid(
+            bid_id,
+            "canonical-five",
+            price,
+            delivery_days,
+            support_days,
+            manifest_url,
+            manifest_hash,
+        )
+        prepared.append((bid_id, manifest_url, manifest_body, evidence_body, bidder))
 
     direct_vm.sender = direct_bob
     for bid_id, manifest_url, manifest_body, evidence_body, bidder in prepared:
@@ -673,6 +675,16 @@ def test_only_authenticated_bidder_can_submit_one_committed_evidence_challenge(
             "",
         )
     direct_vm.sender = direct_charlie
+    with direct_vm.expect_revert("committed before close"):
+        contract.submit_challenge(
+            "injected-challenge",
+            "challenge-policy",
+            "COMMITTED_EVIDENCE_OVERLOOKED",
+            bid_id,
+            "post-close-evidence",
+            "",
+            "",
+        )
     contract.submit_challenge(
         "committed-challenge",
         "challenge-policy",
@@ -782,6 +794,39 @@ def test_valid_challenge_enters_one_bounded_review_and_can_uphold_result(
     reviewed = contract.get_tender("review-policy")
     assert reviewed.status == "AWARDED"
     assert reviewed.final_winner == bid_id
+
+
+@pytest.mark.parametrize(
+    ("price", "delivery_days", "support_days"),
+    [(8700, 27, 120), (7400, 31, 120), (7400, 27, 89)],
+)
+def test_hard_commercial_constraints_disqualify_valid_manifests(
+    direct_vm,
+    direct_deploy,
+    direct_bob,
+    direct_charlie,
+    price,
+    delivery_days,
+    support_days,
+):
+    direct_vm.warp(START)
+    contract = direct_deploy(PRODUCTION)
+    _prepare_single_evaluation(
+        direct_vm,
+        contract,
+        direct_bob,
+        direct_charlie,
+        "hard-constraint-" + str(price) + "-" + str(delivery_days) + "-" + str(support_days),
+        price,
+        delivery_days,
+        support_days,
+    )
+    tender_id = (
+        "hard-constraint-" + str(price) + "-" + str(delivery_days) + "-" + str(support_days)
+    )
+    tender = contract.get_tender(tender_id)
+    assert contract.get_bid("response-bid").manifest_status == "MANIFEST_VALID"
+    assert tender.status == "NO_VALID_BID"
 
 
 def test_settlement_is_separate_from_award_and_replay_protected(

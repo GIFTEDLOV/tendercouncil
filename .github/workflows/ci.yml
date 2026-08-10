@@ -26,3 +26,5 @@ jobs:
         run: |
           python tools/ci_diagnostics.py
           python -m pytest
+      - name: Run security mutation checks
+        run: python tools/mutation_test.py
