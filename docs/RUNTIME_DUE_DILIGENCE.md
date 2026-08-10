@@ -82,9 +82,11 @@ diagnostic, not authoritative.
 The previous Bradbury failure was reproduced when `json.loads` reconstructed
 lists/dictionaries inside the nondeterministic callback before web/LLM calls.
 The safe pattern is now: prepare bounded primitive strings/tuples in the
-deterministic contract context, capture only those immutable values, fetch and
-hash bytes in the callback, and construct semantic prompt text without
-reconstructing storage objects or JSON context containers.
+deterministic contract context, use a separate custom-validator callback that
+returns only `(status, bytes)` for each web fetch, perform exact hashing and
+schema parsing after that result returns, and capture only immutable strings in
+the later semantic callback. The semantic callback does not reconstruct storage
+objects, source JSON lists, or JSON context containers before external calls.
 
 The existing Bradbury probe artifacts remain preserved. A new Bradbury smoke
 is not considered green until every validator agrees and the content hash is

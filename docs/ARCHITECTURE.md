@@ -78,6 +78,13 @@ and ties without a later bounded policy. The validator independently reruns the
 same bounded snapshot and requires exact agreement on all consensus-critical
 fields, including evidence states; rationale is excluded from equivalence.
 
+The evaluator's web boundary is split from its semantic boundary. Each proposal
+and evidence fetch uses a custom validator over an immutable `(status, bytes)`
+tuple. Exact-byte hash and bounded JSON/schema validation happen only after that
+fetch result returns. The later semantic callback captures only immutable policy,
+evidence-report, and proposal strings and performs the structured LLM call; it
+does not reconstruct source JSON lists or dictionaries or drive web access.
+
 ## Provisional award and challenge boundary
 
 An accepted evaluation cannot become payable immediately. The buyer must first
