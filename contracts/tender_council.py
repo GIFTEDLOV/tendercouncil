@@ -274,22 +274,23 @@ class TenderCouncil(gl.Contract):
         if len(evidence_ids_for_bid) == 0:
             raise gl.vm.UserError("Bid must have evidence before evaluation")
 
-        tender_specification = tender.specification
-        bid_proposal = bid.proposal
+        tender_specification = str(tender.specification)
+        bid_proposal = str(bid.proposal)
         source_metadata = []
         for evidence_id in evidence_ids_for_bid:
             item = self.evidence[evidence_id]
             source_metadata.append(
                 {
-                    "kind": item.kind,
-                    "uri": item.uri,
-                    "content_hash": item.content_hash,
+                    "kind": str(item.kind),
+                    "uri": str(item.uri),
+                    "content_hash": str(item.content_hash),
                 }
             )
+        source_metadata_json = json.dumps(source_metadata, sort_keys=True)
 
         def leader_fn():
             sources = []
-            for item in source_metadata:
+            for item in json.loads(source_metadata_json):
                 response = gl.nondet.web.get(item["uri"])
                 body = response.body
                 if isinstance(body, bytes):
