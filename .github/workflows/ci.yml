@@ -22,9 +22,20 @@ jobs:
       - run: genvm-lint validate contracts/tender_council.py
       - run: genvm-lint check contracts/tender_council_production.py
       - run: genvm-lint validate contracts/tender_council_production.py
+      - run: genvm-lint check contracts/tender_council_core.py
+      - run: genvm-lint validate contracts/tender_council_core.py
+      - run: genvm-lint check contracts/tender_council_evaluator.py
+      - run: genvm-lint validate contracts/tender_council_evaluator.py
+      - name: Generate and check split artifacts
+        run: |
+          python tools/make_deployable.py contracts/tender_council_core.py artifacts/tender_council_core_deployable.py
+          python tools/make_deployable.py contracts/tender_council_evaluator.py artifacts/tender_council_evaluator_deployable.py
+          python tools/split_size_check.py
       - name: Print resolved runtime and run all direct tests
         run: |
           python tools/ci_diagnostics.py
           python -m pytest
       - name: Run security mutation checks
         run: python tools/mutation_test.py
+      - name: Run split security mutation checks
+        run: python tools/split_mutation_test.py

@@ -1,55 +1,58 @@
 # TenderCouncil deployment
 
-## Current network
+Target: GenLayer Bradbury testnet, chain ID `4221`, RPC
+`https://rpc-bradbury.genlayer.com`, CLI `0.39.1`, genlayer-js `1.1.8`.
 
-- Target: GenLayer Bradbury testnet
-- RPC: `https://rpc-bradbury.genlayer.com`
-- Chain ID: `4221`
-- CLI: `genlayer` 0.39.1 installed locally
-- Active local CLI accounts were observed with `genlayer account list`; keys
-  are not recorded in this repository.
+## Production pair
 
-## Preserved deployment evidence
+The production pair is deployed in this order:
 
-Historical Stage 0/1 deployment and smoke transaction IDs are retained in:
+1. `TenderCouncilCore` unconfigured.
+2. Wait for finalized Core deployment and record its address.
+3. `TenderCouncilEvaluator(core_address, tendercouncil.evaluator.v1)`.
+4. Wait for finalized Evaluator deployment.
+5. One-time Core `bind_evaluator(address, version, source_hash)`.
+6. Verify the finalized Core binding before opening any tender.
 
-- `artifacts/bradbury-evaluator-probes.json`
-- `artifacts/bradbury-stage1-evaluator-attempt.json`
-- `artifacts/bradbury-stage1-postfix-attempt.json`
-- `artifacts/bradbury-stage1-smoke.json`
+`deploy/deploy_split.py` is the repeatable dry-run manifest generator. It
+refuses `--broadcast` during this implementation stage. A future release
+operator must add the explicit broadcast step only after this report is
+reviewed.
 
-The evaluator-enabled attempts are not green: the preserved validator votes
-include `DETERMINISTIC_VIOLATION`. They are provenance, not release evidence.
+## Generated artifacts and gates
 
-## Release rule
+Canonical sources:
 
-No production deployment is accepted as a release until a repeatable script
-records the source hash, runner header, constructor arguments, network, sender,
-deployment receipt, finality, and every smoke transaction/readback. Manual
-PowerShell argument marshalling is not a release mechanism.
+- `contracts/tender_council_core.py`
+- `contracts/tender_council_evaluator.py`
 
-## Current status
+Generated artifacts:
 
-Repeatable tooling now exists and has been exercised through failed
-preflight-verified production deployment attempts:
+- `artifacts/tender_council_core_deployable.py`
+- `artifacts/tender_council_evaluator_deployable.py`
 
-- `tools/release_preflight.py` compares network, chain ID, sender, source hash,
-  runner header, constructor arguments, schema version, fixture hashes,
-  artifact/source parity, and deployment transport. Any mismatch fails closed.
-- `deploy/deploy_production.py` invokes `genlayer deploy` with a list of
-  arguments, records the exact source/artifact hash and raw transport result,
-  and never performs implicit network or shell-string marshalling.
+`tools/make_deployable.py` is the only generator. Parity is checked before
+deployment. `node tools/split_deployment_size_check.mjs` uses the installed
+GenLayer encoding path without RPC and fails if either outer payload reaches
+the 40 KB engineering target. `node
+tools/bradbury_split_deployment_probe.mjs` performs read-only
+`eth_estimateGas` for both exact deployment transactions and never signs or
+broadcasts.
 
-The first production source submission (`66,964` bytes) and the generated,
-linted compact artifact (`56,272` bytes) were both rejected by Bradbury before
-contract creation with `BlockPubdataLimitReached` / `intrinsic gas too low`.
-The no-broadcast envelope probe now measures a successful outer call at 53,316
-bytes and the first failure at 53,348 bytes. The current native-SHA compact
-artifact is 54,555 source bytes and 54,820 outer-call bytes, still above the
-measured limit. The wrapper recorded all historical attempts under
-`artifacts/`; no production contract address or evaluator transaction exists
-from these attempts. This remains a deployment-size blocker, not a successful
-deployment.
+Current local encoded sizes:
 
-The UI stop gate remains closed pending a production-shaped evaluator-enabled
-Bradbury flow, protocol-finality evidence, and release-artifact verification.
+| Component | Source | Artifact | Outer deployment | Target |
+|---|---:|---:|---:|---:|
+| Core | 36,810 | 33,573 | 33,828 | <40,000 |
+| Evaluator | 22,850 | 20,632 | 20,868 | <40,000 |
+
+## Historical provenance
+
+Failed monolith and evaluator-boundary attempts remain under `artifacts/`.
+They are provenance, not release evidence. No production contract address or
+successful TenderCouncil Bradbury transaction exists yet.
+
+Release evidence must include finalized deployment receipts, Core binding,
+funding, multiple bids, close, evaluation, provisional award, response window,
+challenge/review where practical, award, settlement, finality, and post-
+settlement balance/state verification.

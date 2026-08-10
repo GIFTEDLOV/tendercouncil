@@ -24,18 +24,17 @@ genvm-lint validate contracts/tender_council_production.py
 python -m pytest
 ```
 
-The current direct suite has 37 passing tests and CI pins the development
-toolchain plus the resolved direct GenVM runtime. The production comparative
-evaluator and bounded response/challenge flow are covered locally. Bradbury
-evaluator smoke is still a release blocker because the preserved
-production-shaped attempt has a validator `DETERMINISTIC_VIOLATION`; see
-[docs/PROVENANCE.md](docs/PROVENANCE.md).
+The production deployment is split between `TenderCouncilCore` (custody and
+lifecycle) and `TenderCouncilEvaluator` (authenticated evidence and comparative
+judgment). The preserved monolith is non-deployable reference material. Local
+CI covers both generated artifacts, and the exact Bradbury pair estimate is
+read-only until deployment review.
 
 The frontend remains behind the UI stop gate.
 
-The production foundation is being built in
-`contracts/tender_council_production.py` while the validated Stage 1 contract
-remains preserved for regression and provenance.
+The production pair is in `contracts/tender_council_core.py` and
+`contracts/tender_council_evaluator.py`. The previous contracts remain
+preserved for regression and provenance.
 
 See [docs/STAGES.md](docs/STAGES.md) for the master delivery gates and
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the trust boundaries and

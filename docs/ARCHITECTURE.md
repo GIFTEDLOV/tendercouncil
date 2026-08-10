@@ -1,149 +1,138 @@
 # TenderCouncil architecture
 
-`contracts/tender_council.py` is the preserved Stage 1 prototype. The current
-production foundation is `contracts/tender_council_production.py`; it now
-supports public buyers, multiple tender records, exact payable award custody,
-immutable commercial bid terms, and a bounded bid-manifest schema. Comparative
-evaluation, challenges, and a finalized-only payout request are implemented;
-evaluator-enabled Bradbury proof remains behind the UI stop gate.
-
-TenderCouncil separates the procurement record from the later judgment step.
+TenderCouncil production is a two-contract system:
 
 ```text
-issuer -> TenderCouncil -> tender lifecycle
-supplier -> TenderCouncil -> bid + evidence provenance
-evaluator (later) -> evidence sources -> consensus-backed decision
-frontend (gated) -> public views and authenticated writes
+buyer/bidders -> TenderCouncilCore <- finalized compact callbacks <- TenderCouncilEvaluator
+                      |
+                 escrow + lifecycle + settlement
 ```
 
-The production foundation now includes comparative evaluation and one bounded
-response/challenge round. Finalized settlement and evaluator-enabled Bradbury
-proof remain behind the UI stop gate.
+`contracts/tender_council_production.py` remains a readable behavioral and
+historical reference only. It is superseded and must never be selected by a
+production deployment script.
 
-## Trust boundaries
+## Core authority
 
-- The caller address is the only identity used by the Stage 1 contract.
-- The current Stage 1 prototype uses a deployer-owned tender creator; this is
-  explicitly not the locked production model. Phase B must make tender buyers
-  public creators and remove deployer-administered procurement.
-- A tender buyer may open, close, evaluate, and advance only that buyer's
-  tender. There is no arbitrary manual winner-selection method.
-- A supplier may append evidence only to its own bid.
-- A URI is only a locator. The current evaluator hashes the exact fetched
-  response bytes with pinned `hashlib.sha256` before UTF-8 decoding or semantic
-  exposure. A mismatch returns a bounded rejection and never reaches the LLM.
-  The production manifest validator applies the same exact-byte commitment
-  check before JSON decoding and schema validation.
-  External evidence retrieval and required/optional evidence resolution are
-  performed inside the comparative evaluator. Rationale text is not an
-  equivalence field.
+`TenderCouncilCore` is the only financial and lifecycle authority. It owns
+public buyer creation, exact award escrow, tender policy, deadlines, immutable
+commercial bids, proposal/evidence commitments, closed snapshots, evaluation
+nonces, provisional/final winners, the response window, challenge records,
+refunds, and finalized-only settlement. It contains no web access, LLM call,
+or semantic judgment.
 
-## Production bid manifest (`tendercouncil.bid.v1`)
+Core starts unconfigured. The deployment bootstrapper may bind exactly one
+evaluator address, version, and `sha256:` source commitment. Rebinding is
+impossible. Opening a tender and all evaluator-dependent operations are blocked
+until binding is complete. The bootstrapper is not a procurement administrator.
 
-The proposal URL and `proposal_sha256` are committed in the bid record by the
-authenticated transaction sender. After retrieval, the exact response bytes
-must match that commitment before the manifest is decoded. The validator then
-requires exactly these top-level fields:
+## Evaluator authority
+
+`TenderCouncilEvaluator` is deployed with an immutable Core address and schema
+version. It has no payable methods, escrow, custody, settlement, or winner
+substitution capability. It reads Core snapshots through a typed
+`@gl.contract_interface`, performs deterministic admissibility and exact-byte
+evidence checks, comparatively evaluates remaining bids under the locked
+rubric, persists bounded results, and emits only compact `on="finalized"`
+callbacks.
+
+The evaluator authenticates `gl.message.sender_address == core_address`; it
+does not trust `origin_address`. Core applies the inverse check against its
+bound evaluator address.
+
+## Closed snapshot
+
+At close, Core creates a canonical JSON snapshot using:
 
 ```text
-schema_version, tender_id, bidder, price, delivery_days, support_days,
-proposal, evidence
+schema_version=tendercouncil.snapshot.v1
+json.dumps(value, sort_keys=True, separators=(",", ":"))
+UTF-8 SHA-256 with the pinned GenVM hashlib implementation
 ```
 
-`proposal` must contain exactly `technical_approach`, `delivery_plan`,
-`support_plan`, and `requirements`. `requirements` is a bounded list of
-bounded strings. `evidence` is a bounded list (maximum eight); each item must
-contain exactly `evidence_id`, `kind`, `criterion`, `required`, `url`, and
-`sha256`. Evidence IDs and URL/hash commitments must be unique, kinds and
-criterion mappings are allowlisted, URLs must be HTTPS, and all hashes are
-lowercase `sha256:<64 hex chars>` commitments. Manifest commercial fields must
-equal the immutable onchain bid terms, and bidder/tender fields are bound to the
-onchain record. Invalid, unavailable, hash-mismatched, or schema-invalid
-manifests are recorded as non-authoritative states.
+The snapshot binds tender ID, buyer, title and brief commitments, award and
+commercial constraints, deadline, response window, requirements, rubric,
+evidence policy, and every bid ordered by `bid_id`. Each bid includes bidder,
+price, delivery, support, proposal URL/hash, schema version, submission time,
+and the complete pre-committed evidence commitment string. Core stores the
+resulting `closed_snapshot_digest`; bids and policy have no post-close write
+path.
 
-## Comparative evaluator
+## Evaluation and callback correlation
 
-`evaluate_tender` snapshots every bid for one closed tender. Budget, delivery,
-support, deadline, manifest integrity, and manifest-schema failures are removed
-before semantic reasoning. It then retrieves each retained manifest's declared
-evidence, verifies exact bytes and the bounded evidence schema, and exposes only
-`VALID` evidence claims to the model. Required evidence failures disqualify a
-bid; optional unavailable evidence is explicitly recorded and skipped.
+```text
+CLOSED
+  -> Core.start_evaluation()
+  -> finalized Core -> Evaluator.start_evaluation_job()
+  -> Evaluator reads/verifies snapshot and evaluates
+  -> finalized Evaluator -> Core.receive_evaluation_result()
+  -> PROVISIONAL_AWARD -> RESPONSE_WINDOW
+```
 
-The structured model result contains the winner, valid/disqualified sets,
-criterion scores, winner total, runner-up, confidence enum, and informational
-rationale. Deterministic normalization rejects impossible score arithmetic,
-out-of-range criterion scores, non-partitioned bid sets, non-candidate winners,
-and ties without a later bounded policy. The validator independently reruns the
-same bounded snapshot and requires exact agreement on all consensus-critical
-fields, including evidence states; rationale is excluded from equivalence.
+Every result binds tender ID, evaluation nonce, snapshot digest, evaluator
+schema, result type, winner ID, and result digest. Core reads the persisted
+bounded result from Evaluator and independently checks set partitioning, winner
+membership, disqualification, rubric bounds, arithmetic, runner-up, and nonce
+invariants. Duplicate, stale, wrong-state, wrong-snapshot, wrong-schema,
+wrong-caller, malformed, or replayed callbacks fail closed.
 
-The evaluator's web boundary is split from its semantic boundary. Each proposal
-and evidence fetch uses a custom validator over an immutable `(status, bytes)`
-tuple. Exact-byte hash and bounded JSON/schema validation happen only after that
-fetch result returns. The later semantic callback captures only immutable policy,
-evidence-report, and proposal strings and performs the structured LLM call; it
-does not reconstruct source JSON lists or dictionaries or drive web access.
+`NO_VALID_BID` is terminal for that tender's award path and has an explicit
+finalized refund path; it never creates a winner.
 
-## Provisional award and challenge boundary
+## Evidence and semantic boundary
 
-An accepted evaluation cannot become payable immediately. The buyer must first
-call `begin_provisional_award`, then separately call `start_response_window`.
-The contract enforces a minimum 600-second response window. A challenge is
-sender-authenticated, limited to one per bidder and 16 per tender, and may use
-only an evidence ID already committed in the target bid's validated manifest.
-Optional challenge documents use `tendercouncil.challenge.v1`; exact-byte
-SHA-256 and schema validation occur before their claims can enter review.
+The proposal and evidence manifests use `tendercouncil.bid.v1` and
+`tendercouncil.evidence.v1`. URLs are locators only. The evaluator retrieves
+the exact response bytes, compares SHA-256 before decoding, then applies
+bounded schema validation. Required unavailable, missing, hash-mismatched, or
+invalid evidence disqualifies according to policy. Optional unavailable
+evidence is recorded and skipped; it is never treated as confirmation.
 
-After the window, invalid or absent challenges advance directly to `AWARDED`.
-Valid challenges enter exactly one `REVIEWING_CHALLENGES` round. That review
-can uphold the provisional winner or select only an original valid bid, with
-the same structured output independently re-derived by validators. It cannot
-change commercial terms or add evidence.
+Only deterministic admissible candidates and valid evidence claims enter the
+semantic prompt. Every proposal, claim, challenge, fake system block, and
+instruction-like string is explicitly untrusted data. Validators independently
+derive the same comparative result and compare the complete bounded result,
+not merely leader JSON syntax. Rationale is informational.
+
+## Response and challenge boundary
+
+An accepted result is non-payable `PROVISIONAL_AWARD`. Core then starts a
+minimum 600-second `RESPONSE_WINDOW`. Only eligible bidders may submit one
+bounded challenge using one of the four locked reason codes. Evidence references
+must have been committed before close. External challenge bodies are URL/hash
+bound and exact-byte verified by Evaluator before review.
+
+After the window, no valid challenges advance directly to `AWARDED`. Valid
+challenges create exactly one finalized review request bound to the original
+result digest, snapshot digest, challenge-set digest, evaluation nonce, and
+review nonce. Review may uphold, replace with an original valid bid, or produce
+`NO_VALID_BID`; it cannot add evidence or change commercial terms.
+
+## Settlement and refunds
+
+Only Core can settle. `AWARDED -> SETTLEMENT_PENDING` emits the winner transfer
+with `on="finalized"`; Core does not mark paid when the request is emitted.
+`confirm_settlement()` requires the observed ghost-contract balance delta before
+recording `SETTLED`. Award amount and recipient are read from immutable Core
+records, so Evaluator callbacks cannot control funds. DRAFT cancellation and
+`NO_VALID_BID` refund use the same finalized transfer plus balance-delta
+confirmation and replay guards.
 
 ## State machine
 
-`DRAFT -> OPEN -> CLOSED -> EVALUATING -> PROVISIONAL_AWARD -> RESPONSE_WINDOW`
-`-> REVIEWING_CHALLENGES -> AWARDED`
+```text
+DRAFT -> OPEN -> CLOSED -> EVALUATING -> PROVISIONAL_AWARD
+       -> RESPONSE_WINDOW -> REVIEWING_CHALLENGES -> AWARDED
+       -> SETTLEMENT_PENDING -> SETTLED
+```
 
-`RESPONSE_WINDOW` may skip `REVIEWING_CHALLENGES` when no valid challenge
-exists. `NO_VALID_BID` is terminal for an empty admissible set. After
-`AWARDED`, `settle_award` emits an external EOA transfer with
-`on="finalized"` and enters `SETTLEMENT_PENDING`; only
-`confirm_settlement` can reach `SETTLED`, after the expected contract balance
-delta is observed. Funded cancellation remains disabled until a finalized
-refund path exists. Bids are accepted only in `OPEN`; evaluation freezes the
-original immutable record.
+`RESPONSE_WINDOW` may skip review when no valid challenge exists. Terminal
+alternatives are `NO_VALID_BID` and finalized `CANCELLED`.
 
-## Storage discipline
+## Deployment size
 
-Persistent collections use GenLayer storage-compatible `TreeMap` and `DynArray`
-types. Structured records use `@allow_storage` dataclasses. IDs are supplied by
-callers so the records are addressable without relying on host time or a
-non-deterministic counter.
-
-## Nondeterministic boundary investigation
-
-The original evaluator failed on Bradbury because its nondeterministic closures
-called `json.loads()` inside the sub-VM to reconstruct a list of source metadata
-dictionaries, then used those reconstructed objects to drive web and LLM calls.
-The failure was isolated with a single Bradbury probe deployment: probes A-E
-(constant, web, LLM, web+LLM, and captured immutable strings) were accepted;
-the production-shaped F probe was the first failure and returned
-`DETERMINISTIC_VIOLATION` for all five validators. Its trace recorded no web or
-LLM calls. The installed Bradbury v0.2.11 and local v0.2.16 implementations of
-`run_nondet_unsafe` and the storage boundary are byte-identical.
-
-The smallest supported fix is to prepare immutable primitive tuples in the
-deterministic context, iterate those tuples directly inside the nondeterministic
-closure, and request structured LLM output with `response_format="json"`. No
-storage object, JSON-decoded source-context container, or mutable closure state
-crosses the boundary. The regression suite cloudpickle-tests both callbacks,
-probes installed SHA-256 behavior, and retains the full probe evidence in
-`artifacts/bradbury-evaluator-probes.json`.
-
-The first post-fix production-shaped smoke reached an accepted bounded result,
-but one of five validators still returned `DETERMINISTIC_VIOLATION`; its trace
-does not identify a cause or report web/LLM calls. This is preserved in
-`artifacts/bradbury-stage1-postfix-attempt.json` and blocks evaluator-enabled
-Bradbury release proof and the UI gate until explained and fixed.
+Generated artifacts are mechanically derived from canonical sources. The local
+encoded Bradbury measurements are recorded in
+`artifacts/tender_council_split-size-budget.json`; the engineering target is
+less than 40,000 outer deployment bytes per contract. The prior monolith is
+not a deployment fallback.
