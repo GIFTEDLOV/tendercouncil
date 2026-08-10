@@ -18,6 +18,7 @@ from tools.make_deployable import make_deployable
 HEADER = '# { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }'
 SHA256_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
 MAX_OUTER_TARGET = 40_000
+CLI_TRANSIENT = "?? deploy/01_deploy_split_bradbury.compiled.js"
 
 
 def fail(message: str):
@@ -65,8 +66,10 @@ def build_manifest(network: str, chain_id: int, sender: str):
         fail("deployment network must be testnet-bradbury / chain 4221")
     if not re.fullmatch(r"0x[0-9a-fA-F]{40}", sender):
         fail("sender must be a 20-byte hex address")
-    if git("status", "--porcelain"):
-        fail("worktree is not clean")
+    status_lines = [line for line in git("status", "--porcelain").splitlines() if line]
+    unexpected = [line for line in status_lines if line != CLI_TRANSIENT]
+    if unexpected:
+        fail("worktree is not clean: " + "; ".join(unexpected))
     current_head = git("rev-parse", "HEAD")
     expected_head = os.environ.get("TENDERCOUNCIL_EXPECTED_HEAD")
     if expected_head and current_head != expected_head:
