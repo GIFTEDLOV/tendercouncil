@@ -71,12 +71,13 @@ async function localHashes() {
 
 function runPreflight(sender) {
   const python = process.env.TENDERCOUNCIL_PYTHON || "python";
-  const result = spawnSync(python, ["tools/release_preflight_split.py", "--network", NETWORK, "--chain-id", String(CHAIN_ID), "--sender", sender], {
+  const args = ["tools/release_preflight_split.py", "--network", NETWORK, "--chain-id", String(CHAIN_ID), "--sender", sender];
+  const result = spawnSync("cmd.exe", ["/d", "/s", "/c", `"${python}" ${args.join(" ")}`], {
     cwd: ROOT, encoding: "utf8", env: { ...process.env, TENDERCOUNCIL_EXPECTED_HEAD: process.env.TENDERCOUNCIL_EXPECTED_HEAD || "" },
   });
   process.stdout.write(result.stdout || "");
   process.stderr.write(result.stderr || "");
-  if (result.status !== 0) throw new Error("release preflight failed");
+  if (result.status !== 0) throw new Error(`release preflight failed (status=${result.status}, error=${result.error?.message || "none"})`);
 }
 
 function gitHead() {
