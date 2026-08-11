@@ -1,0 +1,31 @@
+{
+  "classification": "DUPLICATE_FINALIZED_DEPLOYMENT_UNUSED",
+  "reason": "Two overlapping continuation runners submitted the same Evaluator artifact before the duplicate processes were stopped. No tender was created, no funds were escrowed, no binding was sent to either duplicate at the time of classification.",
+  "core": {
+    "address": "0xaf12cF3B7225c94E6674255780B16aDCfEb03E15",
+    "deployment_tx": "0x805b7b30df3b33fa9c1a5d026df2be0320ea026fc9eff30b08daf6aed3a076b1"
+  },
+  "evaluators": [
+    {
+      "selected_for_binding": true,
+      "address": "0xEF30f069A8Be376D40F18758b9bfDa54D7c04Ec7",
+      "evm_deployment_tx": "0x8c8292b31d9efa902d9b138d8c21fd38db4fc927cd0042fb95d876e9288d6da2",
+      "deployment_tx": "0x63ecc87b4fd48dafb8d2f161e757e6e08764e49bbb8a97e44a9ddd326aa2b64a",
+      "status": "FINALIZED",
+      "consensus": "AGREE",
+      "execution": "FINISHED_WITH_RETURN"
+    },
+    {
+      "selected_for_binding": false,
+      "address": "0x8EBaEcAcDef4a77E68B0B50DCdf5b60794Aaf2a7",
+      "evm_deployment_tx": "0x7b228d7ea7e56839a0844d8c67a0ecc88968292addd8b1cd0c06e6be9d1bd366",
+      "deployment_tx": "0x8d77d38c7ed3b489bbdfe861dba70122e0e23ec13b939505c6970ff4dafbd48c",
+      "status": "FINALIZED",
+      "consensus": "AGREE",
+      "execution": "FINISHED_WITH_RETURN"
+    }
+  ],
+  "artifact_sha256": "0393794db295ae2a0a1eef76841be53fbf0a95620e4cc9709f1f78ac1c47b549",
+  "artifact_bytes": 30557,
+  "recorded_at_utc": "2026-08-11T23:00:00Z"
+}
