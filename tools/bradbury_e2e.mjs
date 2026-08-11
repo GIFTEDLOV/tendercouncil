@@ -249,8 +249,9 @@ async function run() {
   } catch (error) {
     manifest.failures.push({ at_utc: new Date().toISOString(), error: String(error?.stack || error) });
     manifest.source = await sourceManifest();
-    await fs.writeFile(E2E_PATH, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
-    console.error(JSON.stringify({ status: "E2E_FAILED", e2e_manifest: E2E_PATH, failure: String(error?.stack || error) }, null, 2));
+    const failurePath = path.join(ROOT, `artifacts/tender_council_bradbury_e2e_failure_${new Date().toISOString().replaceAll(":", "").replaceAll(".", "")}.json`);
+    await fs.writeFile(failurePath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+    console.error(JSON.stringify({ status: "E2E_FAILED", e2e_failure_manifest: failurePath, failure: String(error?.stack || error) }, null, 2));
     throw error;
   }
 }
