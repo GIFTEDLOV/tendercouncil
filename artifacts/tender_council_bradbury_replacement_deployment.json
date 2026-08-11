@@ -11,7 +11,126 @@
   "deployable_evaluator_artifact_sha256": "0393794db295ae2a0a1eef76841be53fbf0a95620e4cc9709f1f78ac1c47b549",
   "artifact_generator_sha256": "421ef0c225c5140b65a48515784d11d9388f69bd18e8cf4606e23c65083f8b5a",
   "evaluator_schema_version": "tendercouncil.evaluator.v1",
-  "steps": [],
-  "failed_at_utc": "2026-08-11T16:27:42.338Z",
-  "failure": "Error: transaction did not finalize: 0x805b7b30df3b33fa9c1a5d026df2be0320ea026fc9eff30b08daf6aed3a076b1\n    at waitFinal (file:///C:/Users/DELL/tendercouncil/deploy/deploy_split_bradbury.mjs:102:52)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async deploySplitBradbury (file:///C:/Users/DELL/tendercouncil/deploy/deploy_split_bradbury.mjs:145:26)\n    at async run (file:///C:/Users/DELL/tendercouncil/tools/bradbury_e2e.mjs:143:32)\n    at async file:///C:/Users/DELL/tendercouncil/tools/bradbury_e2e.mjs:259:1"
+  "steps": [
+    "core_finality_rechecked_after_runner_timeout",
+    "core_finality_rechecked_after_runner_timeout",
+    "evaluator_finality_rechecked"
+  ],
+  "failed_at_utc": "2026-08-11T22:29:04.774Z",
+  "failure": "TypeError: Cannot read properties of undefined (reading 'length')\n    at file:///C:/Users/DELL/AppData/Roaming/npm/node_modules/genlayer/node_modules/viem/_esm/utils/abi/encodeFunctionData.js:7:28\n    at encodeFunctionData (file:///C:/Users/DELL/AppData/Roaming/npm/node_modules/genlayer/node_modules/viem/_esm/utils/abi/encodeFunctionData.js:11:7)\n    at simulateContract (file:///C:/Users/DELL/AppData/Roaming/npm/node_modules/genlayer/node_modules/viem/_esm/actions/public/simulateContract.js:45:22)\n    at Object.simulateContract (file:///C:/Users/DELL/AppData/Roaming/npm/node_modules/genlayer/node_modules/viem/_esm/clients/decorators/public.js:107:37)\n    at main (file:///C:/Users/DELL/tendercouncil/deploy/bind_existing_bradbury_evaluator.mjs:58:16)\n    at async file:///C:/Users/DELL/tendercouncil/deploy/bind_existing_bradbury_evaluator.mjs:71:7",
+  "core": {
+    "address": "0xaf12cF3B7225c94E6674255780B16aDCfEb03E15",
+    "deployment_tx": "0x805b7b30df3b33fa9c1a5d026df2be0320ea026fc9eff30b08daf6aed3a076b1",
+    "finality_recheck": {
+      "status": "FINALIZED",
+      "result": "AGREE",
+      "execution": "FINISHED_WITH_RETURN",
+      "created_timestamp": "1786463850",
+      "finalized_observed_at_utc": "2026-08-11T21:58:36.665Z",
+      "contract_address": "0xaf12cF3B7225c94E6674255780B16aDCfEb03E15",
+      "validators": {
+        "round": "0",
+        "leaderIndex": "0",
+        "votesCommitted": "5",
+        "votesRevealed": "5",
+        "appealBond": "0",
+        "rotationsLeft": "3",
+        "result": 1,
+        "roundValidators": [
+          "0x7538369A22a176afFccb6B273eedfbb92780bf22",
+          "0x58a7b7ac6Cb01843e4e5af117C551E59449E0F49",
+          "0x3B940A5b4A762583453D9e9Cf0981BE0426A8e79",
+          "0x3f5cAED686336ED9cF3Dede61154B0Cd67Fb9bD7",
+          "0x77a07271abB443F55be19c357AA35206BeB63E1d"
+        ],
+        "validatorVotes": [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "validatorVotesHash": [
+          "0x52ae6a3534089a6d16a3f25ab4ff78137b2af2e9950acc2c954da1e678a3bd5c",
+          "0x83d29509fb776778eb5b316e3ad3ac8aa9899659460b9297833219c2a05948b3",
+          "0x6ac4a73e6b9b7ad55156a85b26e010455a43bca5aa16a4c7680e697e31790453",
+          "0x63556cbb29ad1f2e37bcfe1a21143f1341c08611fe5e5305aeaf17f0deb49a9f",
+          "0x64afe41d41025bd9596cf1b99370640479d4d9cee62b74e8cae4b0a795aa7728"
+        ],
+        "validatorResultHash": [
+          "0x37ccc824b1939deb1d8637fecaca1ae173eef82b86f526c76c00154168de03ce",
+          "0x37ccc824b1939deb1d8637fecaca1ae173eef82b86f526c76c00154168de03ce",
+          "0x37ccc824b1939deb1d8637fecaca1ae173eef82b86f526c76c00154168de03ce",
+          "0x37ccc824b1939deb1d8637fecaca1ae173eef82b86f526c76c00154168de03ce",
+          "0x37ccc824b1939deb1d8637fecaca1ae173eef82b86f526c76c00154168de03ce"
+        ],
+        "validatorVotesName": [
+          "AGREE",
+          "AGREE",
+          "AGREE",
+          "AGREE",
+          "AGREE"
+        ]
+      }
+    }
+  },
+  "evaluator": {
+    "address": "0xEF30f069A8Be376D40F18758b9bfDa54D7c04Ec7",
+    "deployment_tx": "0x63ecc87b4fd48dafb8d2f161e757e6e08764e49bbb8a97e44a9ddd326aa2b64a",
+    "evm_deployment_tx": "0x8c8292b31d9efa902d9b138d8c21fd38db4fc927cd0042fb95d876e9288d6da2",
+    "constructor_core": "0xaf12cF3B7225c94E6674255780B16aDCfEb03E15",
+    "version": "tendercouncil.evaluator.v1",
+    "finalized_recheck": {
+      "status": "FINALIZED",
+      "result": "AGREE",
+      "execution": "FINISHED_WITH_RETURN",
+      "created_timestamp": "1786485429",
+      "observed_at_utc": "2026-08-11T22:29:04.750Z",
+      "contract_address": "0xEF30f069A8Be376D40F18758b9bfDa54D7c04Ec7",
+      "validators": {
+        "round": "0",
+        "leaderIndex": "0",
+        "votesCommitted": "5",
+        "votesRevealed": "5",
+        "appealBond": "0",
+        "rotationsLeft": "3",
+        "result": 1,
+        "roundValidators": [
+          "0x0c526A6af46A038E31dA21C123756Ab2D75f06Bc",
+          "0x3f5cAED686336ED9cF3Dede61154B0Cd67Fb9bD7",
+          "0x4FC292d5D255Ec8Ad4cdcd36c5E188dfEE9D160e",
+          "0x3B940A5b4A762583453D9e9Cf0981BE0426A8e79",
+          "0x9D998aD7C7f9Cc448A4DbDf49edD7CADBe3d57B6"
+        ],
+        "validatorVotes": [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "validatorVotesHash": [
+          "0x6f6a816778517607878655e54233e4a6d23ebcae76e0c6bef50336f2b74bf5a5",
+          "0x4701ff1ce283980025e031f7b85c58f25f8892c929050cfb05bd8d6563318c29",
+          "0x6a3b76eafe8ef44fb2692c29cdf15d84e8f2b618dabf414300f1ba339649b847",
+          "0x2ec326887bd99b0f4b63cefaf8912563923dd55ed35d3c4320dde48506bda773",
+          "0x5f15d2ce75d164cfa13a287ce7157f6f92b5c5501b39b63c2149ed2e73d54f10"
+        ],
+        "validatorResultHash": [
+          "0x572ad2941c5270bf5403e00ad23ce15ff9fd828f88d565626dd0251153fee745",
+          "0x572ad2941c5270bf5403e00ad23ce15ff9fd828f88d565626dd0251153fee745",
+          "0x572ad2941c5270bf5403e00ad23ce15ff9fd828f88d565626dd0251153fee745",
+          "0x572ad2941c5270bf5403e00ad23ce15ff9fd828f88d565626dd0251153fee745",
+          "0x572ad2941c5270bf5403e00ad23ce15ff9fd828f88d565626dd0251153fee745"
+        ],
+        "validatorVotesName": [
+          "AGREE",
+          "AGREE",
+          "AGREE",
+          "AGREE",
+          "AGREE"
+        ]
+      }
+    }
+  }
 }

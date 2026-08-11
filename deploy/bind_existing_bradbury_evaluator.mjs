@@ -55,7 +55,7 @@ async function main() {
   manifest.evaluator = { ...(manifest.evaluator || {}), address: EVALUATOR, deployment_tx: EVALUATOR_TX, evm_deployment_tx: EVALUATOR_EVM_TX, constructor_core: CORE, version: VERSION, finalized_recheck: { status: evaluatorTx.statusName, result: evaluatorTx.resultName, execution: evaluatorTx.txExecutionResultName, created_timestamp: evaluatorTx.createdTimestamp, observed_at_utc: new Date().toISOString(), contract_address: evaluatorTx.txDataDecoded.contractAddress, validators: safe(evaluatorTx.lastRound) } };
   manifest.steps = [...(manifest.steps || []), "evaluator_finality_rechecked"];
   await writeManifest(manifest);
-  await client.simulateContract({ account, address: CORE, functionName: "bind_evaluator", args: [EVALUATOR, VERSION, codeHash] });
+  await client.simulateWriteContract({ account, address: CORE, functionName: "bind_evaluator", args: [EVALUATOR, VERSION, codeHash], leaderOnly: false });
   const bindingTx = await client.writeContract({ account, address: CORE, functionName: "bind_evaluator", args: [EVALUATOR, VERSION, codeHash], value: 0n, leaderOnly: false });
   const receipts = await waitFinal(client, bindingTx);
   const finalBinding = JSON.parse(await read(client, CORE, "get_evaluator_binding"));
