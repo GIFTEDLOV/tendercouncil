@@ -23,6 +23,26 @@ def _canonical(value)->str:
     return json.dumps(value,sort_keys=True,separators=(',',':'))
 def _same_ids(left,right)->bool:
     return sorted(set(left))==sorted(set(right))
+def _score_invariants(value:dict)->bool:
+    if not isinstance(value,dict)or not isinstance(value.get('scores'),list):
+        return False
+    by_id={}
+    for row in value['scores']:
+        if not isinstance(row,dict)or row.get('bid_id')in by_id:
+            return False
+        if row.get('total')!=sum((row.get(name,-1)for name in('technical','delivery','price','capability','support'))):
+            return False
+        by_id[row['bid_id']]=row
+    if value.get('status')=='COMPARATIVE':
+        winner=by_id.get(value.get('winner_bid_id'))
+        if winner is None or winner.get('total')!=value.get('winner_total_score'):
+            return False
+        runner_id=value.get('runner_up_bid_id','')
+        if runner_id:
+            runner=by_id.get(runner_id)
+            if runner is None or runner.get('total')!=value.get('runner_up_score'):
+                return False
+    return True
 def _comparative_equivalent(actual:dict,expected:dict)->bool:
     exact_fields=('status','winner_bid_id','runner_up_bid_id','deterministic_disqualified_bid_ids','integrity_disqualified_bid_ids','semantic_candidate_ids','semantic_disqualified_bid_ids','valid_bid_ids','disqualified_bid_ids','semantic_classifications')
     for field in exact_fields:
@@ -34,6 +54,8 @@ def _comparative_equivalent(actual:dict,expected:dict)->bool:
                 return False
         elif actual.get(field)!=expected.get(field):
             return False
+    if not _score_invariants(actual)or not _score_invariants(expected):
+        return False
     if actual.get('status')!='COMPARATIVE':
         return actual.get('status')==expected.get('status')
     if actual.get('winner_bid_id')!=expected.get('winner_bid_id'):
