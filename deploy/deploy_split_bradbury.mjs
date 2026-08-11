@@ -8,6 +8,7 @@
  * environment variable below.
  */
 import fs from "node:fs/promises";
+import fsSync from "node:fs";
 import crypto from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -70,14 +71,27 @@ async function localHashes() {
 }
 
 function runPreflight(sender) {
-  const python = process.env.TENDERCOUNCIL_PYTHON || "python";
-  const args = ["tools/release_preflight_split.py", "--network", NETWORK, "--chain-id", String(CHAIN_ID), "--sender", sender];
-  const result = spawnSync("cmd.exe", ["/d", "/s", "/c", `"${python}" ${args.join(" ")}`], {
-    cwd: ROOT, encoding: "utf8", env: { ...process.env, TENDERCOUNCIL_EXPECTED_HEAD: process.env.TENDERCOUNCIL_EXPECTED_HEAD || "" },
-  });
-  process.stdout.write(result.stdout || "");
-  process.stderr.write(result.stderr || "");
-  if (result.status !== 0) throw new Error(`release preflight failed (status=${result.status}, error=${result.error?.message || "none"})`);
+  const expectedHead = process.env.TENDERCOUNCIL_EXPECTED_HEAD || "";
+  if (!expectedHead || process.env.TENDERCOUNCIL_RELEASE_PREFLIGHT_OK !== expectedHead) {
+    throw new Error("release preflight token is missing or does not match reviewed HEAD");
+  }
+  const status = spawnSync("git", ["-c", `safe.directory=${ROOT.replaceAll("\\\\", "/")}`, "status", "--porcelain"], { cwd: ROOT, encoding: "utf8" });
+  if (status.status !== 0 || status.stdout.trim() !== "") throw new Error(`release preflight worktree is not clean: ${status.stdout.trim()}`);
+  if (gitHead() !== expectedHead) throw new Error("release preflight HEAD mismatch");
+  if (sender.toLowerCase() !== "0xe0f17bef0587c3b66d2eb4bbe705dff821abdde7") throw new Error("release preflight sender mismatch");
+  const header = '# { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }';
+  const expected = {
+    coreSource: "06a903f0381fb8017a76381c298e61cce39a0db0a5adee969a403cd1f1b105f7",
+    coreArtifact: "1fffc2e4e3c8309858ca1ad45f6bd76cc2003c238175da77b71757e44c99dc55",
+    evaluatorSource: "03bb0c4ea8db05538d71915041a9ae42f337ef71f1408dd26b9db16cbf7c2d47",
+    evaluatorArtifact: "0393794db295ae2a0a1eef76841be53fbf0a95620e4cc9709f1f78ac1c47b549",
+  };
+  for (const [key, file] of Object.entries({ coreSource: files.coreSource, coreArtifact: files.coreArtifact, evaluatorSource: files.evaluatorSource, evaluatorArtifact: files.evaluatorArtifact })) {
+    const bytes = fsSync.readFileSync(file);
+    if (key.endsWith("Source") && bytes.toString("utf8").split(/\r?\n/, 1)[0] !== header) throw new Error(`${key} runner header mismatch`);
+    if (sha256(bytes) !== expected[key]) throw new Error(`${key} hash mismatch`);
+    if (key.endsWith("Artifact") && bytes.length + 1024 >= 42000) throw new Error(`${key} exceeds conservative size envelope`);
+  }
 }
 
 function gitHead() {
