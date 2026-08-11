@@ -19,7 +19,7 @@ const NETWORK = "testnet-bradbury";
 const CHAIN_ID = 4221;
 const RPC = "https://rpc-bradbury.genlayer.com";
 const CONFIRM = "DEPLOY_TWO_CONTRACTS_TO_BRADBURY";
-const MANIFEST_PATH = path.join(ROOT, "artifacts/tender_council_bradbury_deployment.json");
+const MANIFEST_PATH = path.join(ROOT, "artifacts/tender_council_bradbury_replacement_deployment.json");
 
 const files = {
   coreSource: path.join(ROOT, "contracts/tender_council_core.py"),
@@ -86,8 +86,8 @@ function gitHead() {
 }
 
 async function waitFinal(client, hash) {
-  const accepted = await client.waitForTransactionReceipt({ hash, status: "ACCEPTED", retries: 120, interval: 5000 });
-  const finalized = await client.waitForTransactionReceipt({ hash, status: "FINALIZED", retries: 240, interval: 5000 });
+  const accepted = await client.waitForTransactionReceipt({ hash, status: "ACCEPTED", retries: 240, interval: 5000 });
+  const finalized = await client.waitForTransactionReceipt({ hash, status: "FINALIZED", retries: 720, interval: 5000 });
   if (statusName(finalized) !== "FINALIZED") throw new Error(`transaction did not finalize: ${hash}`);
   return { accepted: jsonSafe(accepted), finalized: jsonSafe(finalized) };
 }
