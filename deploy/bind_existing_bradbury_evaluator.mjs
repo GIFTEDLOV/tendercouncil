@@ -8,6 +8,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SDK_ROOT = "C:/Users/DELL/AppData/Roaming/npm/node_modules/genlayer/node_modules/genlayer-js/dist";
 const sdk = await import(pathToFileURL(`${SDK_ROOT}/index.js`));
+const { CalldataAddress } = await import(pathToFileURL(`${SDK_ROOT}/chunk-EY35NPSE.js`));
+const { hexToBytes } = await import(pathToFileURL("C:/Users/DELL/AppData/Roaming/npm/node_modules/genlayer/node_modules/viem/_esm/index.js"));
 const { testnetBradbury } = await import(pathToFileURL(`${SDK_ROOT}/chains/index.js`));
 const keytar = createRequire(pathToFileURL("C:/Users/DELL/AppData/Roaming/npm/node_modules/genlayer/dist/index.js"))("keytar");
 const CORE = process.env.TENDERCOUNCIL_EXISTING_CORE || "";
@@ -44,6 +46,7 @@ async function main() {
   if (client.chain.id !== CHAIN_ID) throw new Error("wrong chain");
   const artifact = await fs.readFile(path.join(ROOT, "artifacts/tender_council_evaluator_deployable.py"));
   const codeHash = `sha256:${sha256(artifact)}`;
+  const evaluatorArgument = new CalldataAddress(hexToBytes(EVALUATOR));
   const coreTx = await client.getTransaction({ hash: CORE_TX });
   const evaluatorTx = await client.getTransaction({ hash: EVALUATOR_TX });
   if (coreTx.statusName !== "FINALIZED" || coreTx.txDataDecoded?.contractAddress?.toLowerCase() !== CORE.toLowerCase()) throw new Error("Core finality mismatch");
@@ -62,7 +65,7 @@ async function main() {
     console.log(`binding_estimate=${bindingEstimate.toString()}`);
     return bindingEstimate;
   };
-  const bindingTx = await client.writeContract({ account, address: CORE, functionName: "bind_evaluator", args: [EVALUATOR, VERSION, codeHash], value: 0n, leaderOnly: false });
+  const bindingTx = await client.writeContract({ account, address: CORE, functionName: "bind_evaluator", args: [evaluatorArgument, VERSION, codeHash], value: 0n, leaderOnly: false });
   if (bindingEstimate === undefined) throw new Error("binding gas estimate was not observed before broadcast");
   const receipts = await waitFinal(client, bindingTx);
   const finalBinding = JSON.parse(await read(client, CORE, "get_evaluator_binding"));
