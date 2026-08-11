@@ -223,6 +223,13 @@ def _validate_external_challenge(raw: bytes, challenge: dict):
     return "VALID", body["claim"]
 
 
+def _resolve_external_challenge(fetched, challenge: dict):
+    """Map bounded retrieval and integrity/schema outcomes to explicit states."""
+    if fetched[0] != "OK":
+        return "UNAVAILABLE", ""
+    return _validate_external_challenge(fetched[1], challenge)
+
+
 def _required(policy: str, criterion: str) -> bool:
     return criterion + ":required" in policy.split(";")
 
@@ -582,10 +589,7 @@ class TenderCouncilEvaluator(gl.Contract):
             claims = challenge["claims"]
             if challenge["challenge_url"]:
                 fetched = _fetch(challenge["challenge_url"], MAX_MANIFEST_BYTES)
-                if fetched[0] != "OK":
-                    challenge_states.append(challenge["challenge_id"] + ":UNAVAILABLE")
-                    continue
-                state, claims = _validate_external_challenge(fetched[1], challenge)
+                state, claims = _resolve_external_challenge(fetched, challenge)
                 challenge_states.append(challenge["challenge_id"] + ":" + state)
                 if state != "VALID":
                     continue

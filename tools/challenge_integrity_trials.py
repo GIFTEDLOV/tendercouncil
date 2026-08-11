@@ -11,15 +11,15 @@ from pathlib import Path
 
 def load_validator(source: Path):
     tree = ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
-    wanted = {"_hash_bytes", "_validate_external_challenge"}
+    wanted = {"_hash_bytes", "_validate_external_challenge", "_resolve_external_challenge"}
     nodes = [node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name in wanted]
     namespace = {"json": json, "hashlib": hashlib, "MAX_CLAIMS": 6000}
     exec(compile(ast.Module(body=nodes, type_ignores=[]), str(source), "exec"), namespace)
-    return namespace["_validate_external_challenge"]
+    return namespace["_validate_external_challenge"], namespace["_resolve_external_challenge"]
 
 
 def run(source: Path) -> None:
-    validate = load_validator(source)
+    validate, resolve = load_validator(source)
     challenge = {
         "challenge_id": "c1", "challenger": "0x" + "11" * 20,
         "reason_code": "RUBRIC_MISAPPLIED", "target_bid_id": "bid-b",
@@ -42,7 +42,9 @@ def run(source: Path) -> None:
     bad["challenge_sha256"] = "sha256:" + hashlib.sha256(malformed).hexdigest()
     if validate(malformed, bad)[0] != "SCHEMA_INVALID":
         raise SystemExit("malformed challenge was not rejected as SCHEMA_INVALID")
-    print("challenge integrity trials: PASS (VALID, HASH_MISMATCH, SCHEMA_INVALID)")
+    if resolve(("UNAVAILABLE", b""), challenge)[0] != "UNAVAILABLE":
+        raise SystemExit("unavailable challenge was not classified as UNAVAILABLE")
+    print("challenge integrity trials: PASS (VALID, UNAVAILABLE, HASH_MISMATCH, SCHEMA_INVALID)")
 
 
 def main() -> None:

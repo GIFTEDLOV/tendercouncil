@@ -147,6 +147,10 @@ def _validate_external_challenge(raw:bytes,challenge:dict):
     if body['schema_version']!='tendercouncil.challenge.v1' or body['challenge_id']!=challenge['challenge_id']or body['challenger'].lower()!=challenge['challenger'].lower()or(body['reason_code']!=challenge['reason_code'])or(body['target_bid_id']!=challenge['target_bid_id'])or(body['referenced_evidence_id']!=challenge['referenced_evidence_id'])or(body['tender_id']!=challenge['tender_id'])or(not isinstance(body['claim'],str))or(not body['claim'])or(len(body['claim'])>MAX_CLAIMS):
         return('SCHEMA_INVALID','')
     return('VALID',body['claim'])
+def _resolve_external_challenge(fetched,challenge:dict):
+    if fetched[0]!='OK':
+        return('UNAVAILABLE','')
+    return _validate_external_challenge(fetched[1],challenge)
 def _required(policy:str,criterion:str)->bool:
     return criterion+':required' in policy.split(';')
 def _load_original_result(record,tender_id:str,nonce:u64,expected_digest:str):
@@ -409,10 +413,7 @@ class TenderCouncilEvaluator(gl.Contract):
             claims=challenge['claims']
             if challenge['challenge_url']:
                 fetched=_fetch(challenge['challenge_url'],MAX_MANIFEST_BYTES)
-                if fetched[0]!='OK':
-                    challenge_states.append(challenge['challenge_id']+':UNAVAILABLE')
-                    continue
-                state,claims=_validate_external_challenge(fetched[1],challenge)
+                state,claims=_resolve_external_challenge(fetched,challenge)
                 challenge_states.append(challenge['challenge_id']+':'+state)
                 if state!='VALID':
                     continue
