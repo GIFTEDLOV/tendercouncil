@@ -1,0 +1,12 @@
+{
+  "classification": "E2E_RUNNER_TOOLING_STOPPED_BEFORE_TENDER",
+  "reason": "The first bidder funding transfer finalized as a normal EVM transfer, while the runner incorrectly polled it through the GenLayer transaction-status API. The runner was stopped before tender creation.",
+  "bidder": "0xC8732D516AD35CB7A137548878358856dBD9D8f2",
+  "amount_wei": "20000000000000000",
+  "evm_tx": "0x657ba094c838595bc9d8bcd5f6b9c839fa56f7f5569c9d8ee53048916937e349",
+  "evm_receipt_status": "0x1",
+  "evm_block": "0x106ef08",
+  "tender_created": false,
+  "bids_submitted": false,
+  "recorded_at_utc": "2026-08-12T00:50:00Z"
+}

@@ -56,6 +56,16 @@ async function waitStatus(client, hash, status) {
   console.log(`waiting ${status}: ${hash}`);
   return client.waitForTransactionReceipt({ hash, status, fullTransaction: true, retries: status === "FINALIZED" ? 720 : 240, interval: 5000 });
 }
+async function waitEvmFinal(client, hash) {
+  for (let attempt = 1; attempt <= 720; attempt += 1) {
+    const receipt = await client.request({ method: "eth_getTransactionReceipt", params: [hash] });
+    if (receipt?.status === "0x1") return { hash, evm_receipt: jsonSafe(receipt), finality: "EVM_RECEIPT" };
+    if (receipt?.status === "0x0") throw new Error(`native funding transfer reverted: ${hash}`);
+    if (attempt % 2 === 0) console.log(`waiting EVM receipt: ${hash}`);
+    await sleep(5000);
+  }
+  throw new Error(`native funding transfer did not receive a successful EVM receipt: ${hash}`);
+}
 async function waitAcceptedFinalized(client, hash) {
   const accepted = await waitStatus(client, hash, "ACCEPTED");
   const finalized = await waitStatus(client, hash, "FINALIZED");
@@ -163,8 +173,13 @@ async function run() {
 
     manifest.funding = [];
     for (const item of localAccounts) {
+      const currentBalance = await buyer.getBalance({ address: item.address, blockTag: "latest" });
+      if (currentBalance >= BIDDER_FUNDING) {
+        manifest.funding.push({ bidder: item.address, amount_wei: BIDDER_FUNDING.toString(), existing_balance_wei: String(currentBalance), skipped_existing_funding: true, note: "preserved from an earlier interrupted funding phase" });
+        continue;
+      }
       const hash = await sendNativeHash(buyer, item.address, BIDDER_FUNDING);
-      const tx = await waitAcceptedFinalized(buyer, hash);
+      const tx = await waitEvmFinal(buyer, hash);
       manifest.funding.push({ bidder: item.address, amount_wei: BIDDER_FUNDING.toString(), ...tx });
     }
 
