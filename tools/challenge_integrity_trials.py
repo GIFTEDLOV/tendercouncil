@@ -11,15 +11,15 @@ from pathlib import Path
 
 def load_validator(source: Path):
     tree = ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
-    wanted = {"_hash_bytes", "_validate_external_challenge", "_resolve_external_challenge"}
+    wanted = {"_hash_bytes", "_validate_external_challenge", "_resolve_external_challenge", "_deterministic_uphold_review"}
     nodes = [node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name in wanted]
     namespace = {"json": json, "hashlib": hashlib, "MAX_CLAIMS": 6000}
     exec(compile(ast.Module(body=nodes, type_ignores=[]), str(source), "exec"), namespace)
-    return namespace["_validate_external_challenge"], namespace["_resolve_external_challenge"]
+    return namespace["_validate_external_challenge"], namespace["_resolve_external_challenge"], namespace["_deterministic_uphold_review"]
 
 
 def run(source: Path) -> None:
-    validate, resolve = load_validator(source)
+    validate, resolve, uphold = load_validator(source)
     challenge = {
         "challenge_id": "c1", "challenger": "0x" + "11" * 20,
         "reason_code": "RUBRIC_MISAPPLIED", "target_bid_id": "bid-b",
@@ -44,7 +44,12 @@ def run(source: Path) -> None:
         raise SystemExit("malformed challenge was not rejected as SCHEMA_INVALID")
     if resolve(("UNAVAILABLE", b""), challenge)[0] != "UNAVAILABLE":
         raise SystemExit("unavailable challenge was not classified as UNAVAILABLE")
-    print("challenge integrity trials: PASS (VALID, UNAVAILABLE, HASH_MISMATCH, SCHEMA_INVALID)")
+    invalid_states = ["UNAVAILABLE", "HASH_MISMATCH", "SCHEMA_INVALID"]
+    for state in invalid_states:
+        result = uphold("bid-b", ["c1:" + state])
+        if result["decision"] != "UPHOLD" or result["winner_bid_id"] != "bid-b":
+            raise SystemExit("invalid challenge state overturned the original award")
+    print("challenge integrity trials: PASS (VALID, UNAVAILABLE, HASH_MISMATCH, SCHEMA_INVALID, deterministic invalid-state UPHOLD)")
 
 
 def main() -> None:

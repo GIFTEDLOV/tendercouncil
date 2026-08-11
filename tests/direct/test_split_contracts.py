@@ -5,6 +5,7 @@ CORE = "contracts/tender_council_core.py"
 EVALUATOR = "contracts/tender_council_evaluator.py"
 ZERO_HASH = "sha256:" + "a" * 64
 DEADLINE = 1798761600
+BUDGET_WEI = 8_000_000_000_000_000_000
 
 
 def _addr(raw, prototype):
@@ -13,14 +14,13 @@ def _addr(raw, prototype):
 
 def _create(core, direct_vm, buyer, tender_id="split-tender"):
     direct_vm.sender = buyer
-    direct_vm.value = 8000
+    direct_vm.value = BUDGET_WEI
     core.create_tender(
         tender_id,
         "Analytics dashboard procurement",
         "https://buyer.example/brief.json",
         ZERO_HASH,
-        8000,
-        8000,
+        BUDGET_WEI,
         30,
         90,
         DEADLINE,
@@ -65,7 +65,7 @@ def test_core_snapshot_is_canonical_and_evaluation_is_locked_until_callback(
     direct_vm.sender = direct_vm.origin
     core.bind_evaluator(evaluator_address, "tendercouncil.evaluator.v1", "sha256:" + "c" * 64)
     _create(core, direct_vm, direct_bob)
-    direct_vm.deal(direct_vm._contract_address, 8000)
+    direct_vm.deal(direct_vm._contract_address, BUDGET_WEI)
     direct_vm.sender = direct_bob
     core.open_tender("split-tender")
     direct_vm.warp("2027-01-01T00:00:00Z")
@@ -92,14 +92,13 @@ def test_core_binds_immutable_commercial_terms_and_rejects_manual_award(
     direct_vm.sender = direct_vm.origin
     core.bind_evaluator(_addr(bytes.fromhex("56" * 20), core), "tendercouncil.evaluator.v1", "sha256:" + "d" * 64)
     _create(core, direct_vm, direct_bob, "manual-award")
-    direct_vm.deal(direct_vm._contract_address, 8000)
+    direct_vm.deal(direct_vm._contract_address, BUDGET_WEI)
     direct_vm.sender = direct_bob
     core.open_tender("manual-award")
     with direct_vm.expect_revert("only an unsettled awarded tender may settle"):
         core.settle_award("manual-award")
     assert not hasattr(core, "award_bid")
     assert not hasattr(core, "resolve_challenge")
-
 
 def test_evaluator_rejects_non_core_job_sender(direct_vm, direct_deploy):
     core_address = "0x" + "12" * 20

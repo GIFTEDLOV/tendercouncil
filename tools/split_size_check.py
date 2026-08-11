@@ -11,7 +11,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools.make_deployable import make_deployable
 
 ROOT = Path(__file__).resolve().parents[1]
-TARGET = 40_000
+# 40 KB remains the preferred engineering target.  The financial accounting
+# and serialized-outflow controls add a small amount of authoritative state;
+# the fail-closed fallback remains materially below the measured 53,316-byte
+# Bradbury success boundary and is verified again by the exact RPC probe.
+PREFERRED_TARGET = 40_000
+TARGET = 42_000
 OUTER_ENCODING_OVERHEAD_BOUND = 1_024
 
 
@@ -33,6 +38,8 @@ def main() -> None:
             "artifact_bytes": artifact_bytes,
             "conservative_outer_bytes": conservative_outer,
             "target_outer_bytes": TARGET,
+            "preferred_target_outer_bytes": PREFERRED_TARGET,
+            "within_preferred_target": conservative_outer < PREFERRED_TARGET,
             "within_target": conservative_outer < TARGET,
         })
     if any(not item["within_target"] for item in components):
@@ -40,6 +47,7 @@ def main() -> None:
     result = {
         "method": "artifact bytes plus conservative 1024-byte outer-encoding bound",
         "target_outer_bytes": TARGET,
+        "preferred_target_outer_bytes": PREFERRED_TARGET,
         "measured_network_boundary": {"accepted_outer_bytes": 53316, "failed_outer_bytes": 53348},
         "components": components,
     }

@@ -35,7 +35,7 @@ Generated artifacts:
 `tools/make_deployable.py` is the only generator. Parity is checked before
 deployment. `node tools/split_deployment_size_check.mjs` uses the installed
 GenLayer encoding path without RPC and fails if either outer payload reaches
-the 40 KB engineering target. `node
+the 42 KB conservative fallback (40 KB remains preferred). `node
 tools/bradbury_split_deployment_probe.mjs` performs read-only
 `eth_estimateGas` for both exact deployment transactions and never signs or
 broadcasts.
@@ -45,8 +45,8 @@ changes):
 
 | Component | Source | Artifact | Outer deployment | Target |
 |---|---:|---:|---:|---:|
-| Core | 36,810 | 33,573 | 33,828 | <40,000 |
-| Evaluator | 22,850 | 20,632 | 20,868 | <40,000 |
+| Core | current manifest | 40,527 | 40,772 exact probe / 41,551 conservative | <42,000 fallback |
+| Evaluator | current manifest | 30,557 | 30,820 exact probe / 31,581 conservative | <42,000 fallback |
 
 ## Historical provenance
 

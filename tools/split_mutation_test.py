@@ -118,6 +118,24 @@ PYTHON_PROBE_MUTATIONS = (
         "    if False:",
         "tools/challenge_integrity_trials.py",
     ),
+    (
+        "integrity-set-exactness-weakened",
+        '    if not _same_ids(value["integrity_disqualified_bid_ids"], integrity_ids):',
+        '    if not set(value["integrity_disqualified_bid_ids"]).issubset(set(integrity_ids)):',
+        "tools/semantic_policy_trials.py",
+    ),
+    (
+        "semantic-no-valid-rejected-as-comparative-only",
+        '    if value["status"] not in ("COMPARATIVE", "NO_VALID_BID"):',
+        '    if value["status"] != "COMPARATIVE":',
+        "tools/semantic_policy_trials.py",
+    ),
+    (
+        "invalid-challenge-review-not-deterministic-uphold",
+        '        "decision": "UPHOLD",',
+        '        "decision": "REPLACE_WINNER",',
+        "tools/challenge_integrity_trials.py",
+    ),
 )
 
 COMPOUND_PROBE_MUTATIONS = (
@@ -143,9 +161,22 @@ COMPOUND_PROBE_MUTATIONS = (
         "semantic-resurrection-allowed",
         (
             ('    expected_candidates = set(all_ids) - set(deterministic_ids) - set(integrity_ids)\n    if set(candidate_ids) != expected_candidates:', '    if False:'),
-            ('    expected_disqualified = sorted(set(deterministic_ids) | set(value["integrity_disqualified_bid_ids"]) | set(semantic_bad))', '    expected_disqualified = sorted(set(value["integrity_disqualified_bid_ids"]) | set(semantic_bad))'),
+            ('    expected_disqualified = sorted(set(deterministic_ids) | set(integrity_ids) | set(semantic_bad))', '    expected_disqualified = sorted(set(value["integrity_disqualified_bid_ids"]) | set(semantic_bad))'),
         ),
         "tools/semantic_policy_trials.py",
+    ),
+)
+
+FINANCIAL_MUTATIONS = (
+    (
+        "winner-payout-replaced-with-budget",
+        "        payout = winner.price_wei",
+        "        payout = tender.max_budget_wei",
+    ),
+    (
+        "global-financial-outflow-lock-removed",
+        '    def _require_no_financial_outflow(self):\n        if self.financial_outflow_pending:\n            raise gl.vm.UserError("another financial outflow is pending")',
+        '    def _require_no_financial_outflow(self):\n        if False:\n            raise gl.vm.UserError("another financial outflow is pending")',
     ),
 )
 
@@ -273,6 +304,50 @@ def run_compound_probe_mutant(name, replacements, probe):
         shutil.rmtree(raw_dir, ignore_errors=True)
 
 
+def run_execution_probe_mutant(name, needle, replacement):
+    raw_dir = tempfile.mkdtemp(prefix="tendercouncil-split-execution-mutant-", dir=ROOT)
+    try:
+        mutant_root = Path(raw_dir)
+        for relative in (
+            "contracts/tender_council_evaluator.py", "tools/evaluator_no_valid_trial.py",
+            "tests/fixtures/evaluator_core_fixture.py",
+        ):
+            _copy_fixture(mutant_root, relative)
+        source_path = mutant_root / "contracts/tender_council_evaluator.py"
+        source = source_path.read_text(encoding="utf-8")
+        if source.count(needle) != 1:
+            raise RuntimeError(f"{name}: mutation target count is {source.count(needle)}")
+        source_path.write_text(source.replace(needle, replacement), encoding="utf-8")
+        result = _run([sys.executable, "tools/evaluator_no_valid_trial.py"], mutant_root)
+        if result.returncode == 0:
+            raise RuntimeError(f"{name}: mutant survived\n{result.stdout}\n{result.stderr}")
+        print(f"caught {name}")
+    finally:
+        shutil.rmtree(raw_dir, ignore_errors=True)
+
+
+def run_financial_mutant(name, needle, replacement):
+    raw_dir = tempfile.mkdtemp(prefix="tendercouncil-financial-mutant-", dir=ROOT)
+    try:
+        mutant_root = Path(raw_dir)
+        for relative in (
+            "contracts/tender_council_core.py", "tools/financial_trials.py",
+            "tests/fixtures/split_fake_evaluator.py",
+        ):
+            _copy_fixture(mutant_root, relative)
+        source_path = mutant_root / "contracts/tender_council_core.py"
+        source = source_path.read_text(encoding="utf-8")
+        if source.count(needle) != 1:
+            raise RuntimeError(f"{name}: mutation target count is {source.count(needle)}")
+        source_path.write_text(source.replace(needle, replacement), encoding="utf-8")
+        result = _run([sys.executable, "tools/financial_trials.py"], mutant_root)
+        if result.returncode == 0:
+            raise RuntimeError(f"{name}: mutant survived\n{result.stdout}\n{result.stderr}")
+        print(f"caught {name}")
+    finally:
+        shutil.rmtree(raw_dir, ignore_errors=True)
+
+
 def main():
     for mutation in DIRECT_MUTATIONS:
         run_direct_mutant(*mutation)
@@ -282,8 +357,15 @@ def main():
         run_python_probe_mutant(*mutation)
     for mutation in COMPOUND_PROBE_MUTATIONS:
         run_compound_probe_mutant(*mutation)
+    run_execution_probe_mutant(
+        "real-evaluator-semantic-no-valid-path",
+        '    if value["status"] not in ("COMPARATIVE", "NO_VALID_BID"):',
+        '    if value["status"] != "COMPARATIVE":',
+    )
+    for mutation in FINANCIAL_MUTATIONS:
+        run_financial_mutant(*mutation)
     run_finality_mutant()
-    print(f"caught {len(DIRECT_MUTATIONS) + len(RUNTIME_MUTATIONS) + len(PYTHON_PROBE_MUTATIONS) + len(COMPOUND_PROBE_MUTATIONS) + 1} split mutants")
+    print(f"caught {len(DIRECT_MUTATIONS) + len(RUNTIME_MUTATIONS) + len(PYTHON_PROBE_MUTATIONS) + len(COMPOUND_PROBE_MUTATIONS) + len(FINANCIAL_MUTATIONS) + 2} split mutants")
 
 
 if __name__ == "__main__":

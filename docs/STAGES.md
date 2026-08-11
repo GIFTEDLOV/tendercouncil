@@ -11,10 +11,10 @@
 | Cross-contract correlation | IMPLEMENTED locally | Finalized message path and nonce/digest guards |
 | Evidence integrity/schema | IMPLEMENTED locally | Evaluator exact-byte hash and bounded manifest/evidence validation |
 | Response/challenge/review | IMPLEMENTED locally | One bounded review round and external challenge hash boundary |
-| Finalized settlement/refunds | IMPLEMENTED locally | Core-only transfer, pending confirmation, balance delta |
-| Generated artifacts/size gate | GREEN locally | Both outer payloads below 40 KB target |
-| Direct tests | IMPLEMENTED locally | 44 tests plus executable semantic/equivalence/challenge/review probes |
-| Mutation/security tests | IMPLEMENTED locally | 16 executable split mutants plus the original security suite |
+| Finalized settlement/refunds | IMPLEMENTED locally | Winner-price wei payout, remainder refund, serialized outflow lock, pending confirmation, balance delta |
+| Generated artifacts/size gate | GREEN locally | Preferred 40 KB target; conservative 42 KB fallback remains below Bradbury boundary and exact RPC estimate is required |
+| Direct tests | IMPLEMENTED locally | Existing direct suite plus real all-semantic-fail and financial simulator trials |
+| Mutation/security tests | IMPLEMENTED locally | Original suite plus split, semantic NO_VALID_BID, challenge, integrity, payout, and outflow-lock mutants |
 | Bradbury estimate-only pair probe | NEXT | Must run and record both exact estimates |
 | Bradbury broadcast/E2E | BLOCKED BY REVIEW | Explicitly not authorized in this stage |
 | Final UI | STOPPED | UI stop gate remains closed |

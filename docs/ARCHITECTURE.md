@@ -50,10 +50,10 @@ json.dumps(value, sort_keys=True, separators=(",", ":"))
 UTF-8 SHA-256 with the pinned GenVM hashlib implementation
 ```
 
-The snapshot binds tender ID, buyer, title and brief commitments, award and
-commercial constraints, deadline, response window, requirements, rubric,
+The snapshot binds tender ID, buyer, title and brief commitments, the
+maximum budget in GEN wei and all other commercial constraints, deadline, response window, requirements, rubric,
 evidence policy, and every bid ordered by `bid_id`. Each bid includes bidder,
-price, delivery, support, proposal URL/hash, schema version, submission time,
+`price_wei`, delivery, support, proposal URL/hash, schema version, submission time,
 and the complete pre-committed evidence commitment string. Core stores the
 resulting `closed_snapshot_digest`; bids and policy have no post-close write
 path.
@@ -116,13 +116,20 @@ review nonce. Review may uphold, replace with an original valid bid, or produce
 
 ## Settlement and refunds
 
-Only Core can settle. `AWARDED -> SETTLEMENT_PENDING` emits the winner transfer
-with `on="finalized"`; Core does not mark paid when the request is emitted.
-`confirm_settlement()` requires the observed ghost-contract balance delta before
-recording `SETTLED`. Award amount and recipient are read from immutable Core
-records, so Evaluator callbacks cannot control funds. DRAFT cancellation and
-`NO_VALID_BID` refund use the same finalized transfer plus balance-delta
-confirmation and replay guards.
+Only Core can settle. Commercial money is integer GEN wei: `max_budget_wei` is
+escrowed exactly, each immutable bid stores `price_wei`, and the winner receives
+exactly that quoted price. `AWARDED -> SETTLEMENT_PENDING` emits the winner
+transfer with `on="finalized"`; Core then verifies the ghost-contract balance
+delta before emitting the buyer's unused remainder refund. The accounting
+invariant is `escrow_deposited = winner_payout_amount + buyer_refund_amount`.
+Neither transfer is considered complete when merely requested.
+
+Core serializes all external outflows with one global lock containing the
+tender, kind, amount, and pre-transfer balance. This permits many simultaneous
+open/evaluating tenders while preventing concurrent payout, refund, or
+cancellation transfers from invalidating balance-delta verification.
+DRAFT-cancellation and `NO_VALID_BID` refunds use the same finalized transfer,
+lock, and replay guards.
 
 ## State machine
 
@@ -139,6 +146,8 @@ alternatives are `NO_VALID_BID` and finalized `CANCELLED`.
 
 Generated artifacts are mechanically derived from canonical sources. The local
 encoded Bradbury measurements are recorded in
-`artifacts/tender_council_split-size-budget.json`; the engineering target is
-less than 40,000 outer deployment bytes per contract. The prior monolith is
-not a deployment fallback.
+`artifacts/tender_council_split-size-budget.json`; 40,000 outer bytes remains
+the preferred target. The fail-closed local fallback is 42,000 conservative
+outer bytes, still materially below the measured 53,316-byte Bradbury success
+boundary and subject to the exact no-broadcast RPC estimate. The prior
+monolith is not a deployment fallback.

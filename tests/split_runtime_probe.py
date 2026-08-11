@@ -19,6 +19,7 @@ BUYER = "0x" + "11" * 20
 ATTACKER = "0x" + "22" * 20
 DEADLINE = 1798761600
 HASH = "sha256:" + "a" * 64
+BUDGET_WEI = 8_000_000_000_000_000_000
 
 
 def digest(value: str) -> str:
@@ -34,20 +35,20 @@ def new_engine(core_path: Path, fake_path: Path):
     return engine, core_address, fake_address
 
 
-def fund(engine, address: str, amount: int = 8000):
+def fund(engine, address: str, amount: int = BUDGET_WEI):
     engine.vm._balances[bytes.fromhex(address[2:])] = amount
 
 
 def create_open_close(engine, core_address: str, tender_id: str = "probe"):
-    engine.vm.value = 8000
+    engine.vm.value = BUDGET_WEI
     engine.call_method(core_address, "create_tender", [
         tender_id, "Probe tender", "https://buyer.example/brief", HASH,
-        8000, 8000, 30, 90, DEADLINE, 600,
+        BUDGET_WEI, 30, 90, DEADLINE, 7200,
         "authentication;CSV export;responsive/mobile;dashboard/chart",
         35, 20, 20, 15, 10, "capability:required;secondary:optional",
     ], sender=BUYER)
     engine.vm.value = 0
-    fund(engine, core_address)
+    fund(engine, core_address, BUDGET_WEI)
     engine.call_method(core_address, "open_tender", [tender_id], sender=BUYER)
     engine.vm.warp("2027-02-01T00:00:00Z")
     engine.call_method(core_address, "close_tender", [tender_id], sender=BUYER)
@@ -107,18 +108,18 @@ def evaluation_control(core_path: Path, fake_path: Path, control: str):
 
 def review_correlation(core_path: Path, fake_path: Path):
     engine, core, fake = new_engine(core_path, fake_path)
-    engine.vm.value = 8000
+    engine.vm.value = BUDGET_WEI
     engine.call_method(core, "create_tender", [
         "review", "Probe tender", "https://buyer.example/brief", HASH,
-        8000, 8000, 30, 90, DEADLINE, 600,
+        BUDGET_WEI, 30, 90, DEADLINE, 7200,
         "authentication;CSV export;responsive/mobile;dashboard/chart",
         35, 20, 20, 15, 10, "capability:required;secondary:optional",
     ], sender=BUYER)
     engine.vm.value = 0
-    fund(engine, core)
+    fund(engine, core, BUDGET_WEI)
     engine.call_method(core, "open_tender", ["review"], sender=BUYER)
     engine.call_method(core, "submit_bid", [
-        "bid", "review", 7400, 27, 120, "https://bidder.example/proposal", HASH, "", "tendercouncil.bid.v1",
+        "bid", "review", 7_400_000_000_000_000_000, 27, 120, "https://bidder.example/proposal", HASH, "", "tendercouncil.bid.v1",
     ], sender=ATTACKER)
     engine.vm.warp("2027-02-01T00:00:00Z")
     engine.call_method(core, "close_tender", ["review"], sender=BUYER)

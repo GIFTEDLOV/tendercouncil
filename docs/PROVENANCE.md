@@ -7,7 +7,7 @@ are retained rather than erased.
 
 - Repository: `GIFTEDLOV/tendercouncil`
 - Branch: `main`
-- Baseline HEAD at session start: `f1f52022e7ae59d503fc484e3eb4da20343b65e4`
+- Baseline HEAD at session start: `d5c4f50bfa08495c57511e602e47a6fc28337606`
 
 ## Existing evidence
 
@@ -29,4 +29,9 @@ funds were exposed and no settlement occurred. The pair is immutable historical
 evidence and must not be rebound or used for the replacement E2E. Earlier
 production Bradbury deployment attempts remain in
 `artifacts/bradbury-production-deployment-*.json`; no frontend has been
-started.
+started. This continuation adds exact GEN-wei escrow/payout/refund accounting,
+serialized Core outflows for multi-tender balance verification, execution-level
+all-semantic-fail `NO_VALID_BID`, exact integrity-set enforcement, and
+deterministic invalid-challenge `UPHOLD` handling. The read-only Bradbury probe
+estimated the replacement artifacts successfully; no transaction was signed or
+broadcast.

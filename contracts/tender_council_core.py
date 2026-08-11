@@ -128,8 +128,7 @@ class CoreTender:
     title: str
     brief_url: str
     brief_sha256: str
-    max_budget: u256
-    award_amount: u256
+    max_budget_wei: u256
     max_delivery_days: u64
     min_support_days: u64
     bidding_deadline: u64
@@ -138,7 +137,7 @@ class CoreTender:
     requirements: str
     rubric: str
     evidence_policy: str
-    escrow_amount: u256
+    escrow_deposited: u256
     closed_snapshot_digest: str
     evaluation_nonce: u64
     evaluation_result_digest: str
@@ -149,7 +148,13 @@ class CoreTender:
     review_nonce: u64
     challenge_set_digest: str
     settlement_state: str
-    balance_before: u256
+    winner_payout_amount: u256
+    buyer_refund_amount: u256
+    payout_pending: bool
+    refund_pending: bool
+    payout_confirmed: bool
+    refund_confirmed: bool
+    refund_kind: str
 
 
 @allow_storage
@@ -158,7 +163,7 @@ class CoreBid:
     bid_id: str
     tender_id: str
     bidder: Address
-    price: u256
+    price_wei: u256
     delivery_days: u64
     support_days: u64
     proposal_url: str
@@ -222,6 +227,11 @@ class TenderCouncilCore(gl.Contract):
     evaluator_code_hash: str
     evaluator_bound: bool
     total_locked_escrow: u256
+    financial_outflow_pending: bool
+    financial_outflow_tender_id: str
+    financial_outflow_kind: str
+    financial_outflow_amount: u256
+    financial_outflow_balance_before: u256
 
     def __init__(self):
         self.bootstrapper = gl.message.sender_address
@@ -230,6 +240,11 @@ class TenderCouncilCore(gl.Contract):
         self.evaluator_code_hash = ""
         self.evaluator_bound = False
         self.total_locked_escrow = u256(0)
+        self.financial_outflow_pending = False
+        self.financial_outflow_tender_id = ""
+        self.financial_outflow_kind = ""
+        self.financial_outflow_amount = u256(0)
+        self.financial_outflow_balance_before = u256(0)
 
     def _now(self) -> u64:
         return u64(int(datetime.datetime.now(datetime.timezone.utc).timestamp()))
@@ -251,6 +266,27 @@ class TenderCouncilCore(gl.Contract):
         if not self.evaluator_bound:
             raise gl.vm.UserError("evaluator binding is incomplete")
 
+    def _require_no_financial_outflow(self):
+        if self.financial_outflow_pending:
+            raise gl.vm.UserError("another financial outflow is pending")
+
+    def _begin_financial_outflow(self, tender_id: str, kind: str, amount: u256):
+        self._require_no_financial_outflow()
+        if amount == u256(0) or self.balance < amount:
+            raise gl.vm.UserError("escrow balance is insufficient")
+        self.financial_outflow_pending = True
+        self.financial_outflow_tender_id = tender_id
+        self.financial_outflow_kind = kind
+        self.financial_outflow_amount = amount
+        self.financial_outflow_balance_before = self.balance
+
+    def _clear_financial_outflow(self):
+        self.financial_outflow_pending = False
+        self.financial_outflow_tender_id = ""
+        self.financial_outflow_kind = ""
+        self.financial_outflow_amount = u256(0)
+        self.financial_outflow_balance_before = u256(0)
+
     def _tender(self, tender_id: str) -> CoreTender:
         tender = self.tenders.get(tender_id)
         if tender is None:
@@ -267,7 +303,7 @@ class TenderCouncilCore(gl.Contract):
             bid_values.append({
                 "bid_id": str(bid.bid_id),
                 "bidder": str(bid.bidder),
-                "price": int(bid.price),
+                "price_wei": int(bid.price_wei),
                 "delivery_days": int(bid.delivery_days),
                 "support_days": int(bid.support_days),
                 "proposal_url": str(bid.proposal_url),
@@ -283,8 +319,7 @@ class TenderCouncilCore(gl.Contract):
             "title": str(tender.title),
             "brief_url": str(tender.brief_url),
             "brief_sha256": str(tender.brief_sha256),
-            "award_amount": int(tender.award_amount),
-            "max_budget": int(tender.max_budget),
+            "max_budget_wei": int(tender.max_budget_wei),
             "max_delivery_days": int(tender.max_delivery_days),
             "min_support_days": int(tender.min_support_days),
             "bidding_deadline": int(tender.bidding_deadline),
@@ -342,7 +377,7 @@ class TenderCouncilCore(gl.Contract):
         deterministic = set()
         for bid_id in all_ids:
             bid = self.bids[bid_id]
-            if (bid.price > tender.max_budget
+            if (bid.price_wei > tender.max_budget_wei
                     or bid.delivery_days > tender.max_delivery_days
                     or bid.support_days < tender.min_support_days
                     or bid.submitted_at > tender.bidding_deadline
@@ -438,6 +473,25 @@ class TenderCouncilCore(gl.Contract):
         return self.balance
 
     @gl.public.view
+    def get_settlement_accounting(self, tender_id: str) -> str:
+        tender = self._tender(tender_id)
+        return _canonical({
+            "escrow_deposited": int(tender.escrow_deposited),
+            "winner_payout_amount": int(tender.winner_payout_amount),
+            "buyer_refund_amount": int(tender.buyer_refund_amount),
+            "payout_pending": tender.payout_pending,
+            "refund_pending": tender.refund_pending,
+            "payout_confirmed": tender.payout_confirmed,
+            "refund_confirmed": tender.refund_confirmed,
+            "settlement_state": tender.settlement_state,
+            "financial_outflow_pending": self.financial_outflow_pending,
+            "financial_outflow_tender_id": self.financial_outflow_tender_id,
+            "financial_outflow_kind": self.financial_outflow_kind,
+            "financial_outflow_amount": int(self.financial_outflow_amount),
+            "financial_outflow_balance_before": int(self.financial_outflow_balance_before),
+        })
+
+    @gl.public.view
     def get_tender(self, tender_id: str) -> CoreTender:
         return self._tender(tender_id)
 
@@ -528,7 +582,7 @@ class TenderCouncilCore(gl.Contract):
     @gl.public.write.payable
     def create_tender(
         self, tender_id: str, title: str, brief_url: str, brief_sha256: str,
-        max_budget: u256, award_amount: u256, max_delivery_days: u64,
+        max_budget_wei: u256, max_delivery_days: u64,
         min_support_days: u64, bidding_deadline: u64, response_window_seconds: u64,
         requirements: str, technical_weight: u8, delivery_weight: u8,
         price_weight: u8, capability_weight: u8, support_weight: u8,
@@ -543,8 +597,8 @@ class TenderCouncilCore(gl.Contract):
         self._require_length(evidence_policy, MAX_TEXT, "evidence policy")
         if tender_id in self.tenders:
             raise gl.vm.UserError("tender already exists")
-        if max_budget == u256(0) or award_amount == u256(0) or award_amount > max_budget:
-            raise gl.vm.UserError("invalid budget or award")
+        if max_budget_wei == u256(0):
+            raise gl.vm.UserError("invalid maximum budget")
         if max_delivery_days == u64(0) or min_support_days == u64(0):
             raise gl.vm.UserError("invalid delivery or support constraint")
         if bidding_deadline <= self._now():
@@ -560,14 +614,16 @@ class TenderCouncilCore(gl.Contract):
             _parse_rubric(rubric)
         except Exception:
             raise gl.vm.UserError("rubric must total exactly 100")
-        if gl.message.value != award_amount:
-            raise gl.vm.UserError("exact award funding is required")
+        self._require_no_financial_outflow()
+        if gl.message.value != max_budget_wei:
+            raise gl.vm.UserError("exact maximum-budget funding is required")
         self.tenders[tender_id] = CoreTender(
             tender_id, gl.message.sender_address, title, brief_url, brief_sha256,
-            max_budget, award_amount, max_delivery_days, min_support_days,
+            max_budget_wei, max_delivery_days, min_support_days,
             bidding_deadline, response_window_seconds, STATUS_DRAFT, requirements,
             rubric, evidence_policy, gl.message.value, "", u64(0), "", "", "",
-            u64(0), u64(0), u64(0), "", SETTLEMENT_ESCROWED, u256(0),
+            u64(0), u64(0), u64(0), "", SETTLEMENT_ESCROWED,
+            u256(0), u256(0), False, False, False, False, "",
         )
         self.tender_ids.append(tender_id)
         self.total_locked_escrow = self.total_locked_escrow + gl.message.value
@@ -586,7 +642,7 @@ class TenderCouncilCore(gl.Contract):
 
     @gl.public.write
     def submit_bid(
-        self, bid_id: str, tender_id: str, price: u256, delivery_days: u64,
+        self, bid_id: str, tender_id: str, price_wei: u256, delivery_days: u64,
         support_days: u64, proposal_url: str, proposal_sha256: str,
         evidence_commitments: str, schema_version: str = "tendercouncil.bid.v1",
     ):
@@ -602,14 +658,14 @@ class TenderCouncilCore(gl.Contract):
         tender = self._tender(tender_id)
         if tender.status != STATUS_OPEN or self._now() > tender.bidding_deadline:
             raise gl.vm.UserError("bidding is closed")
-        if price == u256(0):
-            raise gl.vm.UserError("price must be positive")
+        if price_wei == u256(0):
+            raise gl.vm.UserError("price_wei must be positive")
         for known_id in self.bid_ids:
             known = self.bids[known_id]
             if known.tender_id == tender_id and known.bidder == gl.message.sender_address:
                 raise gl.vm.UserError("one immutable bid per wallet is required")
         self.bids[bid_id] = CoreBid(
-            bid_id, tender_id, gl.message.sender_address, price, delivery_days,
+            bid_id, tender_id, gl.message.sender_address, price_wei, delivery_days,
             support_days, proposal_url, proposal_sha256, evidence_commitments,
             schema_version, self._now(),
         )
@@ -791,6 +847,12 @@ class TenderCouncilCore(gl.Contract):
         elif decision in ("UPHOLD", "REPLACE_WINNER"):
             if winner_bid_id == "" or winner_bid_id not in [bid_id for bid_id in self.bid_ids if self.bids[bid_id].tender_id == tender_id]:
                 raise gl.vm.UserError("review winner is not a tender bid")
+            original_payload = EvaluatorInterface(self.evaluator_address).view().get_evaluation_result(
+                tender_id, evaluation_nonce,
+            )
+            original = json.loads(original_payload)
+            if winner_bid_id not in original.get("valid_bid_ids", []):
+                raise gl.vm.UserError("review winner was not an original valid bid")
             tender.final_winner = winner_bid_id
             tender.status = STATUS_AWARDED
             tender.settlement_state = SETTLEMENT_UNSETTLED
@@ -803,14 +865,20 @@ class TenderCouncilCore(gl.Contract):
         tender = self._tender(tender_id)
         if tender.status != STATUS_AWARDED or tender.settlement_state != SETTLEMENT_UNSETTLED:
             raise gl.vm.UserError("only an unsettled awarded tender may settle")
+        self._require_no_financial_outflow()
         winner = self.bids.get(tender.final_winner)
         if winner is None or winner.tender_id != tender_id:
             raise gl.vm.UserError("final winner is invalid")
-        if self.balance < tender.award_amount:
-            raise gl.vm.UserError("escrow balance is insufficient")
-        before = self.balance
-        Recipient(winner.bidder).emit_transfer(value=tender.award_amount, on="finalized")
-        tender.balance_before = before
+        payout = winner.price_wei
+        if payout == u256(0) or payout > tender.escrow_deposited:
+            raise gl.vm.UserError("winner payout exceeds escrow")
+        tender.winner_payout_amount = payout
+        tender.buyer_refund_amount = tender.escrow_deposited - payout
+        if tender.escrow_deposited != tender.winner_payout_amount + tender.buyer_refund_amount:
+            raise gl.vm.UserError("settlement accounting invariant failed")
+        tender.payout_pending = True
+        self._begin_financial_outflow(tender_id, "PAYOUT", payout)
+        Recipient(winner.bidder).emit_transfer(value=payout, on="finalized")
         tender.settlement_state = SETTLEMENT_TRANSFER_PENDING
         tender.status = STATUS_SETTLEMENT_PENDING
         self.tenders[tender_id] = tender
@@ -820,11 +888,27 @@ class TenderCouncilCore(gl.Contract):
         tender = self._tender(tender_id)
         if tender.status != STATUS_SETTLEMENT_PENDING or tender.settlement_state != SETTLEMENT_TRANSFER_PENDING:
             raise gl.vm.UserError("settlement is not pending")
-        if self.balance != tender.balance_before - tender.award_amount:
+        if (not self.financial_outflow_pending
+                or self.financial_outflow_tender_id != tender_id
+                or self.financial_outflow_kind != "PAYOUT"):
+            raise gl.vm.UserError("payout outflow correlation failed")
+        if self.balance != self.financial_outflow_balance_before - self.financial_outflow_amount:
             raise gl.vm.UserError("finalized transfer was not verified")
-        self.total_locked_escrow = self.total_locked_escrow - tender.award_amount
-        tender.settlement_state = SETTLEMENT_SETTLED
-        tender.status = STATUS_SETTLED
+        tender.payout_pending = False
+        tender.payout_confirmed = True
+        self._clear_financial_outflow()
+        if tender.buyer_refund_amount > u256(0):
+            tender.refund_pending = True
+            tender.refund_kind = "REFUND"
+            self._begin_financial_outflow(tender_id, "REFUND", tender.buyer_refund_amount)
+            Recipient(tender.buyer).emit_transfer(value=tender.buyer_refund_amount, on="finalized")
+            tender.settlement_state = SETTLEMENT_REFUND_PENDING
+        else:
+            tender.refund_pending = False
+            tender.refund_confirmed = True
+            self.total_locked_escrow = self.total_locked_escrow - tender.escrow_deposited
+            tender.settlement_state = SETTLEMENT_SETTLED
+            tender.status = STATUS_SETTLED
         self.tenders[tender_id] = tender
 
     @gl.public.write
@@ -833,9 +917,13 @@ class TenderCouncilCore(gl.Contract):
         self._require_buyer(tender)
         if tender.status != STATUS_DRAFT:
             raise gl.vm.UserError("only an unopened tender may be cancelled")
-        before = self.balance
-        Recipient(tender.buyer).emit_transfer(value=tender.award_amount, on="finalized")
-        tender.balance_before = before
+        self._require_no_financial_outflow()
+        tender.winner_payout_amount = u256(0)
+        tender.buyer_refund_amount = tender.escrow_deposited
+        tender.refund_pending = True
+        tender.refund_kind = "CANCEL_REFUND"
+        self._begin_financial_outflow(tender_id, "CANCEL_REFUND", tender.escrow_deposited)
+        Recipient(tender.buyer).emit_transfer(value=tender.escrow_deposited, on="finalized")
         tender.status = STATUS_REFUND_PENDING
         tender.settlement_state = SETTLEMENT_REFUND_PENDING
         self.tenders[tender_id] = tender
@@ -843,12 +931,22 @@ class TenderCouncilCore(gl.Contract):
     @gl.public.write
     def confirm_refund(self, tender_id: str):
         tender = self._tender(tender_id)
-        if tender.status != STATUS_REFUND_PENDING or tender.settlement_state != SETTLEMENT_REFUND_PENDING:
+        if (tender.status not in (STATUS_REFUND_PENDING, STATUS_SETTLEMENT_PENDING)
+                or tender.settlement_state != SETTLEMENT_REFUND_PENDING):
             raise gl.vm.UserError("refund is not pending")
-        if self.balance != tender.balance_before - tender.award_amount:
+        if (not self.financial_outflow_pending
+                or self.financial_outflow_tender_id != tender_id
+                or self.financial_outflow_kind not in ("CANCEL_REFUND", "NO_VALID_REFUND", "REFUND")):
+            raise gl.vm.UserError("refund outflow correlation failed")
+        if self.balance != self.financial_outflow_balance_before - self.financial_outflow_amount:
             raise gl.vm.UserError("refund transfer was not verified")
-        self.total_locked_escrow = self.total_locked_escrow - tender.award_amount
-        tender.status = STATUS_CANCELLED
+        tender.refund_pending = False
+        tender.refund_confirmed = True
+        self._clear_financial_outflow()
+        self.total_locked_escrow = self.total_locked_escrow - tender.escrow_deposited
+        if tender.winner_payout_amount == u256(0) and tender.status == STATUS_REFUND_PENDING:
+            if tender.settlement_state == SETTLEMENT_REFUND_PENDING and tender.buyer_refund_amount == tender.escrow_deposited:
+                tender.status = STATUS_CANCELLED if tender.refund_kind == "CANCEL_REFUND" else STATUS_NO_VALID_BID
         tender.settlement_state = SETTLEMENT_SETTLED
         self.tenders[tender_id] = tender
 
@@ -858,9 +956,13 @@ class TenderCouncilCore(gl.Contract):
         self._require_buyer(tender)
         if tender.status != STATUS_NO_VALID_BID or tender.settlement_state != SETTLEMENT_UNSETTLED:
             raise gl.vm.UserError("tender is not refundable")
-        before = self.balance
-        Recipient(tender.buyer).emit_transfer(value=tender.award_amount, on="finalized")
-        tender.balance_before = before
+        self._require_no_financial_outflow()
+        tender.winner_payout_amount = u256(0)
+        tender.buyer_refund_amount = tender.escrow_deposited
+        tender.refund_pending = True
+        tender.refund_kind = "NO_VALID_REFUND"
+        self._begin_financial_outflow(tender_id, "NO_VALID_REFUND", tender.escrow_deposited)
+        Recipient(tender.buyer).emit_transfer(value=tender.escrow_deposited, on="finalized")
         tender.status = STATUS_REFUND_PENDING
         tender.settlement_state = SETTLEMENT_REFUND_PENDING
         self.tenders[tender_id] = tender

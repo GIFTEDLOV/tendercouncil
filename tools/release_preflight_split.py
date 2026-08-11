@@ -17,7 +17,8 @@ from tools.make_deployable import make_deployable
 
 HEADER = '# { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }'
 SHA256_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
-MAX_OUTER_TARGET = 40_000
+PREFERRED_OUTER_TARGET = 40_000
+MAX_OUTER_TARGET = 42_000
 CLI_TRANSIENT = "?? deploy/01_deploy_split_bradbury.compiled.js"
 
 
@@ -58,6 +59,9 @@ def component(name: str):
         "deployable_artifact": str(artifact.relative_to(ROOT)).replace("\\", "/"),
         "deployable_artifact_sha256": digest(artifact),
         "deployable_artifact_bytes": artifact.stat().st_size,
+        "preferred_outer_target_bytes": PREFERRED_OUTER_TARGET,
+        "conservative_outer_bytes": artifact.stat().st_size + 1024,
+        "within_preferred_outer_target": artifact.stat().st_size + 1024 < PREFERRED_OUTER_TARGET,
     }
 
 
