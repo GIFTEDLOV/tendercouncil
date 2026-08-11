@@ -76,7 +76,9 @@ function runPreflight(sender) {
     throw new Error("release preflight token is missing or does not match reviewed HEAD");
   }
   const status = spawnSync("git", ["-c", `safe.directory=${ROOT.replaceAll("\\\\", "/")}`, "status", "--porcelain"], { cwd: ROOT, encoding: "utf8" });
-  if (status.status !== 0 || status.stdout.trim() !== "") throw new Error(`release preflight worktree is not clean: ${status.stdout.trim()}`);
+  const statusOutput = status.stdout || "";
+  if (status.status !== 0) throw new Error(`release preflight git status failed: ${status.error?.message || status.stderr || "unknown error"}`);
+  if (statusOutput.trim() !== "") throw new Error(`release preflight worktree is not clean: ${statusOutput.trim()}`);
   if (gitHead() !== expectedHead) throw new Error("release preflight HEAD mismatch");
   if (sender.toLowerCase() !== "0xe0f17bef0587c3b66d2eb4bbe705dff821abdde7") throw new Error("release preflight sender mismatch");
   const header = '# { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }';
