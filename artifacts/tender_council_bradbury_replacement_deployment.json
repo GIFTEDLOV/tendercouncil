@@ -15,10 +15,11 @@
     "core_finality_rechecked_after_runner_timeout",
     "core_finality_rechecked_after_runner_timeout",
     "evaluator_finality_rechecked",
+    "evaluator_finality_rechecked",
     "evaluator_finality_rechecked"
   ],
-  "failed_at_utc": "2026-08-11T22:39:39.920Z",
-  "failure": "InvalidInputRpcError: Missing or invalid parameters.\nDouble check you have provided the correct parameters.\n\nDetails: execution failed: &genvm.VMResult{Kind:0x2, ReturnData:[]uint8{0x2e, 0x4, 0x64, 0x61, 0x74, 0x61, 0x5c, 0x65, 0x78, 0x69, 0x74, 0x5f, 0x63, 0x6f, 0x64, 0x65, 0x20, 0x31, 0x6, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x5, 0xb, 0x66, 0x69, 0x6e, 0x67, 0x65, 0x72, 0x70, 0x72, 0x69, 0x6e, 0x74, 0x16, 0x6, 0x66, 0x72, 0x61, 0x6d, 0x65, 0x73, 0x15, 0x16, 0x4, 0x66, 0x75, 0x6e, 0x63, 0xe1, 0x7, 0xb, 0x6d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x3c, 0x63, 0x70, 0x79, 0x74, 0x68, 0x6f, 0x6e, 0x16, 0x4, 0x66, 0x75, 0x6e, 0x63, 0xb9, 0x7, 0xb, 0x6d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x3c, 0x63, 0x70, 0x79, 0x74, 0x68, 0x6f, 0x6e, 0x10, 0x6d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x5f, 0x69, 0x6e, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x73, 0x16, 0x7, 0x63, 0x70, 0x79, 0x74, 0x68, 0x6f, 0x6e, 0xe, 0x8, 0x6d, 0x65, 0x6d, 0x6f, 0x72, 0x69, 0x65, 0x73, 0xd, 0x83, 0x2, 0xcb, 0x3, 0x8b, 0xe5, 0x19, 0x2, 0x17, 0x4f, 0xbe, 0x3f, 0x9b, 0xaa, 0x70, 0x3a, 0xe3, 0xc6, 0x27, 0xcc, 0xc2, 0x3b, 0xb7, 0xdc, 0xa1, 0x9d, 0xe4, 0x75, 0x6d, 0x8, 0x2b, 0x44, 0xdf, 0xa8, 0x9, 0x73, 0x6f, 0x66, 0x74, 0x66, 0x6c, 0x6f, 0x61, 0x74, 0xe, 0x8, 0x6d, 0x65, 0x6d, 0x6f, 0x72, 0x69, 0x65, 0x73, 0xd, 0x83, 0x2, 0xfc, 0x9e, 0x4f, 0xa3, 0x44, 0x8d, 0xa5, 0xd, 0xc6, 0xff, 0x51, 0x4a, 0xba, 0x5, 0x68, 0xba, 0x4, 0x52, 0x76, 0xf5, 0x8d, 0x3c, 0x60, 0xfd, 0xf4, 0xc5, 0xc3, 0xd2, 0x8b, 0x16, 0xac, 0xc8, 0x4, 0x6b, 0x69, 0x6e, 0x64, 0x3c, 0x56, 0x6d, 0x45, 0x72, 0x72, 0x6f, 0x72, 0xf, 0x73, 0x74, 0x6f, 0x72, 0x61, 0x67, 0x65, 0x5f, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x73, 0x5}, EqOutputs:[][]uint8(nil), Messages:[]validatorwallet.IMessagesSubmittedMessage(nil), Events:[]events.RawEvent(nil), StorageDeltas:[]storage.StorageStateItem(nil), Stdout:\"\", Stderr:\"Traceback (most recent call last):\\n  File \\\"/py/libs/_genlayer_runner.py\\\", line 180, in <module>\\n    _handle_main()\\n    ~~~~~~~~~~~~^^\\n  File \\\"/py/libs/_genlayer_runner.py\\\", line 170, in _handle_main\\n    _give_result(\\n    ~~~~~~~~~~~~^\\n    \\tlambda: meth2call(contract_instance, *cd.get('args', []), **cd.get('kwargs', {}))\\n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\n    )\\n    ^\\n  File \\\"/py/libs/_genlayer_runner.py\\\", line 65, in _give_result\\n    res = res_fn()\\n  File \\\"/py/libs/_genlayer_runner.py\\\", line 171, in <lambda>\\n    lambda: meth2call(contract_instance, *cd.get('args', []), **cd.get('kwargs', {}))\\n            ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\n  File \\\"/contract.py\\\", line 404, in bind_evaluator\\n    self.evaluator_address=evaluator_address\\n    ^^^^^^^^^^^^^^^^^^^^^^\\n  File \\\"/py/libs/genlayer/py/storage/_internal/generate.py\\\", line 349, in setter\\n    prop_desc.set(s._storage_slot, s._off + off, v)\\n    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\n  File \\\"/py/libs/genlayer/py/storage/_internal/desc_base_types.py\\\", line 88, in set\\n    slot.write(off, memoryview(val.as_bytes))\\n                               ^^^^^^^^^^^^\\nAttributeError: 'str' object has no attribute 'as_bytes'\\n\", GenVMLog:[]map[string]interface {}{map[string]interface {}{\"file\":\"common/src/lib.rs:111\", \"level\":\"info\", \"message\":\"logging initialized\", \"target\":\"genvm_common\", \"ts\":\"1786487980553\", \"version\":\"v0.2.11-x86_64-linux-release\"}, map[string]interface {}{\"file\":\"src/exe/run.rs:150\", \"genvm_id\":\"1053515\", \"level\":\"info\", \"message\":\"genvm id\", \"target\":\"genvm::exe::run\", \"ts\":\"1786487980553\"}, map[string]interface {}{\"default\":\"v0.1.0\", \"file\":\"src/runners/parse.rs:88\", \"level\":\"warn\", \"message\":\"runner comment does not start with version, using default\", \"target\":\"genvm::runners::parse\", \"ts\":\"1786487980582\"}, map[string]interface {}{\"file\":\"src/lib.rs:299\", \"level\":\"info\", \"message\":\"metrics\", \"metrics\":map[string]interface {}{\"gvm\":map[string]interface {}{\"host\":map[string]interface {}{\"time\":26043}, \"llm_module\":map[string]interface {}{\"calls\":0, \"time\":0}, \"supervisor\":map[string]interface {}{\"compilation_time\":0, \"compiled_modules\":0, \"precompile_hits\":2}, \"web_module\":map[string]interface {}{\"calls\":0, \"time\":0}}, \"llm\":interface {}(nil), \"web\":interface {}(nil)}, \"target\":\"genvm\", \"ts\":\"1786487980822\"}, map[string]interface {}{\"file\":\"src/exe/run.rs:111\", \"level\":\"warn\", \"message\":\"sigterm received\", \"target\":\"genvm::exe::run\", \"ts\":\"1786487980822\"}}, StorageProof:[32]uint8{0xe0, 0xa5, 0xd7, 0x38, 0x7a, 0x4a, 0xa6, 0xe3, 0x36, 0x1b, 0x7d, 0xf9, 0xb4, 0x8b, 0x38, 0x9b, 0x9b, 0xfe, 0x8a, 0xe7, 0xf4, 0x13, 0xf, 0x78, 0xb, 0xf2, 0xa7, 0xa3, 0x44, 0x5b, 0x66, 0x2c}, RunTime:0, NondetDisagreementCallNo:(*uint32)(nil)}: genvm execution error\nVersion: viem@2.51.0\n    at withRetry.delay.count.count (file:///C:/Users/DELL/AppData/Roaming/npm/node_modules/genlayer/node_modules/viem/_esm/utils/buildRequest.js:56:31)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async attemptRetry (file:///C:/Users/DELL/AppData/Roaming/npm/node_modules/genlayer/node_modules/viem/_esm/utils/promise/withRetry.js:24:30)",
+  "failed_at_utc": "2026-08-11T22:52:33.234Z",
+  "failure": "Error: binding gas estimate was not observed before broadcast\n    at main (file:///C:/Users/DELL/tendercouncil/deploy/bind_existing_bradbury_evaluator.mjs:69:44)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///C:/Users/DELL/tendercouncil/deploy/bind_existing_bradbury_evaluator.mjs:81:7",
   "core": {
     "address": "0xaf12cF3B7225c94E6674255780B16aDCfEb03E15",
     "deployment_tx": "0x805b7b30df3b33fa9c1a5d026df2be0320ea026fc9eff30b08daf6aed3a076b1",
@@ -86,7 +87,7 @@
       "result": "AGREE",
       "execution": "FINISHED_WITH_RETURN",
       "created_timestamp": "1786485429",
-      "observed_at_utc": "2026-08-11T22:39:38.322Z",
+      "observed_at_utc": "2026-08-11T22:52:31.197Z",
       "contract_address": "0xEF30f069A8Be376D40F18758b9bfDa54D7c04Ec7",
       "validators": {
         "round": "0",
@@ -133,5 +134,33 @@
         ]
       }
     }
-  }
+  },
+  "binding": {
+    "tx": "0xb38f22a00e98ddad98ac6958709adc5ea2bee0d02c1d0e30582008c2db54e14e",
+    "evm_tx": "0xf9f8f6a4182cdc0427baabe049b4469b669bf18bec6f2fb1116624a2bf899b5e",
+    "evaluator_address": "0xEF30f069A8Be376D40F18758b9bfDa54D7c04Ec7",
+    "version": "tendercouncil.evaluator.v1",
+    "evaluator_code_hash": "sha256:0393794db295ae2a0a1eef76841be53fbf0a95620e4cc9709f1f78ac1c47b549",
+    "status": "FINALIZED",
+    "status_code": 7,
+    "consensus": "AGREE",
+    "execution": "FINISHED_WITH_RETURN",
+    "created_timestamp": "1786488753",
+    "finalized_observed_at_utc": "2026-08-11T23:23:23.448Z",
+    "validator_votes": ["AGREE", "AGREE", "AGREE", "AGREE", "AGREE"]
+  },
+  "final_readback": {
+    "get_production_ready": true,
+    "binding": {
+      "bound": true,
+      "address": "0xEF30f069A8Be376D40F18758b9bfDa54D7c04Ec7",
+      "version": "tendercouncil.evaluator.v1",
+      "evaluator_code_hash": "sha256:0393794db295ae2a0a1eef76841be53fbf0a95620e4cc9709f1f78ac1c47b549"
+    },
+    "evaluator_core": "0xaf12cf3b7225c94e6674255780b16adcfeb03e15",
+    "evaluator_version": "tendercouncil.evaluator.v1",
+    "core_balance_wei": "0"
+  },
+  "duplicate_evaluator_provenance": "artifacts/tender_council_duplicate_evaluator_provenance.json",
+  "completed_at_utc": "2026-08-11T23:23:23.448Z"
 }

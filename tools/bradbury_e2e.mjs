@@ -4,7 +4,6 @@ import crypto from "node:crypto";
 import path from "node:path";
 import { createRequire } from "node:module";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import deploySplitBradbury from "../deploy/deploy_split_bradbury.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SDK_ROOT = "C:/Users/DELL/AppData/Roaming/npm/node_modules/genlayer/node_modules/genlayer-js/dist";
@@ -140,9 +139,13 @@ async function run() {
     transactions: {},
   };
   try {
-    const deployClientResult = await deploySplitBradbury(deployClient);
-    void deployClientResult;
+    if (process.env.TENDERCOUNCIL_USE_EXISTING_PAIR !== "USE_EXISTING_BOUND_PAIR") {
+      throw new Error("E2E requires explicit reuse of the reviewed bound pair; deployment is a separate operation");
+    }
     const replacement = JSON.parse(await fs.readFile(REPLACEMENT_DEPLOYMENT_PATH, "utf8"));
+    if (replacement.core?.address?.toLowerCase() !== "0xaf12cf3b7225c94e6674255780b16adcfeb03e15" || replacement.evaluator?.address?.toLowerCase() !== "0xef30f069a8be376d40f18758b9bfda54d7c04ec7" || replacement.final_readback?.get_production_ready !== true) {
+      throw new Error("reviewed bound replacement pair is missing or does not match the approved live pair");
+    }
     manifest.release.git_commit = replacement.git_commit;
     manifest.release.canonical_core_source_sha256 = replacement.canonical_core_source_sha256;
     manifest.release.deployable_core_artifact_sha256 = replacement.deployable_core_artifact_sha256;
