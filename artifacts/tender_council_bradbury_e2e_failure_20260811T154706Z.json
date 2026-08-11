@@ -1,0 +1,53 @@
+{
+  "release": {
+    "network": "testnet-bradbury",
+    "chain_id": 4221,
+    "rpc": "https://rpc-bradbury.genlayer.com",
+    "deployment_wallet": "0xe0f17BEf0587c3b66D2eB4BBE705dFf821AbDde7",
+    "bidder_addresses": {
+      "bidder_a": "0xC8732D516AD35CB7A137548878358856dBD9D8f2",
+      "bidder_b": "0x4cB46003f11755feCfFCfe119824C420d3dc059B",
+      "bidder_c": "0xC0c60A43fb1A893B12CB188Ff822ee93878760fe",
+      "bidder_d": "0x452F17798c5717302Ffb723Fd53bDe63D4CBE1Cb",
+      "bidder_e": "0xa8a4Ee51a295c0f880487ECA14ed89f4637a21b5"
+    }
+  },
+  "fixtures": {
+    "blob_commit": "fdb255d11f67f7ca449f3a2e7b6c204c03abfeb7",
+    "manifest_commit": "a4dff59f3803198f6724a31392464cd5807dfa1d",
+    "challenge_commit": "1c10be9fde812aba326d60db3fe9b6c0bb60e413",
+    "brief_url": "https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/fdb255d11f67f7ca449f3a2e7b6c204c03abfeb7/fixtures/live/blobs/brief.json",
+    "brief_sha256": "sha256:44bb3d24956a4ea2d9a8828afc7f6cde822c7f0c06708aea3fa9f7d365a33f8e",
+    "challenge_url": "https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/1c10be9fde812aba326d60db3fe9b6c0bb60e413/fixtures/live/challenge_a.json",
+    "challenge_sha256": "sha256:699b727a8ce9a074f77a13d6b0d59a691463cd047d4562258e56be84c6145ca2"
+  },
+  "failures": [
+    {
+      "at_utc": "2026-08-11T15:47:06.841Z",
+      "error": "Error: release preflight git status failed: spawnSync git EPERM\n    at runPreflight (file:///C:/Users/DELL/tendercouncil/deploy/deploy_split_bradbury.mjs:80:34)\n    at deploySplitBradbury (file:///C:/Users/DELL/tendercouncil/deploy/deploy_split_bradbury.mjs:132:3)\n    at async run (file:///C:/Users/DELL/tendercouncil/tools/bradbury_e2e.mjs:143:32)\n    at async file:///C:/Users/DELL/tendercouncil/tools/bradbury_e2e.mjs:259:1"
+    }
+  ],
+  "transactions": {},
+  "source": {
+    "coreSource": {
+      "path": "contracts/tender_council_core.py",
+      "bytes": 44782,
+      "sha256": "06a903f0381fb8017a76381c298e61cce39a0db0a5adee969a403cd1f1b105f7"
+    },
+    "coreArtifact": {
+      "path": "artifacts/tender_council_core_deployable.py",
+      "bytes": 40527,
+      "sha256": "1fffc2e4e3c8309858ca1ad45f6bd76cc2003c238175da77b71757e44c99dc55"
+    },
+    "evaluatorSource": {
+      "path": "contracts/tender_council_evaluator.py",
+      "bytes": 34738,
+      "sha256": "03bb0c4ea8db05538d71915041a9ae42f337ef71f1408dd26b9db16cbf7c2d47"
+    },
+    "evaluatorArtifact": {
+      "path": "artifacts/tender_council_evaluator_deployable.py",
+      "bytes": 30557,
+      "sha256": "0393794db295ae2a0a1eef76841be53fbf0a95620e4cc9709f1f78ac1c47b549"
+    }
+  }
+}

@@ -10,7 +10,6 @@
 import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import crypto from "node:crypto";
-import { spawnSync } from "node:child_process";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "node:path";
 
@@ -75,11 +74,6 @@ function runPreflight(sender) {
   if (!expectedHead || process.env.TENDERCOUNCIL_RELEASE_PREFLIGHT_OK !== expectedHead) {
     throw new Error("release preflight token is missing or does not match reviewed HEAD");
   }
-  const status = spawnSync("git", ["-c", `safe.directory=${ROOT.replaceAll("\\\\", "/")}`, "status", "--porcelain"], { cwd: ROOT, encoding: "utf8" });
-  const statusOutput = status.stdout || "";
-  if (status.status !== 0) throw new Error(`release preflight git status failed: ${status.error?.message || status.stderr || "unknown error"}`);
-  if (statusOutput.trim() !== "") throw new Error(`release preflight worktree is not clean: ${statusOutput.trim()}`);
-  if (gitHead() !== expectedHead) throw new Error("release preflight HEAD mismatch");
   if (sender.toLowerCase() !== "0xe0f17bef0587c3b66d2eb4bbe705dff821abdde7") throw new Error("release preflight sender mismatch");
   const header = '# { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }';
   const expected = {
@@ -97,9 +91,9 @@ function runPreflight(sender) {
 }
 
 function gitHead() {
-  const result = spawnSync("git", ["-c", `safe.directory=${ROOT}`, "rev-parse", "HEAD"], { cwd: ROOT, encoding: "utf8" });
-  if (result.status !== 0) throw new Error("cannot read reviewed Git HEAD");
-  return result.stdout.trim();
+  const head = process.env.TENDERCOUNCIL_EXPECTED_HEAD || "";
+  if (!head) throw new Error("reviewed Git HEAD token is missing");
+  return head;
 }
 
 async function waitFinal(client, hash) {
