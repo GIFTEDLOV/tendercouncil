@@ -125,7 +125,7 @@ async function sourceManifest() {
 }
 
 async function run() {
-  if (process.env.TENDERCOUNCIL_BROADCAST_CONFIRM !== "RUN_TENDERCOUNCIL_BRADBURY_E2E") throw new Error("explicit E2E confirmation missing");
+  if (process.env.TENDERCOUNCIL_E2E_CONFIRM !== "RUN_TENDERCOUNCIL_BRADBURY_E2E") throw new Error("explicit E2E confirmation missing");
   const bootstrap = await accountFor("player3");
   const deployClient = clientFor(bootstrap);
   if (deployClient.chain.id !== CHAIN_ID) throw new Error("wrong chain");
