@@ -125,7 +125,10 @@ COMPOUND_PROBE_MUTATIONS = (
         "winner-changing-tolerance-accepted",
         (
             ('        "status", "winner_bid_id", "runner_up_bid_id",', '        "status", "runner_up_bid_id",'),
+            ('        "status", "runner_up_bid_id",', '        "status",'),
             ('    if actual.get("winner_bid_id") != expected.get("winner_bid_id"):', '    if False:'),
+            ('    if actual.get("runner_up_bid_id") != expected.get("runner_up_bid_id"):', '    if False:'),
+            ('SCORE_TOLERANCE = 2', 'SCORE_TOLERANCE = 100'),
         ),
         "tools/equivalence_trials.py",
     ),
