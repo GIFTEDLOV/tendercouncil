@@ -87,6 +87,65 @@ RUNTIME_MUTATIONS = (
     ),
 )
 
+PYTHON_PROBE_MUTATIONS = (
+    (
+        "full-result-comparator-reintroduced",
+        "    return True\n\n\ndef _fetch",
+        "    return _canonical(actual) == _canonical(expected)\n\n\ndef _fetch",
+        "tools/equivalence_trials.py",
+    ),
+    (
+        "rationale-made-consensus-critical",
+        '    if actual.get("status") != "COMPARATIVE":',
+        '    if actual.get("rationale") != expected.get("rationale"):\n        return False\n    if actual.get("status") != "COMPARATIVE":',
+        "tools/equivalence_trials.py",
+    ),
+    (
+        "semantic-disqualification-disabled",
+        "    semantic_bad = sorted(bid_id for bid_id in candidate_ids if not classified[bid_id])",
+        "    semantic_bad = []",
+        "tools/semantic_policy_trials.py",
+    ),
+    (
+        "challenge-hash-verification-bypassed",
+        '    if _hash_bytes(raw) != challenge["challenge_sha256"]:',
+        "    if False:",
+        "tools/challenge_integrity_trials.py",
+    ),
+    (
+        "challenge-schema-validation-bypassed",
+        "    if not isinstance(body, dict) or tuple(sorted(body)) != expected:",
+        "    if False:",
+        "tools/challenge_integrity_trials.py",
+    ),
+)
+
+COMPOUND_PROBE_MUTATIONS = (
+    (
+        "winner-changing-tolerance-accepted",
+        (
+            ('        "status", "winner_bid_id", "runner_up_bid_id",', '        "status", "runner_up_bid_id",'),
+            ('    if actual.get("winner_bid_id") != expected.get("winner_bid_id"):', '    if False:'),
+        ),
+        "tools/equivalence_trials.py",
+    ),
+    (
+        "mandatory-semantic-disagreement-tolerated",
+        (
+            ('        "semantic_candidate_ids", "semantic_disqualified_bid_ids",\n        "valid_bid_ids", "disqualified_bid_ids", "semantic_classifications",', '        "semantic_candidate_ids",'),
+        ),
+        "tools/equivalence_trials.py",
+    ),
+    (
+        "semantic-resurrection-allowed",
+        (
+            ('    expected_candidates = set(all_ids) - set(deterministic_ids) - set(integrity_ids)\n    if set(candidate_ids) != expected_candidates:', '    if False:'),
+            ('    expected_disqualified = sorted(set(deterministic_ids) | set(value["integrity_disqualified_bid_ids"]) | set(semantic_bad))', '    expected_disqualified = sorted(set(value["integrity_disqualified_bid_ids"]) | set(semantic_bad))'),
+        ),
+        "tools/semantic_policy_trials.py",
+    ),
+)
+
 
 def _copy_fixture(mutant_root: Path, relative: str) -> None:
     destination = mutant_root / relative
@@ -171,13 +230,57 @@ def run_finality_mutant():
         shutil.rmtree(raw_dir, ignore_errors=True)
 
 
+def run_python_probe_mutant(name, needle, replacement, probe):
+    raw_dir = tempfile.mkdtemp(prefix="tendercouncil-split-python-mutant-", dir=ROOT)
+    try:
+        mutant_root = Path(raw_dir)
+        for relative in ("contracts/tender_council_evaluator.py", probe):
+            _copy_fixture(mutant_root, relative)
+        source_path = mutant_root / "contracts/tender_council_evaluator.py"
+        source = source_path.read_text(encoding="utf-8")
+        if source.count(needle) != 1:
+            raise RuntimeError(f"{name}: mutation target count is {source.count(needle)}")
+        source_path.write_text(source.replace(needle, replacement), encoding="utf-8")
+        result = _run([sys.executable, probe, "--source", "contracts/tender_council_evaluator.py"], mutant_root)
+        if result.returncode == 0:
+            raise RuntimeError(f"{name}: mutant survived\n{result.stdout}\n{result.stderr}")
+        print(f"caught {name}")
+    finally:
+        shutil.rmtree(raw_dir, ignore_errors=True)
+
+
+def run_compound_probe_mutant(name, replacements, probe):
+    raw_dir = tempfile.mkdtemp(prefix="tendercouncil-split-compound-mutant-", dir=ROOT)
+    try:
+        mutant_root = Path(raw_dir)
+        for relative in ("contracts/tender_council_evaluator.py", probe):
+            _copy_fixture(mutant_root, relative)
+        source_path = mutant_root / "contracts/tender_council_evaluator.py"
+        source = source_path.read_text(encoding="utf-8")
+        for needle, replacement in replacements:
+            if source.count(needle) != 1:
+                raise RuntimeError(f"{name}: mutation target count for {needle!r} is {source.count(needle)}")
+            source = source.replace(needle, replacement)
+        source_path.write_text(source, encoding="utf-8")
+        result = _run([sys.executable, probe, "--source", "contracts/tender_council_evaluator.py"], mutant_root)
+        if result.returncode == 0:
+            raise RuntimeError(f"{name}: mutant survived\n{result.stdout}\n{result.stderr}")
+        print(f"caught {name}")
+    finally:
+        shutil.rmtree(raw_dir, ignore_errors=True)
+
+
 def main():
     for mutation in DIRECT_MUTATIONS:
         run_direct_mutant(*mutation)
     for mutation in RUNTIME_MUTATIONS:
         run_runtime_mutant(*mutation)
+    for mutation in PYTHON_PROBE_MUTATIONS:
+        run_python_probe_mutant(*mutation)
+    for mutation in COMPOUND_PROBE_MUTATIONS:
+        run_compound_probe_mutant(*mutation)
     run_finality_mutant()
-    print(f"caught {len(DIRECT_MUTATIONS) + len(RUNTIME_MUTATIONS) + 1} split mutants")
+    print(f"caught {len(DIRECT_MUTATIONS) + len(RUNTIME_MUTATIONS) + len(PYTHON_PROBE_MUTATIONS) + len(COMPOUND_PROBE_MUTATIONS) + 1} split mutants")
 
 
 if __name__ == "__main__":

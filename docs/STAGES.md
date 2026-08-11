@@ -13,8 +13,8 @@
 | Response/challenge/review | IMPLEMENTED locally | One bounded review round and external challenge hash boundary |
 | Finalized settlement/refunds | IMPLEMENTED locally | Core-only transfer, pending confirmation, balance delta |
 | Generated artifacts/size gate | GREEN locally | Both outer payloads below 40 KB target |
-| Direct tests | PARTIAL | Core/Evaluator direct guards pass; simulator cross-contract coverage remains to be expanded |
-| Mutation/security tests | PARTIAL | Existing monolith suite remains green; split-specific mutation harness remains to be expanded |
+| Direct tests | IMPLEMENTED locally | 44 tests plus executable semantic/equivalence/challenge/review probes |
+| Mutation/security tests | IMPLEMENTED locally | 16 executable split mutants plus the original security suite |
 | Bradbury estimate-only pair probe | NEXT | Must run and record both exact estimates |
 | Bradbury broadcast/E2E | BLOCKED BY REVIEW | Explicitly not authorized in this stage |
 | Final UI | STOPPED | UI stop gate remains closed |
@@ -25,8 +25,8 @@
 2. Run the exact no-broadcast Core/Evaluator Bradbury estimates.
 3. Stop for architecture/deployment review.
 4. Only after approval, perform one controlled two-contract deployment.
-5. Prove finality, funded procurement, response window, challenge path, and
-   finalized settlement.
+5. After review, prove finality, funded procurement, the 7200-second Bradbury
+   response window, challenge path, and finalized settlement.
 
 The UI cannot begin until the complete backend/security/Bradbury stop gate is
 explicitly opened.

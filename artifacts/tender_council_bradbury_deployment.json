@@ -1,5 +1,6 @@
 {
-  "mode": "BROADCAST_TWO_CONTRACTS_BOUND_FINALIZED",
+  "mode": "FINALIZED_DEPLOYMENT_PROOF_SUPERSEDED_BEFORE_E2E",
+  "supersession_reason": "Post-deployment semantic and challenge audit found production defects before any tender was funded; preserve the finalized pair as stop-gate provenance and do not use it for E2E.",
   "network": "testnet-bradbury",
   "chain_id": 4221,
   "rpc": "https://rpc-bradbury.genlayer.com",

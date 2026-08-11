@@ -22,9 +22,7 @@ SETTLEMENT_UNSETTLED='UNSETTLED'
 SETTLEMENT_TRANSFER_PENDING='TRANSFER_PENDING'
 SETTLEMENT_SETTLED='SETTLED'
 SETTLEMENT_REFUND_PENDING='REFUND_PENDING'
-CHALLENGE_PENDING='PENDING'
-CHALLENGE_VALID='VALID'
-CHALLENGE_INVALID='INVALID'
+CHALLENGE_ADMITTED='ADMITTED'
 CHALLENGE_MANDATORY_REQUIREMENT='MANDATORY_REQUIREMENT_MISAPPLIED'
 CHALLENGE_EVIDENCE_OVERLOOKED='COMMITTED_EVIDENCE_OVERLOOKED'
 CHALLENGE_RUBRIC='RUBRIC_MISAPPLIED'
@@ -221,33 +219,62 @@ class TenderCouncilCore(gl.Contract):
             challenge=self.challenges[challenge_id]
             if challenge.tender_id!=tender_id:
                 continue
-            rows.append({'challenge_id':str(challenge.challenge_id),'challenger':str(challenge.challenger),'reason_code':str(challenge.reason_code),'target_bid_id':str(challenge.target_bid_id),'referenced_evidence_id':str(challenge.referenced_evidence_id),'challenge_url':str(challenge.challenge_url),'challenge_sha256':str(challenge.challenge_sha256),'submitted_at':int(challenge.submitted_at),'status':str(challenge.status),'claims':str(challenge.claims)})
+            rows.append({'challenge_id':str(challenge.challenge_id),'challenger':str(challenge.challenger),'reason_code':str(challenge.reason_code),'target_bid_id':str(challenge.target_bid_id),'referenced_evidence_id':str(challenge.referenced_evidence_id),'challenge_url':str(challenge.challenge_url),'challenge_sha256':str(challenge.challenge_sha256),'submitted_at':int(challenge.submitted_at)})
         return _sha256(_canonical({'schema_version':'tendercouncil.challenges.v1','items':rows}))
     def _validate_result(self,tender:CoreTender,result:dict,result_type:str):
-        required=('confidence','disqualified_bid_ids','runner_up_bid_id','runner_up_score','rationale','scores','valid_bid_ids','winner_bid_id','winner_total_score','status')
+        required=('confidence','deterministic_disqualified_bid_ids','integrity_disqualified_bid_ids','semantic_candidate_ids','semantic_disqualified_bid_ids','semantic_classifications','disqualified_bid_ids','runner_up_bid_id','runner_up_score','rationale','scores','valid_bid_ids','winner_bid_id','winner_total_score','status')
         if not isinstance(result,dict)or tuple(sorted(result))!=tuple(sorted(required)):
             raise gl.vm.UserError('malformed evaluator result')
         if result['status']!=result_type:
             raise gl.vm.UserError('result type mismatch')
         valid=result['valid_bid_ids']
         disqualified=result['disqualified_bid_ids']
-        if not isinstance(valid,list)or not isinstance(disqualified,list):
+        category_fields=('deterministic_disqualified_bid_ids','integrity_disqualified_bid_ids','semantic_candidate_ids','semantic_disqualified_bid_ids')
+        if not isinstance(valid,list)or not isinstance(disqualified,list)or any((not isinstance(result[field],list)for field in category_fields)):
             raise gl.vm.UserError('result bid sets are malformed')
         all_ids=set()
         for bid_id in self.bid_ids:
             if self.bids[bid_id].tender_id==tender.tender_id:
                 all_ids.add(bid_id)
-        if set(valid)|set(disqualified)!=all_ids or set(valid)&set(disqualified):
+        deterministic=set()
+        for bid_id in all_ids:
+            bid=self.bids[bid_id]
+            if bid.price>tender.max_budget or bid.delivery_days>tender.max_delivery_days or bid.support_days<tender.min_support_days or(bid.submitted_at>tender.bidding_deadline)or(bid.schema_version!='tendercouncil.bid.v1'):
+                deterministic.add(bid_id)
+        if set(result['deterministic_disqualified_bid_ids'])!=deterministic:
+            raise gl.vm.UserError('deterministic disqualification mismatch')
+        integrity=set(result['integrity_disqualified_bid_ids'])
+        if not integrity.issubset(all_ids)or integrity&deterministic:
+            raise gl.vm.UserError('integrity disqualification mismatch')
+        semantic_candidates=all_ids-deterministic-integrity
+        if set(result['semantic_candidate_ids'])!=semantic_candidates:
+            raise gl.vm.UserError('semantic candidate set mismatch')
+        classifications=result['semantic_classifications']
+        if not isinstance(classifications,list)or len(classifications)!=len(semantic_candidates):
+            raise gl.vm.UserError('semantic classification coverage mismatch')
+        classified={}
+        for item in classifications:
+            if not isinstance(item,dict)or tuple(sorted(item))!=('bid_id','mandatory_requirements_pass')or item['bid_id']in classified or(item['bid_id']not in semantic_candidates)or(not isinstance(item['mandatory_requirements_pass'],bool)):
+                raise gl.vm.UserError('malformed semantic classification')
+            classified[item['bid_id']]=item['mandatory_requirements_pass']
+        semantic_bad={bid_id for bid_id in semantic_candidates if not classified[bid_id]}
+        if set(result['semantic_disqualified_bid_ids'])!=semantic_bad:
+            raise gl.vm.UserError('semantic disqualification mismatch')
+        expected_valid=semantic_candidates-semantic_bad
+        expected_disqualified=deterministic|integrity|semantic_bad
+        if set(valid)!=expected_valid or set(disqualified)!=expected_disqualified:
             raise gl.vm.UserError('result bid partition is invalid')
+        if not isinstance(result['rationale'],str)or len(result['rationale'])>MAX_TEXT:
+            raise gl.vm.UserError('result rationale is malformed')
+        if result['confidence']not in('HIGH','MEDIUM','LOW'):
+            raise gl.vm.UserError('result confidence is malformed')
         if result_type=='NO_VALID_BID':
-            if result['winner_bid_id']!='' or valid or result['scores']or(not isinstance(result['rationale'],str))or(len(result['rationale'])>MAX_TEXT):
+            if result['winner_bid_id']!='' or valid or result['scores']or(result['winner_total_score']!=0)or(result['runner_up_bid_id']!='')or(result['runner_up_score']!=0):
                 raise gl.vm.UserError('NO_VALID_BID result contains a winner')
             return
         if result['winner_bid_id']not in valid or result['winner_bid_id']in disqualified:
             raise gl.vm.UserError('result winner is not a valid bid')
         scores=result['scores']
-        if not isinstance(result['rationale'],str)or len(result['rationale'])>MAX_TEXT:
-            raise gl.vm.UserError('result rationale is malformed')
         if not isinstance(scores,list)or len(scores)!=len(valid):
             raise gl.vm.UserError('result scores do not cover valid bids')
         score_map={}
@@ -323,8 +350,8 @@ class TenderCouncilCore(gl.Contract):
         rows=[]
         for challenge_id in sorted(self.challenge_ids):
             challenge=self.challenges[challenge_id]
-            if challenge.tender_id==tender_id and challenge.status==CHALLENGE_VALID:
-                rows.append({'challenge_id':challenge.challenge_id,'tender_id':challenge.tender_id,'challenger':str(challenge.challenger),'reason_code':challenge.reason_code,'target_bid_id':challenge.target_bid_id,'referenced_evidence_id':challenge.referenced_evidence_id,'challenge_url':challenge.challenge_url,'challenge_sha256':challenge.challenge_sha256,'claims':challenge.claims})
+            if challenge.tender_id==tender_id and challenge.status==CHALLENGE_ADMITTED:
+                rows.append({'challenge_id':challenge.challenge_id,'tender_id':challenge.tender_id,'challenger':str(challenge.challenger),'reason_code':challenge.reason_code,'target_bid_id':challenge.target_bid_id,'referenced_evidence_id':challenge.referenced_evidence_id,'challenge_url':challenge.challenge_url,'challenge_sha256':challenge.challenge_sha256,'claims':''})
         return _canonical({'tender_id':tender_id,'evaluation_nonce':int(tender.evaluation_nonce),'review_nonce':int(review_nonce),'snapshot_digest':tender.closed_snapshot_digest,'original_result_digest':tender.evaluation_result_digest,'challenge_set_digest':tender.challenge_set_digest,'challenges':rows})
     @gl.public.write
     def bind_evaluator(self,evaluator_address:Address,evaluator_version:str,evaluator_code_hash:str):
@@ -500,38 +527,22 @@ class TenderCouncilCore(gl.Contract):
         count=sum((1 for old_id in self.challenge_ids if self.challenges[old_id].tender_id==tender_id))
         if count>=MAX_CHALLENGES:
             raise gl.vm.UserError('challenge limit exceeded')
-        self.challenges[challenge_id]=CoreChallenge(challenge_id,tender_id,gl.message.sender_address,reason_code,target_bid_id,referenced_evidence_id,challenge_url,challenge_sha256,self._now(),CHALLENGE_PENDING if challenge_url else CHALLENGE_VALID,'')
+        self.challenges[challenge_id]=CoreChallenge(challenge_id,tender_id,gl.message.sender_address,reason_code,target_bid_id,referenced_evidence_id,challenge_url,challenge_sha256,self._now(),CHALLENGE_ADMITTED,'')
         self.challenge_ids.append(challenge_id)
-    @gl.public.write
-    def resolve_challenge(self,challenge_id:str,valid:bool,claims:str=''):
-        challenge=self.challenges.get(challenge_id)
-        if challenge is None:
-            raise gl.vm.UserError('challenge does not exist')
-        tender=self._tender(challenge.tender_id)
-        self._require_buyer(tender)
-        if tender.status!=STATUS_RESPONSE_WINDOW or challenge.status!=CHALLENGE_PENDING:
-            raise gl.vm.UserError('challenge cannot be resolved')
-        if len(claims)>MAX_TEXT:
-            raise gl.vm.UserError('challenge claims exceed bound')
-        challenge.status=CHALLENGE_VALID if valid else CHALLENGE_INVALID
-        challenge.claims=claims if valid else ''
-        self.challenges[challenge_id]=challenge
     @gl.public.write
     def advance_after_response(self,tender_id:str):
         tender=self._tender(tender_id)
         self._require_buyer(tender)
         if tender.status!=STATUS_RESPONSE_WINDOW or self._now()<=tender.response_window_end:
             raise gl.vm.UserError('response window is still open')
-        valid=0
+        admitted=0
         for challenge_id in self.challenge_ids:
             challenge=self.challenges[challenge_id]
             if challenge.tender_id!=tender_id:
                 continue
-            if challenge.status==CHALLENGE_PENDING:
-                raise gl.vm.UserError('pending challenge remains')
-            if challenge.status==CHALLENGE_VALID:
-                valid+=1
-        if valid==0:
+            if challenge.status==CHALLENGE_ADMITTED:
+                admitted+=1
+        if admitted==0:
             tender.final_winner=tender.provisional_winner
             tender.status=STATUS_AWARDED
             tender.settlement_state=SETTLEMENT_UNSETTLED

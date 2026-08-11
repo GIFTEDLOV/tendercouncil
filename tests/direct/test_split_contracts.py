@@ -98,6 +98,7 @@ def test_core_binds_immutable_commercial_terms_and_rejects_manual_award(
     with direct_vm.expect_revert("only an unsettled awarded tender may settle"):
         core.settle_award("manual-award")
     assert not hasattr(core, "award_bid")
+    assert not hasattr(core, "resolve_challenge")
 
 
 def test_evaluator_rejects_non_core_job_sender(direct_vm, direct_deploy):

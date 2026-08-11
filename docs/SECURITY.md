@@ -14,7 +14,8 @@ preserved Stage 1 prototype from the production foundation.
 - Hash mismatch, oversized content, and non-UTF-8 content fail closed.
 - Source data is explicitly untrusted in the evaluator prompt.
 - Validator callbacks independently rerun the task and compare bounded stable
-  fields; malformed validator data returns `False`.
+  fields: exact classifications and winner identity, bounded subjective score
+  drift, and no tolerance for a changed winner. Rationale is informational.
 - Direct regression probes exercise the nondeterministic boundary and changed
   content rejection.
 - Production tenders are public-buyer, sender-authenticated, exactly funded,
@@ -22,8 +23,9 @@ preserved Stage 1 prototype from the production foundation.
 - Production evaluation ranks all deterministically admissible bids under one
   locked rubric; the buyer has no arbitrary winner-substitution method.
 - Provisional awards require a separate non-zero response window. Challenges
-  are bounded, sender-authenticated, and restricted to pre-close evidence
-  commitments; one validator-agreed review round is allowed.
+  are admitted deterministically by Core without buyer validity approval,
+  sender-authenticated, and restricted to pre-close evidence commitments;
+  one validator-agreed review round is allowed.
 - `settle_award` uses an external `on="finalized"` transfer and records
   `TRANSFER_PENDING`; `confirm_settlement` requires the expected balance delta
   before recording `SETTLED`.
@@ -32,29 +34,21 @@ preserved Stage 1 prototype from the production foundation.
   in deployment, not the readable canonical source digest.  Source and artifact
   digests are recorded separately in release provenance.
 
-## Intentionally retained evaluator warnings
+## Evaluator normalization
 
-The Evaluator linter reports five non-fatal `ValueError` normalization warnings
-in the two bounded structured-output normalizers.  These exceptions are inside
-the nondeterministic leader callbacks only: malformed or impossible LLM output
-is rejected, the validator callback catches the failed normalization, and the
-consensus operation fails closed.  The production foundation's malformed-output
-direct tests cover this behavior; the split runtime mutation probe also drives
-the callback path.  These warnings are retained because replacing them with
-generic user-facing exceptions inside nondeterministic callbacks would risk
-changing validator semantics.
+The five previously reported review-normalization warnings are resolved. Review
+malformed-output paths now use bounded `gl.vm.UserError` failures, while the
+validator callback still fails closed. Direct and executable mutation probes
+cover malformed review output and correlation failures.
 
 ## Not yet safe for production
 
 - The preserved Stage 1 prototype remains owner-gated and retains its manual
   award method; it is not the production deployment artifact.
-- Production finalized-child transaction evidence has not yet been recorded
-  on Bradbury, and direct mode reports an unsupported `EthSend` trace rather
-  than simulating the external child transfer.
-- The release preflight and deployment wrapper are present, but no production
-  Bradbury deployment has yet been accepted as release evidence.
-- Bradbury currently rejects both the full and generated compact production
-  artifacts before contract creation at the network pubdata limit; this is an
-  unresolved release blocker and no E2E settlement claim is made.
+- The finalized pair is preserved as superseded stop-gate provenance, not as
+  replacement-release evidence. No tender was funded and no settlement was
+  attempted.
+- The replacement pair has passed exact read-only Bradbury estimates, but no
+  replacement deployment is authorized in this stage.
 
 The UI stop gate is therefore closed.

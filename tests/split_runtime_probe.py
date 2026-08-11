@@ -90,6 +90,9 @@ def evaluation_control(core_path: Path, fake_path: Path, control: str):
         changed = json.dumps({
             "status": "NO_VALID_BID", "winner_bid_id": "", "valid_bid_ids": [],
             "disqualified_bid_ids": [], "scores": [], "winner_total_score": 0,
+            "deterministic_disqualified_bid_ids": [], "integrity_disqualified_bid_ids": [],
+            "semantic_candidate_ids": [], "semantic_disqualified_bid_ids": [],
+            "semantic_classifications": [],
             "runner_up_bid_id": "", "runner_up_score": 0, "confidence": "LOW",
             "rationale": "changed duplicate callback",
         }, sort_keys=True, separators=(",", ":"))
@@ -125,6 +128,9 @@ def review_correlation(core_path: Path, fake_path: Path):
         "status": "COMPARATIVE", "winner_bid_id": "bid", "valid_bid_ids": ["bid"],
         "disqualified_bid_ids": [], "scores": [{"bid_id": "bid", "technical": 35,
         "delivery": 20, "price": 20, "capability": 15, "support": 10, "total": 100}],
+        "deterministic_disqualified_bid_ids": [], "integrity_disqualified_bid_ids": [],
+        "semantic_candidate_ids": ["bid"], "semantic_disqualified_bid_ids": [],
+        "semantic_classifications": [{"bid_id": "bid", "mandatory_requirements_pass": True}],
         "winner_total_score": 100, "runner_up_bid_id": "", "runner_up_score": 0,
         "confidence": "HIGH", "rationale": "test result",
     }, sort_keys=True, separators=(",", ":"))
@@ -133,6 +139,12 @@ def review_correlation(core_path: Path, fake_path: Path):
     engine.call_method(fake, "emit_evaluation", ["review", 1, tender.closed_snapshot_digest, digest(result)], sender=BUYER)
     engine.call_method(core, "start_response_window", ["review"], sender=BUYER)
     engine.call_method(core, "submit_challenge", ["challenge", "review", "MANDATORY_REQUIREMENT_MISAPPLIED", "bid", "", "", ""], sender=ATTACKER)
+    try:
+        engine.call_method(core, "resolve_challenge", ["challenge", True, "buyer censorship"], sender=BUYER)
+    except Exception:
+        pass
+    else:
+        return False
     engine.vm.warp("2027-02-02T00:00:00Z")
     engine.call_method(core, "advance_after_response", ["review"], sender=BUYER)
     tender = engine.call_method(core, "get_tender", ["review"])

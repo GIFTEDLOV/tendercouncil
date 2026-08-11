@@ -91,16 +91,22 @@ evidence is recorded and skipped; it is never treated as confirmation.
 Only deterministic admissible candidates and valid evidence claims enter the
 semantic prompt. Every proposal, claim, challenge, fake system block, and
 instruction-like string is explicitly untrusted data. Validators independently
-derive the same comparative result and compare the complete bounded result,
-not merely leader JSON syntax. Rationale is informational.
+derive the same comparative result. Stable classifications, bid sets, winner,
+runner-up identity, and arithmetic invariants are exact; subjective criterion
+scores use the measured two-point tolerance and a winner change is always
+rejected. Rationale and confidence are informational and are not consensus
+critical.
 
 ## Response and challenge boundary
 
 An accepted result is non-payable `PROVISIONAL_AWARD`. Core then starts a
-minimum 600-second `RESPONSE_WINDOW`. Only eligible bidders may submit one
-bounded challenge using one of the four locked reason codes. Evidence references
-must have been committed before close. External challenge bodies are URL/hash
-bound and exact-byte verified by Evaluator before review.
+minimum 600-second `RESPONSE_WINDOW`; the Bradbury demo uses 7200 seconds.
+Only eligible bidders may submit one bounded challenge using one of the four
+locked reason codes. Admission is deterministic and authenticated; there is no
+buyer validity oracle. Evidence references must have been committed before
+close. External challenge bodies are URL/hash bound and exact-byte verified by
+Evaluator before review, with explicit `VALID`, `UNAVAILABLE`,
+`HASH_MISMATCH`, or `SCHEMA_INVALID` states.
 
 After the window, no valid challenges advance directly to `AWARDED`. Valid
 challenges create exactly one finalized review request bound to the original

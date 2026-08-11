@@ -40,7 +40,8 @@ tools/bradbury_split_deployment_probe.mjs` performs read-only
 `eth_estimateGas` for both exact deployment transactions and never signs or
 broadcasts.
 
-Current local encoded sizes:
+Current local encoded sizes (historical baseline; regenerate after source
+changes):
 
 | Component | Source | Artifact | Outer deployment | Target |
 |---|---:|---:|---:|---:|
@@ -50,8 +51,15 @@ Current local encoded sizes:
 ## Historical provenance
 
 Failed monolith and evaluator-boundary attempts remain under `artifacts/`.
-They are provenance, not release evidence. No production contract address or
-successful TenderCouncil Bradbury transaction exists yet.
+The finalized pair in `artifacts/tender_council_bradbury_deployment.json` is
+preserved as `FINALIZED_DEPLOYMENT_PROOF_SUPERSEDED_BEFORE_E2E`: the semantic
+and challenge audit found defects before any tender was funded, so it is not a
+replacement-release approval. No participant funds were exposed and no
+settlement occurred. A replacement pair must be deployed only after this
+remediation is reviewed.
+
+The canonical live demo must use the 7200-second Bradbury response-window
+configuration documented in `docs/BRADBURY_DEMO_POLICY.md`.
 
 Release evidence must include finalized deployment receipts, Core binding,
 funding, multiple bids, close, evaluation, provisional award, response window,
