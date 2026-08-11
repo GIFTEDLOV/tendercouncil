@@ -1,0 +1,17 @@
+{
+  "mode": "BROADCAST_TWO_CONTRACTS",
+  "network": "testnet-bradbury",
+  "chain_id": 4221,
+  "rpc": "https://rpc-bradbury.genlayer.com",
+  "sender": "0xe0f17BEf0587c3b66D2eB4BBE705dFf821AbDde7",
+  "git_commit": "3cf5258d68ad5ca95ab2d857f5f01bc511681a08",
+  "canonical_core_source_sha256": "06a903f0381fb8017a76381c298e61cce39a0db0a5adee969a403cd1f1b105f7",
+  "deployable_core_artifact_sha256": "1fffc2e4e3c8309858ca1ad45f6bd76cc2003c238175da77b71757e44c99dc55",
+  "canonical_evaluator_source_sha256": "03bb0c4ea8db05538d71915041a9ae42f337ef71f1408dd26b9db16cbf7c2d47",
+  "deployable_evaluator_artifact_sha256": "0393794db295ae2a0a1eef76841be53fbf0a95620e4cc9709f1f78ac1c47b549",
+  "artifact_generator_sha256": "421ef0c225c5140b65a48515784d11d9388f69bd18e8cf4606e23c65083f8b5a",
+  "evaluator_schema_version": "tendercouncil.evaluator.v1",
+  "steps": [],
+  "failed_at_utc": "2026-08-11T16:27:42.338Z",
+  "failure": "Error: transaction did not finalize: 0x805b7b30df3b33fa9c1a5d026df2be0320ea026fc9eff30b08daf6aed3a076b1\n    at waitFinal (file:///C:/Users/DELL/tendercouncil/deploy/deploy_split_bradbury.mjs:102:52)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async deploySplitBradbury (file:///C:/Users/DELL/tendercouncil/deploy/deploy_split_bradbury.mjs:145:26)\n    at async run (file:///C:/Users/DELL/tendercouncil/tools/bradbury_e2e.mjs:143:32)\n    at async file:///C:/Users/DELL/tendercouncil/tools/bradbury_e2e.mjs:259:1"
+}
