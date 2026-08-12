@@ -22,7 +22,7 @@ refunds, and finalized-only settlement. It contains no web access, LLM call,
 or semantic judgment.
 
 Core starts unconfigured. The deployment bootstrapper may bind exactly one
-evaluator address, version, and `sha256:` source commitment. Rebinding is
+evaluator address, version, and `sha256:` deployable-code commitment. Rebinding is
 impossible. Opening a tender and all evaluator-dependent operations are blocked
 until binding is complete. The bootstrapper is not a procurement administrator.
 
