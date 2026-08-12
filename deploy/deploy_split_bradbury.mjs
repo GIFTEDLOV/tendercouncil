@@ -19,7 +19,7 @@ const NETWORK = "testnet-bradbury";
 const CHAIN_ID = 4221;
 const RPC = "https://rpc-bradbury.genlayer.com";
 const CONFIRM = "DEPLOY_TWO_CONTRACTS_TO_BRADBURY";
-const MANIFEST_PATH = path.join(ROOT, "artifacts/tender_council_bradbury_replacement_deployment.json");
+const MANIFEST_PATH = path.join(ROOT, "artifacts/tender_council_bradbury_corrected_deployment.json");
 
 const files = {
   coreSource: path.join(ROOT, "contracts/tender_council_core.py"),

@@ -26,7 +26,7 @@ const CHALLENGE_COMMIT = "1c10be9fde812aba326d60db3fe9b6c0bb60e413";
 const CHALLENGE_URL = `https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/${CHALLENGE_COMMIT}/fixtures/live/challenge_a.json`;
 const CHALLENGE_HASH = "sha256:699b727a8ce9a074f77a13d6b0d59a691463cd047d4562258e56be84c6145ca2";
 const E2E_PATH = path.join(ROOT, "artifacts/tender_council_bradbury_e2e.json");
-const REPLACEMENT_DEPLOYMENT_PATH = path.join(ROOT, "artifacts/tender_council_bradbury_replacement_deployment.json");
+const REPLACEMENT_DEPLOYMENT_PATH = path.join(ROOT, "artifacts/tender_council_bradbury_corrected_deployment.json");
 const LAST_FAILURE_PATH = path.join(ROOT, "artifacts/tender_council_bradbury_e2e_failure_2026-08-12T070125233Z.json");
 
 // These are the five immutable bid envelopes already submitted before the
@@ -214,12 +214,12 @@ async function run() {
     transactions: {},
   };
   try {
-    if (process.env.TENDERCOUNCIL_USE_EXISTING_PAIR !== "USE_EXISTING_BOUND_PAIR") {
-      throw new Error("E2E requires explicit reuse of the reviewed bound pair; deployment is a separate operation");
+    if (process.env.TENDERCOUNCIL_USE_EXISTING_PAIR !== "USE_CORRECTED_BOUND_PAIR") {
+      throw new Error("E2E requires explicit reuse of the corrected finalized pair; deployment is a separate operation");
     }
     const replacement = JSON.parse(await fs.readFile(REPLACEMENT_DEPLOYMENT_PATH, "utf8"));
-    if (replacement.core?.address?.toLowerCase() !== "0xaf12cf3b7225c94e6674255780b16adcfeb03e15" || replacement.evaluator?.address?.toLowerCase() !== "0xef30f069a8be376d40f18758b9bfda54d7c04ec7" || replacement.final_readback?.get_production_ready !== true) {
-      throw new Error("reviewed bound replacement pair is missing or does not match the approved live pair");
+    if (!replacement.core?.address || !replacement.evaluator?.address || replacement.final_readback?.get_production_ready !== true || replacement.binding?.status !== "FINALIZED") {
+      throw new Error("corrected finalized pair is missing or does not have finalized binding readback");
     }
     manifest.release.git_commit = replacement.git_commit;
     manifest.release.canonical_core_source_sha256 = replacement.canonical_core_source_sha256;

@@ -8,7 +8,8 @@ attempts remain under `artifacts/`.
 The previously reviewed replacement pair is finalized and bound. Its first
 funded E2E evaluation exposed a contract defect before any payout or refund;
 the pair is preserved as deployment/finality evidence and will not be reused
-for a corrected E2E:
+for a corrected E2E. The corrected pair will be recorded separately in
+`artifacts/tender_council_bradbury_corrected_deployment.json`:
 
 - Core: `0xaf12cF3B7225c94E6674255780B16aDCfEb03E15`
 - Evaluator: `0xEF30f069A8Be376D40F18758b9bfDa54D7c04Ec7`
