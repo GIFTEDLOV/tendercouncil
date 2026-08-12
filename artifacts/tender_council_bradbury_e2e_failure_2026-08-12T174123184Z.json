@@ -1,0 +1,766 @@
+{
+  "release": {
+    "network": "testnet-bradbury",
+    "chain_id": 4221,
+    "rpc": "https://rpc-bradbury.genlayer.com",
+    "deployment_wallet": "0xe0f17BEf0587c3b66D2eB4BBE705dFf821AbDde7",
+    "bidder_addresses": {
+      "bidder_a": "0xC8732D516AD35CB7A137548878358856dBD9D8f2",
+      "bidder_b": "0x4cB46003f11755feCfFCfe119824C420d3dc059B",
+      "bidder_c": "0xC0c60A43fb1A893B12CB188Ff822ee93878760fe",
+      "bidder_d": "0x452F17798c5717302Ffb723Fd53bDe63D4CBE1Cb",
+      "bidder_e": "0xa8a4Ee51a295c0f880487ECA14ed89f4637a21b5"
+    },
+    "git_commit": "729ae1791778ef7ad82fd67b32322ee83db21a48",
+    "canonical_core_source_sha256": "06a903f0381fb8017a76381c298e61cce39a0db0a5adee969a403cd1f1b105f7",
+    "deployable_core_artifact_sha256": "1fffc2e4e3c8309858ca1ad45f6bd76cc2003c238175da77b71757e44c99dc55",
+    "canonical_evaluator_source_sha256": "2a8d866b142199dcfb828dd18d3e54ff108a197217d130558ea8fa316e098e71",
+    "deployable_evaluator_artifact_sha256": "3ceda15c629867f7c3aad42ed10961b73fda2306c8026a1279d234cd25e531f6"
+  },
+  "fixtures": {
+    "blob_commit": "fdb255d11f67f7ca449f3a2e7b6c204c03abfeb7",
+    "manifest_commit": "a4dff59f3803198f6724a31392464cd5807dfa1d",
+    "challenge_commit": "1c10be9fde812aba326d60db3fe9b6c0bb60e413",
+    "brief_url": "https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/fdb255d11f67f7ca449f3a2e7b6c204c03abfeb7/fixtures/live/blobs/brief.json",
+    "brief_sha256": "sha256:44bb3d24956a4ea2d9a8828afc7f6cde822c7f0c06708aea3fa9f7d365a33f8e",
+    "challenge_url": "https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/1c10be9fde812aba326d60db3fe9b6c0bb60e413/fixtures/live/challenge_a.json",
+    "challenge_sha256": "sha256:699b727a8ce9a074f77a13d6b0d59a691463cd047d4562258e56be84c6145ca2"
+  },
+  "failures": [
+    {
+      "at_utc": "2026-08-12T17:41:23.153Z",
+      "error": "Error: timed out waiting ACCEPTED: 0x4029eadc73c3eaf9a6fb4b6f6eb9d5382f1977aa93ef6ab8ad780524a6e292d4: transaction 0x4029eadc73c3eaf9a6fb4b6f6eb9d5382f1977aa93ef6ab8ad780524a6e292d4 is UNDETERMINED, waiting for ACCEPTED\n    at waitStatus (file:///C:/Users/DELL/tendercouncil/tools/bradbury_e2e.mjs:84:9)\n    at async waitAcceptedFinalized (file:///C:/Users/DELL/tendercouncil/tools/bradbury_e2e.mjs:102:20)\n    at async run (file:///C:/Users/DELL/tendercouncil/tools/bradbury_e2e.mjs:321:43)\n    at async file:///C:/Users/DELL/tendercouncil/tools/bradbury_e2e.mjs:379:1"
+    }
+  ],
+  "transactions": {
+    "start_evaluation": {
+      "hash": "0x28ca125875d0b546022ebcfc0711d8ab84940c1eb737ad48898a7cb1f6287884",
+      "accepted": {
+        "currentTimestamp": "1786553332",
+        "sender": "0xe0f17BEf0587c3b66D2eB4BBE705dFf821AbDde7",
+        "recipient": "0x8d776cE2c5Ed60e5e9E229669eaf91DE7f3Ae257",
+        "initialRotations": "3",
+        "txSlot": "10",
+        "createdTimestamp": "1786553320",
+        "lastVoteTimestamp": "1786553328",
+        "randomSeed": "0x3a670059a5fdb1d39bea835a13e0fcd8f2e9232d578f27b73ef0e468b94ee80b",
+        "result": 1,
+        "txExecutionHash": "0x6cd63b0bd79a923fbf301987a7c53bcf3781cc3702211151ec4e0b880f0f5a61",
+        "txCalldata": "0xf83db83a1604617267730dc401616e616c79746963732d64617368626f6172642d32303236066d6574686f64840173746172745f6576616c756174696f6e00",
+        "eqBlocksOutputs": "0xc786706164646564",
+        "messages": [
+          {
+            "messageType": 1,
+            "recipient": "0xcb4c472a9bB15103b885eC361701152Ec03b2681",
+            "value": "0",
+            "data": "0xf88bb8881604617267731dc401616e616c79746963732d64617368626f6172642d3230323609bc047368613235363a33363433643738393630373833653337373733303032303133366165333664616234303065633135643635306632326331626664626634336431323033643838066d6574686f64a40173746172745f6576616c756174696f6e5f6a6f6280",
+            "onAcceptance": false,
+            "saltNonce": "0"
+          }
+        ],
+        "queueType": 0,
+        "queuePosition": "0",
+        "activator": "0xA58D6FcCD69eaafB5869dA58913f116045D75444",
+        "lastLeader": "0xB7551beF37a05995218f9a1BB7A93e5B6705f535",
+        "status": 5,
+        "txId": "0x28ca125875d0b546022ebcfc0711d8ab84940c1eb737ad48898a7cb1f6287884",
+        "readStateBlockRange": {
+          "activationBlock": "17311406",
+          "processingBlock": "17311407",
+          "proposalBlock": "17311408"
+        },
+        "numOfRounds": "0",
+        "lastRound": {
+          "round": "0",
+          "leaderIndex": "3",
+          "votesCommitted": "5",
+          "votesRevealed": "5",
+          "appealBond": "0",
+          "rotationsLeft": "3",
+          "result": 1,
+          "roundValidators": [
+            "0x3B940A5b4A762583453D9e9Cf0981BE0426A8e79",
+            "0x9D998aD7C7f9Cc448A4DbDf49edD7CADBe3d57B6",
+            "0x96298d411a2D622945BEACa6112374583b501d52",
+            "0xB7551beF37a05995218f9a1BB7A93e5B6705f535",
+            "0x4f36CB2C58385575fafb443d80E3c290b12DA6aE"
+          ],
+          "validatorVotes": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "validatorVotesHash": [
+            "0x6127f51c114e70f51857baf49d1be4d631051147636ea7165bf476243a20e5cc",
+            "0xfaf2b96cab339739644630b27951a39946e0cb141419156faeebdec764db68c9",
+            "0x9346714fe6d9f85d04df6087cf80a778f25eae36da94ba10c2c44bc587576c93",
+            "0x8492aa46976ba5a5fb9b9d57b80bd4f4ca19e963db2de577f087b43fdb56952a",
+            "0x887b527f49970369eca4452b208ab2ba725ec0d9358296ab7a11923316d2b2cf"
+          ],
+          "validatorResultHash": [
+            "0x1c2fe9f4f4c26b5fd2d2344bbca5b59f953087b82c4f86c4d22abaab7c076ca0",
+            "0x1c2fe9f4f4c26b5fd2d2344bbca5b59f953087b82c4f86c4d22abaab7c076ca0",
+            "0x1c2fe9f4f4c26b5fd2d2344bbca5b59f953087b82c4f86c4d22abaab7c076ca0",
+            "0x1c2fe9f4f4c26b5fd2d2344bbca5b59f953087b82c4f86c4d22abaab7c076ca0",
+            "0x1c2fe9f4f4c26b5fd2d2344bbca5b59f953087b82c4f86c4d22abaab7c076ca0"
+          ],
+          "validatorVotesName": [
+            "AGREE",
+            "AGREE",
+            "AGREE",
+            "AGREE",
+            "AGREE"
+          ]
+        },
+        "consumedValidators": [
+          "0x3B940A5b4A762583453D9e9Cf0981BE0426A8e79",
+          "0x9D998aD7C7f9Cc448A4DbDf49edD7CADBe3d57B6",
+          "0x96298d411a2D622945BEACa6112374583b501d52",
+          "0xB7551beF37a05995218f9a1BB7A93e5B6705f535",
+          "0x4f36CB2C58385575fafb443d80E3c290b12DA6aE"
+        ],
+        "txExecutionResult": 1,
+        "txData": "0xf83db83a1604617267730dc401616e616c79746963732d64617368626f6172642d32303236066d6574686f64840173746172745f6576616c756174696f6e00",
+        "txDataDecoded": {
+          "callData": {},
+          "leaderOnly": false,
+          "type": "call"
+        },
+        "numOfInitialValidators": "3",
+        "statusName": "ACCEPTED",
+        "resultName": "AGREE",
+        "txExecutionResultName": "FINISHED_WITH_RETURN"
+      },
+      "finalized": {
+        "currentTimestamp": "1786555132",
+        "sender": "0xe0f17BEf0587c3b66D2eB4BBE705dFf821AbDde7",
+        "recipient": "0x8d776cE2c5Ed60e5e9E229669eaf91DE7f3Ae257",
+        "initialRotations": "3",
+        "txSlot": "10",
+        "createdTimestamp": "1786553320",
+        "lastVoteTimestamp": "1786553328",
+        "randomSeed": "0x3a670059a5fdb1d39bea835a13e0fcd8f2e9232d578f27b73ef0e468b94ee80b",
+        "result": 1,
+        "txExecutionHash": "0x6cd63b0bd79a923fbf301987a7c53bcf3781cc3702211151ec4e0b880f0f5a61",
+        "txCalldata": "0xf83db83a1604617267730dc401616e616c79746963732d64617368626f6172642d32303236066d6574686f64840173746172745f6576616c756174696f6e00",
+        "eqBlocksOutputs": "0xc786706164646564",
+        "messages": [
+          {
+            "messageType": 1,
+            "recipient": "0xcb4c472a9bB15103b885eC361701152Ec03b2681",
+            "value": "0",
+            "data": "0xf88bb8881604617267731dc401616e616c79746963732d64617368626f6172642d3230323609bc047368613235363a33363433643738393630373833653337373733303032303133366165333664616234303065633135643635306632326331626664626634336431323033643838066d6574686f64a40173746172745f6576616c756174696f6e5f6a6f6280",
+            "onAcceptance": false,
+            "saltNonce": "0"
+          }
+        ],
+        "queueType": 0,
+        "queuePosition": "0",
+        "activator": "0xA58D6FcCD69eaafB5869dA58913f116045D75444",
+        "lastLeader": "0xB7551beF37a05995218f9a1BB7A93e5B6705f535",
+        "status": 7,
+        "txId": "0x28ca125875d0b546022ebcfc0711d8ab84940c1eb737ad48898a7cb1f6287884",
+        "readStateBlockRange": {
+          "activationBlock": "17311406",
+          "processingBlock": "17311407",
+          "proposalBlock": "17311408"
+        },
+        "numOfRounds": "0",
+        "lastRound": {
+          "round": "0",
+          "leaderIndex": "3",
+          "votesCommitted": "5",
+          "votesRevealed": "5",
+          "appealBond": "0",
+          "rotationsLeft": "3",
+          "result": 1,
+          "roundValidators": [
+            "0x3B940A5b4A762583453D9e9Cf0981BE0426A8e79",
+            "0x9D998aD7C7f9Cc448A4DbDf49edD7CADBe3d57B6",
+            "0x96298d411a2D622945BEACa6112374583b501d52",
+            "0xB7551beF37a05995218f9a1BB7A93e5B6705f535",
+            "0x4f36CB2C58385575fafb443d80E3c290b12DA6aE"
+          ],
+          "validatorVotes": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "validatorVotesHash": [
+            "0x6127f51c114e70f51857baf49d1be4d631051147636ea7165bf476243a20e5cc",
+            "0xfaf2b96cab339739644630b27951a39946e0cb141419156faeebdec764db68c9",
+            "0x9346714fe6d9f85d04df6087cf80a778f25eae36da94ba10c2c44bc587576c93",
+            "0x8492aa46976ba5a5fb9b9d57b80bd4f4ca19e963db2de577f087b43fdb56952a",
+            "0x887b527f49970369eca4452b208ab2ba725ec0d9358296ab7a11923316d2b2cf"
+          ],
+          "validatorResultHash": [
+            "0x1c2fe9f4f4c26b5fd2d2344bbca5b59f953087b82c4f86c4d22abaab7c076ca0",
+            "0x1c2fe9f4f4c26b5fd2d2344bbca5b59f953087b82c4f86c4d22abaab7c076ca0",
+            "0x1c2fe9f4f4c26b5fd2d2344bbca5b59f953087b82c4f86c4d22abaab7c076ca0",
+            "0x1c2fe9f4f4c26b5fd2d2344bbca5b59f953087b82c4f86c4d22abaab7c076ca0",
+            "0x1c2fe9f4f4c26b5fd2d2344bbca5b59f953087b82c4f86c4d22abaab7c076ca0"
+          ],
+          "validatorVotesName": [
+            "AGREE",
+            "AGREE",
+            "AGREE",
+            "AGREE",
+            "AGREE"
+          ]
+        },
+        "consumedValidators": [
+          "0x3B940A5b4A762583453D9e9Cf0981BE0426A8e79",
+          "0x9D998aD7C7f9Cc448A4DbDf49edD7CADBe3d57B6",
+          "0x96298d411a2D622945BEACa6112374583b501d52",
+          "0xB7551beF37a05995218f9a1BB7A93e5B6705f535",
+          "0x4f36CB2C58385575fafb443d80E3c290b12DA6aE"
+        ],
+        "txExecutionResult": 1,
+        "txData": "0xf83db83a1604617267730dc401616e616c79746963732d64617368626f6172642d32303236066d6574686f64840173746172745f6576616c756174696f6e00",
+        "txDataDecoded": {
+          "callData": {},
+          "leaderOnly": false,
+          "type": "call"
+        },
+        "numOfInitialValidators": "3",
+        "statusName": "FINALIZED",
+        "resultName": "AGREE",
+        "txExecutionResultName": "FINISHED_WITH_RETURN"
+      }
+    },
+    "evaluator_job": {
+      "hash": "0xa08713f91af74fe576ece76df737063070f8793479c8b63ca864a2989507a242",
+      "recipient": "0xEF30f069A8Be376D40F18758b9bfDa54D7c04Ec7",
+      "status": "UNDETERMINED",
+      "status_code": 6,
+      "consensus_result": "DISAGREE",
+      "execution": "FINISHED_WITH_ERROR",
+      "created_timestamp": "1786518078",
+      "last_vote_timestamp": "1786518090",
+      "validator_votes": [
+        "DETERMINISTIC_VIOLATION",
+        "DETERMINISTIC_VIOLATION",
+        "DETERMINISTIC_VIOLATION",
+        "DETERMINISTIC_VIOLATION",
+        "DETERMINISTIC_VIOLATION"
+      ],
+      "initial_rotations": 0,
+      "rotations": 0
+    },
+    "close_tender": {
+      "hash": "0x9fed579245d5ef87fda49732f07ca1e342ce47fb00b5b2452170abf9c00f72bf",
+      "accepted": {
+        "currentTimestamp": "1786551515",
+        "sender": "0xe0f17BEf0587c3b66D2eB4BBE705dFf821AbDde7",
+        "recipient": "0x8d776cE2c5Ed60e5e9E229669eaf91DE7f3Ae257",
+        "initialRotations": "3",
+        "txSlot": "9",
+        "createdTimestamp": "1786551503",
+        "lastVoteTimestamp": "1786551512",
+        "randomSeed": "0x4f09d989e33e15f900e773e70998771b3f45b572bc3413c74c0d24d6e58b184e",
+        "result": 1,
+        "txExecutionHash": "0xcf33182584890bbfcec50bcd859e351f631329c4132cc5e50d94766c5f2c486f",
+        "txCalldata": "0xf7b51604617267730dc401616e616c79746963732d64617368626f6172642d32303236066d6574686f6464636c6f73655f74656e64657200",
+        "eqBlocksOutputs": "0xc786706164646564",
+        "messages": [],
+        "queueType": 0,
+        "queuePosition": "0",
+        "activator": "0x4FC292d5D255Ec8Ad4cdcd36c5E188dfEE9D160e",
+        "lastLeader": "0x27276953fa2052A5178Ae5a3D114a3DFB9A2fC98",
+        "status": 5,
+        "txId": "0x9fed579245d5ef87fda49732f07ca1e342ce47fb00b5b2452170abf9c00f72bf",
+        "readStateBlockRange": {
+          "activationBlock": "17308518",
+          "processingBlock": "17308521",
+          "proposalBlock": "17308523"
+        },
+        "numOfRounds": "0",
+        "lastRound": {
+          "round": "0",
+          "leaderIndex": "1",
+          "votesCommitted": "5",
+          "votesRevealed": "5",
+          "appealBond": "0",
+          "rotationsLeft": "3",
+          "result": 1,
+          "roundValidators": [
+            "0xfd811B16001077243e07173ec72a4735FF04C3AA",
+            "0x27276953fa2052A5178Ae5a3D114a3DFB9A2fC98",
+            "0x4f36CB2C58385575fafb443d80E3c290b12DA6aE",
+            "0x3E1E6060f746c78DB2BE0909C30A1f6A41AcD011",
+            "0x3a130401885fD9322E2E21174A5496065f716b35"
+          ],
+          "validatorVotes": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "validatorVotesHash": [
+            "0xabfcace93a7d70d35d0218da39ad94d598acec95b92170048095744d068fdb7a",
+            "0x3dd403cf988589befaa3411fe9e67c9480c4f74247a6303c7b7af8a0d27c3c1b",
+            "0x0d2f8ecf2a8232a1c381e179f88d9485e8bab31a05043eebdf75d5f90a86c84e",
+            "0x45975c4fe8672ed16658826c6571eb653de26af8c0cd1be36f3f3ecadd27ad45",
+            "0x6e83d1472a96e946ccc847c432304898e58fc86777d65a27b3d2f1aaef5d900d"
+          ],
+          "validatorResultHash": [
+            "0x7e1e873157d10de7e0279b7db527b2a740fb10171316c52230130557db5ab5a6",
+            "0x7e1e873157d10de7e0279b7db527b2a740fb10171316c52230130557db5ab5a6",
+            "0x7e1e873157d10de7e0279b7db527b2a740fb10171316c52230130557db5ab5a6",
+            "0x7e1e873157d10de7e0279b7db527b2a740fb10171316c52230130557db5ab5a6",
+            "0x7e1e873157d10de7e0279b7db527b2a740fb10171316c52230130557db5ab5a6"
+          ],
+          "validatorVotesName": [
+            "AGREE",
+            "AGREE",
+            "AGREE",
+            "AGREE",
+            "AGREE"
+          ]
+        },
+        "consumedValidators": [
+          "0xfd811B16001077243e07173ec72a4735FF04C3AA",
+          "0x27276953fa2052A5178Ae5a3D114a3DFB9A2fC98",
+          "0x4f36CB2C58385575fafb443d80E3c290b12DA6aE",
+          "0x3E1E6060f746c78DB2BE0909C30A1f6A41AcD011",
+          "0x3a130401885fD9322E2E21174A5496065f716b35"
+        ],
+        "txExecutionResult": 1,
+        "txData": "0xf7b51604617267730dc401616e616c79746963732d64617368626f6172642d32303236066d6574686f6464636c6f73655f74656e64657200",
+        "txDataDecoded": {
+          "callData": {},
+          "leaderOnly": false,
+          "type": "call"
+        },
+        "numOfInitialValidators": "3",
+        "statusName": "ACCEPTED",
+        "resultName": "AGREE",
+        "txExecutionResultName": "FINISHED_WITH_RETURN"
+      },
+      "finalized": {
+        "currentTimestamp": "1786553315",
+        "sender": "0xe0f17BEf0587c3b66D2eB4BBE705dFf821AbDde7",
+        "recipient": "0x8d776cE2c5Ed60e5e9E229669eaf91DE7f3Ae257",
+        "initialRotations": "3",
+        "txSlot": "9",
+        "createdTimestamp": "1786551503",
+        "lastVoteTimestamp": "1786551512",
+        "randomSeed": "0x4f09d989e33e15f900e773e70998771b3f45b572bc3413c74c0d24d6e58b184e",
+        "result": 1,
+        "txExecutionHash": "0xcf33182584890bbfcec50bcd859e351f631329c4132cc5e50d94766c5f2c486f",
+        "txCalldata": "0xf7b51604617267730dc401616e616c79746963732d64617368626f6172642d32303236066d6574686f6464636c6f73655f74656e64657200",
+        "eqBlocksOutputs": "0xc786706164646564",
+        "messages": [],
+        "queueType": 0,
+        "queuePosition": "0",
+        "activator": "0x4FC292d5D255Ec8Ad4cdcd36c5E188dfEE9D160e",
+        "lastLeader": "0x27276953fa2052A5178Ae5a3D114a3DFB9A2fC98",
+        "status": 7,
+        "txId": "0x9fed579245d5ef87fda49732f07ca1e342ce47fb00b5b2452170abf9c00f72bf",
+        "readStateBlockRange": {
+          "activationBlock": "17308518",
+          "processingBlock": "17308521",
+          "proposalBlock": "17308523"
+        },
+        "numOfRounds": "0",
+        "lastRound": {
+          "round": "0",
+          "leaderIndex": "1",
+          "votesCommitted": "5",
+          "votesRevealed": "5",
+          "appealBond": "0",
+          "rotationsLeft": "3",
+          "result": 1,
+          "roundValidators": [
+            "0xfd811B16001077243e07173ec72a4735FF04C3AA",
+            "0x27276953fa2052A5178Ae5a3D114a3DFB9A2fC98",
+            "0x4f36CB2C58385575fafb443d80E3c290b12DA6aE",
+            "0x3E1E6060f746c78DB2BE0909C30A1f6A41AcD011",
+            "0x3a130401885fD9322E2E21174A5496065f716b35"
+          ],
+          "validatorVotes": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "validatorVotesHash": [
+            "0xabfcace93a7d70d35d0218da39ad94d598acec95b92170048095744d068fdb7a",
+            "0x3dd403cf988589befaa3411fe9e67c9480c4f74247a6303c7b7af8a0d27c3c1b",
+            "0x0d2f8ecf2a8232a1c381e179f88d9485e8bab31a05043eebdf75d5f90a86c84e",
+            "0x45975c4fe8672ed16658826c6571eb653de26af8c0cd1be36f3f3ecadd27ad45",
+            "0x6e83d1472a96e946ccc847c432304898e58fc86777d65a27b3d2f1aaef5d900d"
+          ],
+          "validatorResultHash": [
+            "0x7e1e873157d10de7e0279b7db527b2a740fb10171316c52230130557db5ab5a6",
+            "0x7e1e873157d10de7e0279b7db527b2a740fb10171316c52230130557db5ab5a6",
+            "0x7e1e873157d10de7e0279b7db527b2a740fb10171316c52230130557db5ab5a6",
+            "0x7e1e873157d10de7e0279b7db527b2a740fb10171316c52230130557db5ab5a6",
+            "0x7e1e873157d10de7e0279b7db527b2a740fb10171316c52230130557db5ab5a6"
+          ],
+          "validatorVotesName": [
+            "AGREE",
+            "AGREE",
+            "AGREE",
+            "AGREE",
+            "AGREE"
+          ]
+        },
+        "consumedValidators": [
+          "0xfd811B16001077243e07173ec72a4735FF04C3AA",
+          "0x27276953fa2052A5178Ae5a3D114a3DFB9A2fC98",
+          "0x4f36CB2C58385575fafb443d80E3c290b12DA6aE",
+          "0x3E1E6060f746c78DB2BE0909C30A1f6A41AcD011",
+          "0x3a130401885fD9322E2E21174A5496065f716b35"
+        ],
+        "txExecutionResult": 1,
+        "txData": "0xf7b51604617267730dc401616e616c79746963732d64617368626f6172642d32303236066d6574686f6464636c6f73655f74656e64657200",
+        "txDataDecoded": {
+          "callData": {},
+          "leaderOnly": false,
+          "type": "call"
+        },
+        "numOfInitialValidators": "3",
+        "statusName": "FINALIZED",
+        "resultName": "AGREE",
+        "txExecutionResultName": "FINISHED_WITH_RETURN"
+      }
+    }
+  },
+  "core": {
+    "address": "0x8d776cE2c5Ed60e5e9E229669eaf91DE7f3Ae257",
+    "deployment_tx": "0x9a6ee8477b17e7d8809f7db85d5e187190b313631360b8bae2586c101bfad982",
+    "evm_deployment_tx": "0x2f7bbd7a0e545a3d0736c6d3202bbaa8b703ea4552f7f8a855258f3cd4bb17fb",
+    "artifact_bytes": 40527,
+    "outer_bytes": 40772,
+    "estimate": "0x1ef9a30",
+    "status": "FINALIZED",
+    "result": "AGREE",
+    "execution": "FINISHED_WITH_RETURN",
+    "validator_votes": [
+      "AGREE",
+      "AGREE",
+      "AGREE",
+      "AGREE",
+      "AGREE"
+    ],
+    "created_timestamp": "1786522993",
+    "finalized_observed_at_utc": "2026-08-12T09:00:16.797Z",
+    "initial_readback": {
+      "get_production_ready": false,
+      "evaluator_bound": false,
+      "balance_wei": "0"
+    }
+  },
+  "evaluator": {
+    "address": "0xcb4c472a9bB15103b885eC361701152Ec03b2681",
+    "deployment_tx": "0xfd1e5f13118657daa79b0ee08152010c71a97d64cb275da0098126f9611ecd77",
+    "evm_deployment_tx": "0xe91c2e22de51b820c2effe26b2f39c2ecf59842da18c95eea55398da05577606",
+    "constructor_core": "0x8d776cE2c5Ed60e5e9E229669eaf91DE7f3Ae257",
+    "version": "tendercouncil.evaluator.v1",
+    "artifact_bytes": 30604,
+    "outer_bytes": 30852,
+    "estimate": "0x17b5657",
+    "status": "FINALIZED",
+    "result": "AGREE",
+    "execution": "FINISHED_WITH_RETURN",
+    "validator_votes": [
+      "AGREE",
+      "AGREE",
+      "AGREE",
+      "AGREE",
+      "AGREE"
+    ],
+    "created_timestamp": "1786525218",
+    "finalized_observed_at_utc": "2026-08-12T09:30:36.157Z",
+    "constructor_readback": {
+      "core_address": "0x8d776cE2c5Ed60e5e9E229669eaf91DE7f3Ae257",
+      "version": "tendercouncil.evaluator.v1"
+    }
+  },
+  "binding": {
+    "tx": "0x413da290184b901291235dcdb849ae42eedd783ab9aba52fecd5b20e315657bd",
+    "evm_tx": "0x3721d472602072b00037242d3f51cc0fc67ec740995aed4cfb1e93fd175d5b3e",
+    "evaluator_address": "0xcb4c472a9bB15103b885eC361701152Ec03b2681",
+    "version": "tendercouncil.evaluator.v1",
+    "evaluator_code_hash": "sha256:3ceda15c629867f7c3aad42ed10961b73fda2306c8026a1279d234cd25e531f6",
+    "status": "FINALIZED",
+    "consensus": "AGREE",
+    "execution": "FINISHED_WITH_RETURN",
+    "validator_votes": [
+      "AGREE",
+      "AGREE",
+      "AGREE",
+      "AGREE",
+      "AGREE"
+    ],
+    "created_timestamp": "1786527094",
+    "finalized_observed_at_utc": "2026-08-12T10:03:55.187Z"
+  },
+  "recovery": {
+    "prior_failure_artifact": "artifacts/tender_council_bradbury_e2e_failure_2026-08-12T070125233Z.json",
+    "prior_failures": [],
+    "prior_transactions": {
+      "start_evaluation": {
+        "hash": "0xaed3688e3f14d76469083651812e2039dce6bdf0cddad1da5ee3c0b31c114d19",
+        "status": "FINALIZED",
+        "consensus": "AGREE",
+        "validator_votes": [
+          "AGREE",
+          "AGREE",
+          "AGREE",
+          "AGREE",
+          "AGREE"
+        ]
+      },
+      "evaluator_job": {
+        "hash": "0xa08713f91af74fe576ece76df737063070f8793479c8b63ca864a2989507a242",
+        "recipient": "0xEF30f069A8Be376D40F18758b9bfDa54D7c04Ec7",
+        "status": "UNDETERMINED",
+        "status_code": 6,
+        "consensus_result": "DISAGREE",
+        "execution": "FINISHED_WITH_ERROR",
+        "created_timestamp": "1786518078",
+        "last_vote_timestamp": "1786518090",
+        "validator_votes": [
+          "DETERMINISTIC_VIOLATION",
+          "DETERMINISTIC_VIOLATION",
+          "DETERMINISTIC_VIOLATION",
+          "DETERMINISTIC_VIOLATION",
+          "DETERMINISTIC_VIOLATION"
+        ],
+        "initial_rotations": 0,
+        "rotations": 0
+      }
+    }
+  },
+  "live_binding": {
+    "production_ready": true,
+    "binding": {
+      "address": "0xcb4c472a9bB15103b885eC361701152Ec03b2681",
+      "bound": true,
+      "evaluator_code_hash": "sha256:3ceda15c629867f7c3aad42ed10961b73fda2306c8026a1279d234cd25e531f6",
+      "version": "tendercouncil.evaluator.v1"
+    },
+    "evaluator_core": "0x8d776ce2c5ed60e5e9e229669eaf91de7f3ae257",
+    "evaluator_version": "tendercouncil.evaluator.v1",
+    "core_balance": "80000000000000000"
+  },
+  "funding": [
+    {
+      "bidder": "0xC8732D516AD35CB7A137548878358856dBD9D8f2",
+      "amount_wei": "20000000000000000",
+      "existing_balance_wei": "39589115054456200",
+      "skipped_existing_funding": true,
+      "note": "preserved from an earlier interrupted funding phase"
+    },
+    {
+      "bidder": "0x4cB46003f11755feCfFCfe119824C420d3dc059B",
+      "amount_wei": "20000000000000000",
+      "existing_balance_wei": "39598551308492500",
+      "skipped_existing_funding": true,
+      "note": "preserved from an earlier interrupted funding phase"
+    },
+    {
+      "bidder": "0xC0c60A43fb1A893B12CB188Ff822ee93878760fe",
+      "amount_wei": "20000000000000000",
+      "existing_balance_wei": "39598551308492500",
+      "skipped_existing_funding": true,
+      "note": "preserved from an earlier interrupted funding phase"
+    },
+    {
+      "bidder": "0x452F17798c5717302Ffb723Fd53bDe63D4CBE1Cb",
+      "amount_wei": "20000000000000000",
+      "existing_balance_wei": "39598551308492500",
+      "skipped_existing_funding": true,
+      "note": "preserved from an earlier interrupted funding phase"
+    },
+    {
+      "bidder": "0xa8a4Ee51a295c0f880487ECA14ed89f4637a21b5",
+      "amount_wei": "20000000000000000",
+      "existing_balance_wei": "39598551308492500",
+      "skipped_existing_funding": true,
+      "note": "preserved from an earlier interrupted funding phase"
+    }
+  ],
+  "tender": {
+    "tender_id": "analytics-dashboard-2026",
+    "budget_gen": "0.08",
+    "budget_wei": "80000000000000000",
+    "max_delivery_days": 30,
+    "min_support_days": 90,
+    "bidding_deadline": 1786551481,
+    "response_window_seconds": 7200,
+    "rubric": {
+      "technical": 35,
+      "delivery": 20,
+      "price": 20,
+      "capability": 15,
+      "support": 10
+    },
+    "existing_tender_resumed": true,
+    "open_readback": {
+      "bidding_deadline": 1786551481,
+      "brief_sha256": "sha256:44bb3d24956a4ea2d9a8828afc7f6cde822c7f0c06708aea3fa9f7d365a33f8e",
+      "brief_url": "https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/fdb255d11f67f7ca449f3a2e7b6c204c03abfeb7/fixtures/live/blobs/brief.json",
+      "buyer": "0xe0f17bef0587c3b66d2eb4bbe705dff821abdde7",
+      "buyer_refund_amount": 0,
+      "challenge_set_digest": "",
+      "closed_snapshot_digest": "",
+      "escrow_deposited": "80000000000000000",
+      "evaluation_nonce": 0,
+      "evaluation_result_digest": "",
+      "evidence_policy": "capability:required;delivery:optional;support:optional;technical:optional",
+      "final_winner": "",
+      "max_budget_wei": "80000000000000000",
+      "max_delivery_days": 30,
+      "min_support_days": 90,
+      "payout_confirmed": false,
+      "payout_pending": false,
+      "provisional_winner": "",
+      "refund_confirmed": false,
+      "refund_kind": "",
+      "refund_pending": false,
+      "requirements": "authentication;CSV export;responsive/mobile support;dashboard/chart functionality",
+      "response_window_end": 0,
+      "response_window_seconds": 7200,
+      "response_window_start": 0,
+      "review_nonce": 0,
+      "rubric": "technical=35;delivery=20;price=20;capability=15;support=10",
+      "settlement_state": "ESCROWED",
+      "status": "OPEN",
+      "tender_id": "analytics-dashboard-2026",
+      "title": "Analytics Dashboard Development",
+      "winner_payout_amount": 0
+    },
+    "after_bids": {
+      "bidding_deadline": 1786551481,
+      "brief_sha256": "sha256:44bb3d24956a4ea2d9a8828afc7f6cde822c7f0c06708aea3fa9f7d365a33f8e",
+      "brief_url": "https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/fdb255d11f67f7ca449f3a2e7b6c204c03abfeb7/fixtures/live/blobs/brief.json",
+      "buyer": "0xe0f17bef0587c3b66d2eb4bbe705dff821abdde7",
+      "buyer_refund_amount": 0,
+      "challenge_set_digest": "",
+      "closed_snapshot_digest": "",
+      "escrow_deposited": "80000000000000000",
+      "evaluation_nonce": 0,
+      "evaluation_result_digest": "",
+      "evidence_policy": "capability:required;delivery:optional;support:optional;technical:optional",
+      "final_winner": "",
+      "max_budget_wei": "80000000000000000",
+      "max_delivery_days": 30,
+      "min_support_days": 90,
+      "payout_confirmed": false,
+      "payout_pending": false,
+      "provisional_winner": "",
+      "refund_confirmed": false,
+      "refund_kind": "",
+      "refund_pending": false,
+      "requirements": "authentication;CSV export;responsive/mobile support;dashboard/chart functionality",
+      "response_window_end": 0,
+      "response_window_seconds": 7200,
+      "response_window_start": 0,
+      "review_nonce": 0,
+      "rubric": "technical=35;delivery=20;price=20;capability=15;support=10",
+      "settlement_state": "ESCROWED",
+      "status": "OPEN",
+      "tender_id": "analytics-dashboard-2026",
+      "title": "Analytics Dashboard Development",
+      "winner_payout_amount": 0
+    }
+  },
+  "bids": [
+    {
+      "bid_id": "bid-a",
+      "bidder": "0xC8732D516AD35CB7A137548878358856dBD9D8f2",
+      "price_wei": "62000000000000000",
+      "delivery_days": 26,
+      "support_days": 90,
+      "proposal_url": "https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/a4dff59f3803198f6724a31392464cd5807dfa1d/fixtures/live/manifests/bid_a.json",
+      "proposal_sha256": "sha256:7400bb115fbdb4fa80b1c31910946cb90abe6b0d3d224f885ed99a672e7c6fbd",
+      "evidence_commitment": "a-capability|CAPABILITY|capability|1|https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/fdb255d11f67f7ca449f3a2e7b6c204c03abfeb7/fixtures/live/blobs/a_capability.json|sha256:999c266ed1dd81a07ea519d4fd997683c88f9be22e23b0c6995d963ddb51a153",
+      "hash": null,
+      "existing_onchain": true
+    },
+    {
+      "bid_id": "bid-b",
+      "bidder": "0x4cB46003f11755feCfFCfe119824C420d3dc059B",
+      "price_wei": "74000000000000000",
+      "delivery_days": 27,
+      "support_days": 120,
+      "proposal_url": "https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/a4dff59f3803198f6724a31392464cd5807dfa1d/fixtures/live/manifests/bid_b.json",
+      "proposal_sha256": "sha256:0b0d8be698b82ae285e6d0f3d5b2c83f71b618b3721ac6021bbea019428c8837",
+      "evidence_commitment": "b-capability|CAPABILITY|capability|1|https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/fdb255d11f67f7ca449f3a2e7b6c204c03abfeb7/fixtures/live/blobs/b_capability.json|sha256:b480be749f5462c9223adf51ccf1de9bf1eb2f039916e57727139f45e33cd0a0",
+      "hash": null,
+      "existing_onchain": true
+    },
+    {
+      "bid_id": "bid-c",
+      "bidder": "0xC0c60A43fb1A893B12CB188Ff822ee93878760fe",
+      "price_wei": "43000000000000000",
+      "delivery_days": 20,
+      "support_days": 90,
+      "proposal_url": "https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/a4dff59f3803198f6724a31392464cd5807dfa1d/fixtures/live/manifests/bid_c.json",
+      "proposal_sha256": "sha256:f17a5263e9c6edca7e361366bc64acc25ff4e43cc8cdb3eb9dd010e497cc0763",
+      "evidence_commitment": "c-capability|CAPABILITY|capability|1|https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/fdb255d11f67f7ca449f3a2e7b6c204c03abfeb7/fixtures/live/blobs/c_capability.json|sha256:42257f097c64c030b79a3203a8ebedea937c2c582898fe646c46576c9275908a",
+      "hash": null,
+      "existing_onchain": true
+    },
+    {
+      "bid_id": "bid-d",
+      "bidder": "0x452F17798c5717302Ffb723Fd53bDe63D4CBE1Cb",
+      "price_wei": "87000000000000000",
+      "delivery_days": 22,
+      "support_days": 120,
+      "proposal_url": "https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/a4dff59f3803198f6724a31392464cd5807dfa1d/fixtures/live/manifests/bid_d.json",
+      "proposal_sha256": "sha256:d355065fc7fc8f0b963c3d475796f76d31841238aa60dcea0ba1502abe74babe",
+      "evidence_commitment": "d-capability|CAPABILITY|capability|1|https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/fdb255d11f67f7ca449f3a2e7b6c204c03abfeb7/fixtures/live/blobs/b_capability.json|sha256:b480be749f5462c9223adf51ccf1de9bf1eb2f039916e57727139f45e33cd0a0",
+      "hash": null,
+      "existing_onchain": true
+    },
+    {
+      "bid_id": "bid-e",
+      "bidder": "0xa8a4Ee51a295c0f880487ECA14ed89f4637a21b5",
+      "price_wei": "69000000000000000",
+      "delivery_days": 45,
+      "support_days": 120,
+      "proposal_url": "https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/a4dff59f3803198f6724a31392464cd5807dfa1d/fixtures/live/manifests/bid_e.json",
+      "proposal_sha256": "sha256:a8a72af7f1bab0dfcb1101581b87d78d49c590a8cacfad58570b55e6c1c7d859",
+      "evidence_commitment": "e-capability|CAPABILITY|capability|1|https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/fdb255d11f67f7ca449f3a2e7b6c204c03abfeb7/fixtures/live/blobs/a_capability.json|sha256:999c266ed1dd81a07ea519d4fd997683c88f9be22e23b0c6995d963ddb51a153",
+      "hash": null,
+      "existing_onchain": true
+    }
+  ],
+  "snapshot": {
+    "canonical_json": "{\"bidding_deadline\":1786551481,\"bids\":[{\"bid_id\":\"bid-a\",\"bidder\":\"0xC8732D516AD35CB7A137548878358856dBD9D8f2\",\"delivery_days\":26,\"evidence_commitments\":\"a-capability|CAPABILITY|capability|1|https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/fdb255d11f67f7ca449f3a2e7b6c204c03abfeb7/fixtures/live/blobs/a_capability.json|sha256:999c266ed1dd81a07ea519d4fd997683c88f9be22e23b0c6995d963ddb51a153\",\"price_wei\":62000000000000000,\"proposal_sha256\":\"sha256:7400bb115fbdb4fa80b1c31910946cb90abe6b0d3d224f885ed99a672e7c6fbd\",\"proposal_url\":\"https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/a4dff59f3803198f6724a31392464cd5807dfa1d/fixtures/live/manifests/bid_a.json\",\"schema_version\":\"tendercouncil.bid.v1\",\"submitted_at\":1786532015,\"support_days\":90},{\"bid_id\":\"bid-b\",\"bidder\":\"0x4cB46003f11755feCfFCfe119824C420d3dc059B\",\"delivery_days\":27,\"evidence_commitments\":\"b-capability|CAPABILITY|capability|1|https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/fdb255d11f67f7ca449f3a2e7b6c204c03abfeb7/fixtures/live/blobs/b_capability.json|sha256:b480be749f5462c9223adf51ccf1de9bf1eb2f039916e57727139f45e33cd0a0\",\"price_wei\":74000000000000000,\"proposal_sha256\":\"sha256:0b0d8be698b82ae285e6d0f3d5b2c83f71b618b3721ac6021bbea019428c8837\",\"proposal_url\":\"https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/a4dff59f3803198f6724a31392464cd5807dfa1d/fixtures/live/manifests/bid_b.json\",\"schema_version\":\"tendercouncil.bid.v1\",\"submitted_at\":1786532018,\"support_days\":120},{\"bid_id\":\"bid-c\",\"bidder\":\"0xC0c60A43fb1A893B12CB188Ff822ee93878760fe\",\"delivery_days\":20,\"evidence_commitments\":\"c-capability|CAPABILITY|capability|1|https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/fdb255d11f67f7ca449f3a2e7b6c204c03abfeb7/fixtures/live/blobs/c_capability.json|sha256:42257f097c64c030b79a3203a8ebedea937c2c582898fe646c46576c9275908a\",\"price_wei\":43000000000000000,\"proposal_sha256\":\"sha256:f17a5263e9c6edca7e361366bc64acc25ff4e43cc8cdb3eb9dd010e497cc0763\",\"proposal_url\":\"https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/a4dff59f3803198f6724a31392464cd5807dfa1d/fixtures/live/manifests/bid_c.json\",\"schema_version\":\"tendercouncil.bid.v1\",\"submitted_at\":1786532021,\"support_days\":90},{\"bid_id\":\"bid-d\",\"bidder\":\"0x452F17798c5717302Ffb723Fd53bDe63D4CBE1Cb\",\"delivery_days\":22,\"evidence_commitments\":\"d-capability|CAPABILITY|capability|1|https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/fdb255d11f67f7ca449f3a2e7b6c204c03abfeb7/fixtures/live/blobs/b_capability.json|sha256:b480be749f5462c9223adf51ccf1de9bf1eb2f039916e57727139f45e33cd0a0\",\"price_wei\":87000000000000000,\"proposal_sha256\":\"sha256:d355065fc7fc8f0b963c3d475796f76d31841238aa60dcea0ba1502abe74babe\",\"proposal_url\":\"https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/a4dff59f3803198f6724a31392464cd5807dfa1d/fixtures/live/manifests/bid_d.json\",\"schema_version\":\"tendercouncil.bid.v1\",\"submitted_at\":1786532024,\"support_days\":120},{\"bid_id\":\"bid-e\",\"bidder\":\"0xa8a4Ee51a295c0f880487ECA14ed89f4637a21b5\",\"delivery_days\":45,\"evidence_commitments\":\"e-capability|CAPABILITY|capability|1|https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/fdb255d11f67f7ca449f3a2e7b6c204c03abfeb7/fixtures/live/blobs/a_capability.json|sha256:999c266ed1dd81a07ea519d4fd997683c88f9be22e23b0c6995d963ddb51a153\",\"price_wei\":69000000000000000,\"proposal_sha256\":\"sha256:a8a72af7f1bab0dfcb1101581b87d78d49c590a8cacfad58570b55e6c1c7d859\",\"proposal_url\":\"https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/a4dff59f3803198f6724a31392464cd5807dfa1d/fixtures/live/manifests/bid_e.json\",\"schema_version\":\"tendercouncil.bid.v1\",\"submitted_at\":1786532028,\"support_days\":120}],\"brief_sha256\":\"sha256:44bb3d24956a4ea2d9a8828afc7f6cde822c7f0c06708aea3fa9f7d365a33f8e\",\"brief_url\":\"https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/fdb255d11f67f7ca449f3a2e7b6c204c03abfeb7/fixtures/live/blobs/brief.json\",\"buyer\":\"0xe0f17BEf0587c3b66D2eB4BBE705dFf821AbDde7\",\"evidence_policy\":\"capability:required;delivery:optional;support:optional;technical:optional\",\"max_budget_wei\":80000000000000000,\"max_delivery_days\":30,\"min_support_days\":90,\"requirements\":\"authentication;CSV export;responsive/mobile support;dashboard/chart functionality\",\"response_window_seconds\":7200,\"rubric\":\"technical=35;delivery=20;price=20;capability=15;support=10\",\"schema_version\":\"tendercouncil.snapshot.v1\",\"tender_id\":\"analytics-dashboard-2026\",\"title\":\"Analytics Dashboard Development\"}",
+    "independent_sha256": "sha256:3643d78960783e377730020136ae36dab400ec15d650f22c1bfdbf43d1203d88",
+    "onchain_digest": "sha256:3643d78960783e377730020136ae36dab400ec15d650f22c1bfdbf43d1203d88"
+  },
+  "source": {
+    "coreSource": {
+      "path": "contracts/tender_council_core.py",
+      "bytes": 44782,
+      "sha256": "06a903f0381fb8017a76381c298e61cce39a0db0a5adee969a403cd1f1b105f7"
+    },
+    "coreArtifact": {
+      "path": "artifacts/tender_council_core_deployable.py",
+      "bytes": 40527,
+      "sha256": "1fffc2e4e3c8309858ca1ad45f6bd76cc2003c238175da77b71757e44c99dc55"
+    },
+    "evaluatorSource": {
+      "path": "contracts/tender_council_evaluator.py",
+      "bytes": 34788,
+      "sha256": "2a8d866b142199dcfb828dd18d3e54ff108a197217d130558ea8fa316e098e71"
+    },
+    "evaluatorArtifact": {
+      "path": "artifacts/tender_council_evaluator_deployable.py",
+      "bytes": 30604,
+      "sha256": "3ceda15c629867f7c3aad42ed10961b73fda2306c8026a1279d234cd25e531f6"
+    }
+  }
+}
