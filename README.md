@@ -2,10 +2,11 @@
 
 TenderCouncil is an isolated GenLayer Intelligent Contract project for authenticated, evidence-backed procurement awards.
 
-The contract and test corpus are being built in stages. Stage 1 establishes the
-deterministic procurement record and provenance model. The frontend is
-intentionally held at the UI stop gate until the contract, evidence model,
-evaluator, tests, and Bradbury smoke proof are ready.
+The production backend uses a two-contract architecture: Core owns policy,
+escrow, lifecycle, challenges, and settlement; Evaluator performs authenticated
+content retrieval, integrity/schema checks, and comparative GenLayer judgment.
+The frontend is intentionally held at the UI stop gate until the complete
+contract, evidence, security, and Bradbury proof is ready.
 
 ## Repository
 
@@ -35,6 +36,11 @@ The frontend remains behind the UI stop gate.
 The production pair is in `contracts/tender_council_core.py` and
 `contracts/tender_council_evaluator.py`. The previous contracts remain
 preserved for regression and provenance.
+
+For the canonical Bradbury proof, the buyer escrows an exact wei budget, five
+wallet-authenticated bidders commit immutable manifests and evidence, and the
+winner receives its quoted price while the unused remainder returns to the
+buyer. See [docs/BRADBURY_E2E.md](docs/BRADBURY_E2E.md) for live proof status.
 
 See [docs/STAGES.md](docs/STAGES.md) for the master delivery gates and
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the trust boundaries and

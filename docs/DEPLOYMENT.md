@@ -15,10 +15,12 @@ The production pair is deployed in this order:
    the hash is the exact SHA-256 of the generated Evaluator deployment artifact.
 6. Verify the finalized Core binding before opening any tender.
 
-`deploy/deploy_split.py` is the repeatable dry-run manifest generator. It
-refuses `--broadcast` during this implementation stage. A future release
-operator must add the explicit broadcast step only after this report is
-reviewed.
+`deploy/deploy_split.py` remains the repeatable dry-run manifest generator and
+does not broadcast. The controlled replacement pair was deployed through the
+reviewed broadcast workflow already recorded in
+`artifacts/tender_council_bradbury_replacement_deployment.json`; future
+redeployments require a new reviewed release pair. The current E2E runner is
+guarded to reuse the approved finalized pair and cannot deploy contracts.
 
 ## Generated artifacts and gates
 
@@ -51,12 +53,11 @@ changes):
 ## Historical provenance
 
 Failed monolith and evaluator-boundary attempts remain under `artifacts/`.
-The finalized pair in `artifacts/tender_council_bradbury_deployment.json` is
-preserved as `FINALIZED_DEPLOYMENT_PROOF_SUPERSEDED_BEFORE_E2E`: the semantic
-and challenge audit found defects before any tender was funded, so it is not a
-replacement-release approval. No participant funds were exposed and no
-settlement occurred. A replacement pair must be deployed only after this
-remediation is reviewed.
+The earlier finalized pair in `artifacts/tender_council_bradbury_deployment.json`
+is preserved as `FINALIZED_DEPLOYMENT_PROOF_SUPERSEDED_BEFORE_E2E`. The
+replacement pair is separately recorded and is the only pair approved for the
+canonical E2E. The funded tender and subsequent live evidence must be recorded
+in `artifacts/tender_council_bradbury_e2e.json` only after completion.
 
 The canonical live demo must use the 7200-second Bradbury response-window
 configuration documented in `docs/BRADBURY_DEMO_POLICY.md`.
