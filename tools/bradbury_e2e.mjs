@@ -220,7 +220,7 @@ async function run() {
     const readClient = sdk.createClient({ chain: testnetBradbury });
     const buyer = deployClient;
     manifest.live_binding = { production_ready: await read(readClient, core, "get_production_ready"), binding: parseJson(await read(readClient, core, "get_evaluator_binding")), evaluator_core: await read(readClient, evaluator, "get_core_address"), evaluator_version: await read(readClient, evaluator, "get_evaluator_version"), core_balance: String(await read(readClient, core, "get_contract_balance")) };
-    if (!manifest.live_binding.production_ready || manifest.live_binding.core_balance !== "0") throw new Error("replacement binding readback failed");
+    if (!manifest.live_binding.production_ready || manifest.live_binding.binding?.bound !== true || manifest.live_binding.binding?.address?.toLowerCase() !== evaluator.toLowerCase() || manifest.live_binding.evaluator_core?.toLowerCase() !== core.toLowerCase() || manifest.live_binding.evaluator_version !== VERSION) throw new Error("replacement binding readback failed");
 
     manifest.funding = [];
     for (const item of localAccounts) {
