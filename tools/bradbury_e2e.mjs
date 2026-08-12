@@ -28,6 +28,7 @@ const CHALLENGE_HASH = "sha256:699b727a8ce9a074f77a13d6b0d59a691463cd047d4562258
 const E2E_PATH = path.join(ROOT, "artifacts/tender_council_bradbury_e2e.json");
 const REPLACEMENT_DEPLOYMENT_PATH = path.join(ROOT, "artifacts/tender_council_bradbury_corrected_deployment.json");
 const LAST_FAILURE_PATH = path.join(ROOT, "artifacts/tender_council_bradbury_e2e_failure_2026-08-12T070125233Z.json");
+const FRESH_PAIR = process.env.TENDERCOUNCIL_FRESH_CORRECTED_PAIR === "1";
 
 // These are the five immutable bid envelopes already submitted before the
 // transient RPC outage. They allow a recovery run to poll rather than resubmit.
@@ -280,13 +281,19 @@ async function run() {
       const bidId = `bid-${id.toLowerCase()}`;
       const existingBid = await readMaybe(readClient, core, "get_bid", [bidId]);
       if (existingBid) {
-        bidHashes.push({ id, label, address, hash: KNOWN_BID_TXS[id], client, price, delivery, support, proposalUrl, proposalHash, commitment, existing: existingBid });
+        bidHashes.push({ id, label, address, hash: FRESH_PAIR ? null : KNOWN_BID_TXS[id], client, price, delivery, support, proposalUrl, proposalHash, commitment, existing: existingBid });
         console.log(`bid_existing=${id}`);
       } else {
-        const hash = KNOWN_BID_TXS[id];
-        if (!hash) throw new Error(`missing known immutable bid transaction for ${id}`);
-        bidHashes.push({ id, label, address, hash, client, price, delivery, support, proposalUrl, proposalHash, commitment });
-        console.log(`bid_recovery_poll=${id}:${hash}`);
+        if (FRESH_PAIR) {
+          const hash = await writeHash(client, core, "submit_bid", [`bid-${id.toLowerCase()}`, TENDER_ID, price, delivery, support, proposalUrl, proposalHash, commitment, "tendercouncil.bid.v1"]);
+          bidHashes.push({ id, label, address, hash, client, price, delivery, support, proposalUrl, proposalHash, commitment });
+          console.log(`bid_submitted=${id}:${hash}`);
+        } else {
+          const hash = KNOWN_BID_TXS[id];
+          if (!hash) throw new Error(`missing known immutable bid transaction for ${id}`);
+          bidHashes.push({ id, label, address, hash, client, price, delivery, support, proposalUrl, proposalHash, commitment });
+          console.log(`bid_recovery_poll=${id}:${hash}`);
+        }
       }
     }
     for (const item of bidHashes) {
