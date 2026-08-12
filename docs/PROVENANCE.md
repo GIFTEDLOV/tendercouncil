@@ -7,7 +7,8 @@ are retained rather than erased.
 
 - Repository: `GIFTEDLOV/tendercouncil`
 - Branch: `main`
-- Baseline HEAD at session start: `d5c4f50bfa08495c57511e602e47a6fc28337606`
+- Initial audit HEAD: `d5c4f50bfa08495c57511e602e47a6fc28337606`
+- Current continuation HEAD: recorded by the release manifest after the live E2E completes.
 
 ## Existing evidence
 
@@ -32,6 +33,10 @@ production Bradbury deployment attempts remain in
 started. This continuation adds exact GEN-wei escrow/payout/refund accounting,
 serialized Core outflows for multi-tender balance verification, execution-level
 all-semantic-fail `NO_VALID_BID`, exact integrity-set enforcement, and
-deterministic invalid-challenge `UPHOLD` handling. The read-only Bradbury probe
-estimated the replacement artifacts successfully; no transaction was signed or
-broadcast.
+deterministic invalid-challenge `UPHOLD` handling. The replacement pair is
+finalized and permanently bound in the separate replacement deployment
+manifest. The funded canonical tender and five immutable bids are now in the
+controlled Bradbury E2E; its runner waits for the onchain deadline and remains
+idempotent after transient RPC/tooling failures. Close, evaluation, challenge,
+review, payout, refund, and settlement evidence will be appended only after
+finalized readback.

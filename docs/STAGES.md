@@ -15,18 +15,19 @@
 | Generated artifacts/size gate | GREEN locally | Preferred 40 KB target; conservative 42 KB fallback remains below Bradbury boundary and exact RPC estimate is required |
 | Direct tests | IMPLEMENTED locally | Existing direct suite plus real all-semantic-fail and financial simulator trials |
 | Mutation/security tests | IMPLEMENTED locally | Original suite plus split, semantic NO_VALID_BID, challenge, integrity, payout, and outflow-lock mutants |
-| Bradbury estimate-only pair probe | NEXT | Must run and record both exact estimates |
-| Bradbury broadcast/E2E | BLOCKED BY REVIEW | Explicitly not authorized in this stage |
+| Bradbury replacement pair deployment/binding | DONE | Finalized Core, Evaluator, and one-time binding are recorded in `artifacts/tender_council_bradbury_replacement_deployment.json` |
+| Bradbury funded canonical E2E | IN PROGRESS | `analytics-dashboard-2026` is funded/open; five immutable bid submissions are recorded; deadline wait is active |
+| Bradbury evaluation/settlement proof | PENDING | Close, asynchronous evaluation, challenge/review, exact payout, remainder refund, and final settlement remain to be recorded |
 | Final UI | STOPPED | UI stop gate remains closed |
 
 ## Locked next gates
 
-1. Run the full local lint, semantic, direct, parity, size, and mutation suite.
-2. Run the exact no-broadcast Core/Evaluator Bradbury estimates.
-3. Stop for architecture/deployment review.
-4. Only after approval, perform one controlled two-contract deployment.
-5. After review, prove finality, funded procurement, the 7200-second Bradbury
-   response window, challenge path, and finalized settlement.
+1. Wait for the immutable live bidding deadline and close the funded tender.
+2. Record the finalized Core → Evaluator → Core evaluation graph and canonical
+   classifications.
+3. Prove the 7200-second response window, authenticated challenge, bounded
+   review, exact winner-price payout, and exact buyer remainder refund.
+4. Run the final local/CI/security/provenance release gate.
 
 The UI cannot begin until the complete backend/security/Bradbury stop gate is
 explicitly opened.
