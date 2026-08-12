@@ -19,9 +19,9 @@
     },
     {
       "name": "evaluator",
-      "source_bytes": 34738,
-      "artifact_bytes": 30557,
-      "conservative_outer_bytes": 31581,
+      "source_bytes": 34788,
+      "artifact_bytes": 30604,
+      "conservative_outer_bytes": 31628,
       "target_outer_bytes": 42000,
       "preferred_target_outer_bytes": 40000,
       "within_preferred_target": true,
