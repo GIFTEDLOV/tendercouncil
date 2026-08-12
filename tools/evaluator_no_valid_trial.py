@@ -43,7 +43,7 @@ def run(evaluator_path: Path, core_fixture_path: Path) -> None:
         raw = json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode()
         web[url] = {"status": 200, "body": raw.decode()}
         bids.append({
-            "bid_id": "B" + str(index), "tender_id": "semantic-all-fail", "bidder": bidder,
+            "bid_id": "B" + str(index), "bidder": bidder,
             "price_wei": manifest["price_wei"], "delivery_days": 20, "support_days": 90,
             "proposal_url": url, "proposal_sha256": digest(raw), "evidence_commitments": "",
             "schema_version": "tendercouncil.bid.v1", "submitted_at": 1700000000 + index,

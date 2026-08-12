@@ -27,7 +27,7 @@ const CHALLENGE_URL = `https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil
 const CHALLENGE_HASH = "sha256:699b727a8ce9a074f77a13d6b0d59a691463cd047d4562258e56be84c6145ca2";
 const E2E_PATH = path.join(ROOT, "artifacts/tender_council_bradbury_e2e.json");
 const REPLACEMENT_DEPLOYMENT_PATH = path.join(ROOT, "artifacts/tender_council_bradbury_replacement_deployment.json");
-const LAST_FAILURE_PATH = path.join(ROOT, "artifacts/tender_council_bradbury_e2e_failure_2026-08-12T011155901Z.json");
+const LAST_FAILURE_PATH = path.join(ROOT, "artifacts/tender_council_bradbury_e2e_failure_2026-08-12T070125233Z.json");
 
 // These are the five immutable bid envelopes already submitted before the
 // transient RPC outage. They allow a recovery run to poll rather than resubmit.
@@ -127,11 +127,32 @@ async function writeFinal(client, address, functionName, args = [], value = 0n) 
 async function sendNativeHash(client, to, value) {
   return client.sendTransaction({ account: client.account, to, value, data: "0x" });
 }
-async function children(client, hash, label) {
+const NEW_TRANSACTION_TOPIC = "0xdab9102861c7483a187584d6371d88316f005af507982ccf95c110879f3ed5a5";
+function paddedAddress(address) { return `0x${"0".repeat(24)}${address.slice(2).toLowerCase()}`; }
+function blockNumber(value) { return typeof value === "string" ? BigInt(value) : BigInt(value ?? 0); }
+async function children(client, hash, label, expectedRecipient = null, expectedMethod = null) {
+  const parent = await client.getTransaction({ hash });
+  const fromBlock = blockNumber(parent?.readStateBlockRange?.proposalBlock || parent?.proposalBlock || 0n);
+  const expectedSender = parent?.recipient?.toLowerCase() || null;
   for (let attempt = 1; attempt <= 120; attempt += 1) {
     try {
-      const ids = await client.getTriggeredTransactionIds({ hash });
-      if (ids && ids.length) {
+      const latest = blockNumber((await client.getBlock({ blockTag: "latest" })).number);
+      const topics = [NEW_TRANSACTION_TOPIC, null, expectedRecipient ? paddedAddress(expectedRecipient) : null];
+      const logs = await client.request({ method: "eth_getLogs", params: [{ address: client.chain.consensusMainContract.address, fromBlock: `0x${fromBlock.toString(16)}`, toBlock: `0x${latest.toString(16)}`, topics }] });
+      const ids = [];
+      for (const log of logs || []) {
+        const id = log?.topics?.[1];
+        if (!id || ids.includes(id)) continue;
+        try {
+          const candidate = await client.getTransaction({ hash: id });
+          if (expectedRecipient && candidate?.recipient?.toLowerCase() !== expectedRecipient.toLowerCase()) continue;
+          if (expectedSender && candidate?.sender?.toLowerCase() !== expectedSender) continue;
+          if (candidate?.createdTimestamp && BigInt(candidate.createdTimestamp) < BigInt(parent.createdTimestamp || 0)) continue;
+          if (expectedMethod && !String(candidate?.txData || "").toLowerCase().includes(Buffer.from(expectedMethod).toString("hex"))) continue;
+          ids.push(id);
+        } catch { /* retain polling on transient/incomplete consensus data */ }
+      }
+      if (ids.length) {
         console.log(`${label}_children=${JSON.stringify(ids)}`);
         return ids;
       }
@@ -286,9 +307,9 @@ async function run() {
     if (manifest.snapshot.independent_sha256 !== manifest.snapshot.onchain_digest) throw new Error("closed snapshot digest mismatch");
 
     manifest.transactions.start_evaluation = await writeFinal(buyer, core, "start_evaluation", [TENDER_ID]);
-    const evalChildren = await children(readClient, manifest.transactions.start_evaluation.hash, "evaluation_parent");
+    const evalChildren = await children(readClient, manifest.transactions.start_evaluation.hash, "evaluation_parent", evaluator, "start_evaluation_job");
     manifest.transactions.evaluator_job = await waitAcceptedFinalized(readClient, evalChildren[0]);
-    const callbackChildren = await children(readClient, evalChildren[0], "evaluator_job");
+    const callbackChildren = await children(readClient, evalChildren[0], "evaluator_job", core, "receive_evaluation_result");
     manifest.transactions.evaluation_callback = await waitAcceptedFinalized(readClient, callbackChildren[0]);
     const resultPayload = await read(readClient, evaluator, "get_evaluation_result", [TENDER_ID, closedTender.evaluation_nonce]);
     manifest.evaluation = { result_digest: `sha256:${sha256(Buffer.from(resultPayload, "utf8"))}`, onchain_result_digest: (await read(readClient, core, "get_tender", [TENDER_ID])).evaluation_result_digest, bounded_result: parseJson(resultPayload), parent: manifest.transactions.start_evaluation.hash, evaluator_job: evalChildren[0], callback: callbackChildren[0] };
@@ -307,9 +328,9 @@ async function run() {
 
     await waitChainTime(readClient, Number(responseTender.response_window_end) + 1, "response_window");
     manifest.transactions.advance_after_response = await writeFinal(buyer, core, "advance_after_response", [TENDER_ID]);
-    const reviewChildren = await children(readClient, manifest.transactions.advance_after_response.hash, "review_parent");
+    const reviewChildren = await children(readClient, manifest.transactions.advance_after_response.hash, "review_parent", evaluator, "start_review_job");
     manifest.transactions.review_job = await waitAcceptedFinalized(readClient, reviewChildren[0]);
-    const reviewCallbackChildren = await children(readClient, reviewChildren[0], "review_job");
+    const reviewCallbackChildren = await children(readClient, reviewChildren[0], "review_job", core, "receive_review_result");
     manifest.transactions.review_callback = await waitAcceptedFinalized(readClient, reviewCallbackChildren[0]);
     const reviewedTender = await read(readClient, core, "get_tender", [TENDER_ID]);
     const reviewPayload = await read(readClient, evaluator, "get_review_result", [TENDER_ID, reviewedTender.review_nonce]);
@@ -320,11 +341,11 @@ async function run() {
     if (awarded.status !== "AWARDED" || awarded.final_winner !== "bid-b") throw new Error("final award readback failed");
     manifest.settlement = { before: parseJson(await read(readClient, core, "get_settlement_accounting", [TENDER_ID])), winner: "bid-b", winner_payout_amount: "74000000000000000", buyer_refund_amount: "6000000000000000" };
     manifest.transactions.settle_award = await writeFinal(buyer, core, "settle_award", [TENDER_ID]);
-    const payoutChildren = await children(readClient, manifest.transactions.settle_award.hash, "payout_parent");
+    const payoutChildren = await children(readClient, manifest.transactions.settle_award.hash, "payout_parent", bidders.bidder_b, null);
     manifest.transactions.payout_transfer = await waitAcceptedFinalized(readClient, payoutChildren[0]);
     manifest.settlement.payout_pending = parseJson(await read(readClient, core, "get_settlement_accounting", [TENDER_ID]));
     manifest.transactions.confirm_settlement = await writeFinal(buyer, core, "confirm_settlement", [TENDER_ID]);
-    const refundChildren = await children(readClient, manifest.transactions.confirm_settlement.hash, "refund_parent");
+    const refundChildren = await children(readClient, manifest.transactions.confirm_settlement.hash, "refund_parent", manifest.release.deployment_wallet, null);
     manifest.transactions.refund_transfer = await waitAcceptedFinalized(readClient, refundChildren[0]);
     manifest.settlement.refund_pending = parseJson(await read(readClient, core, "get_settlement_accounting", [TENDER_ID]));
     manifest.transactions.confirm_refund = await writeFinal(buyer, core, "confirm_refund", [TENDER_ID]);

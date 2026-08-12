@@ -1,0 +1,61 @@
+{
+  "artifact_type": "BRADBURY_E2E_FAILURE_PROVENANCE",
+  "recorded_from": "read-only RPC transaction status and debugTraceTransaction output after the runner failure artifact was cleared by the direct-test artifact cleanup",
+  "at_utc": "2026-08-12T07:01:25.166Z",
+  "classification": "CONTRACT_DEFECT",
+  "network": "testnet-bradbury",
+  "chain_id": 4221,
+  "rpc": "https://rpc-bradbury.genlayer.com",
+  "core": {
+    "address": "0xaf12cF3B7225c94E6674255780B16aDCfEb03E15",
+    "status": "FINALIZED_DEPLOYMENT_PROOF_WITH_E2E_RUNTIME_DEFECT"
+  },
+  "evaluator": {
+    "address": "0xEF30f069A8Be376D40F18758b9bfDa54D7c04Ec7",
+    "status": "FINALIZED_DEPLOYMENT_PROOF_WITH_E2E_RUNTIME_DEFECT"
+  },
+  "tender": {
+    "tender_id": "analytics-dashboard-2026",
+    "status_at_recheck": "EVALUATING",
+    "evaluation_nonce": 1,
+    "closed_snapshot_digest": "sha256:df1aa840136df7a45453cd6bec296d751c97cfc364506b4a41462e4a6b302773",
+    "escrow_deposited_wei": "80000000000000000",
+    "core_balance_wei_at_recheck": "80000000000000000"
+  },
+  "transactions": {
+    "start_evaluation": {
+      "hash": "0xaed3688e3f14d76469083651812e2039dce6bdf0cddad1da5ee3c0b31c114d19",
+      "status": "FINALIZED",
+      "consensus": "AGREE",
+      "validator_votes": ["AGREE", "AGREE", "AGREE", "AGREE", "AGREE"]
+    },
+    "evaluator_job": {
+      "hash": "0xa08713f91af74fe576ece76df737063070f8793479c8b63ca864a2989507a242",
+      "recipient": "0xEF30f069A8Be376D40F18758b9bfDa54D7c04Ec7",
+      "status": "UNDETERMINED",
+      "status_code": 6,
+      "consensus_result": "DISAGREE",
+      "execution": "FINISHED_WITH_ERROR",
+      "created_timestamp": "1786518078",
+      "last_vote_timestamp": "1786518090",
+      "validator_votes": ["DETERMINISTIC_VIOLATION", "DETERMINISTIC_VIOLATION", "DETERMINISTIC_VIOLATION", "DETERMINISTIC_VIOLATION", "DETERMINISTIC_VIOLATION"],
+      "initial_rotations": 0,
+      "rotations": 0
+    }
+  },
+  "debug_evidence": {
+    "trace_source": "debugTraceTransaction",
+    "result_code": 2,
+    "stderr_excerpt": "_evaluate_snapshot -> _validate_manifest -> if manifest['schema_version'] != MANIFEST_SCHEMA_VERSION or manifest['tender_id'] != bid['tender_id']: KeyError: 'tender_id'",
+    "web_calls": 0,
+    "llm_calls": 0,
+    "root_cause": "Core closed snapshots intentionally omit redundant bid.tender_id; the immutable Evaluator dereferenced that absent field instead of comparing the manifest tender_id with snapshot.tender_id.",
+    "financial_effect": "none",
+    "callback_emitted": false,
+    "result_persisted": false
+  },
+  "remediation": {
+    "status": "implemented_locally_pending_release",
+    "change": "_validate_manifest now receives snapshot.tender_id explicitly; the real all-semantic-fail execution fixture uses the Core-shaped bid snapshot without redundant tender_id."
+  }
+}

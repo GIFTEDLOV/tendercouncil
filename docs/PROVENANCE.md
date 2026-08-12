@@ -35,8 +35,13 @@ serialized Core outflows for multi-tender balance verification, execution-level
 all-semantic-fail `NO_VALID_BID`, exact integrity-set enforcement, and
 deterministic invalid-challenge `UPHOLD` handling. The replacement pair is
 finalized and permanently bound in the separate replacement deployment
-manifest. The funded canonical tender and five immutable bids are now in the
-controlled Bradbury E2E; its runner waits for the onchain deadline and remains
-idempotent after transient RPC/tooling failures. Close, evaluation, challenge,
-review, payout, refund, and settlement evidence will be appended only after
-finalized readback.
+manifest. The funded canonical tender and five immutable bids reached a
+controlled Bradbury E2E, but the first Evaluator child exposed a snapshot-shape
+contract defect before web/LLM evaluation. That pair and the stuck tender are
+preserved in the append-only E2E failure artifact; no payout, refund, or
+settlement occurred. The corrected Evaluator binds manifest tender identity to
+the snapshot-level tender ID, and the E2E runner now discovers internal
+children from finalized `NewTransaction` events because the pinned SDK helper
+returned the parent ID on this network. New close, evaluation, challenge,
+review, payout, refund, and settlement evidence will be appended only after a
+corrected pair reaches finalized readback.

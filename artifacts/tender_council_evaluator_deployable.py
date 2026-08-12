@@ -101,7 +101,7 @@ def _commitment_set(value:str):
     if value=='':
         return[]
     return value.split(';')
-def _validate_manifest(raw:bytes,bid:dict):
+def _validate_manifest(raw:bytes,bid:dict,expected_tender_id:str):
     if len(raw)>MAX_MANIFEST_BYTES or _hash_bytes(raw)!=bid['proposal_sha256']:
         return None
     try:
@@ -111,7 +111,7 @@ def _validate_manifest(raw:bytes,bid:dict):
     expected_top=('bidder','delivery_days','evidence','price_wei','proposal','schema_version','support_days','tender_id')
     if not isinstance(manifest,dict)or tuple(sorted(manifest))!=expected_top:
         return None
-    if manifest['schema_version']!=MANIFEST_SCHEMA_VERSION or manifest['tender_id']!=bid['tender_id']:
+    if manifest['schema_version']!=MANIFEST_SCHEMA_VERSION or manifest['tender_id']!=expected_tender_id:
         return None
     if str(manifest['bidder']).lower()!=str(bid['bidder']).lower():
         return None
@@ -348,7 +348,7 @@ class TenderCouncilEvaluator(gl.Contract):
                 integrity_bad.append(bid['bid_id'])
                 evidence_states.append(bid['bid_id']+':MANIFEST:'+manifest_fetch[0])
                 continue
-            manifest=_validate_manifest(manifest_fetch[1],bid)
+            manifest=_validate_manifest(manifest_fetch[1],bid,snapshot['tender_id'])
             if manifest is None:
                 integrity_bad.append(bid['bid_id'])
                 evidence_states.append(bid['bid_id']+':MANIFEST:INVALID')
