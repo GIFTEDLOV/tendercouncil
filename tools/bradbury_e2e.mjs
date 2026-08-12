@@ -276,6 +276,8 @@ async function run() {
     }
     manifest.tender.after_bids = await read(readClient, core, "get_tender", [TENDER_ID]);
 
+    const deadline = Number(manifest.tender.after_bids.bidding_deadline);
+    if (manifest.tender.after_bids.status !== "OPEN") throw new Error(`expected OPEN tender before close, got ${manifest.tender.after_bids.status}`);
     await waitChainTime(readClient, deadline + 1, "bidding_deadline");
     manifest.transactions.close_tender = await writeFinal(buyer, core, "close_tender", [TENDER_ID]);
     const closedSnapshot = await read(readClient, core, "get_closed_snapshot", [TENDER_ID]);
