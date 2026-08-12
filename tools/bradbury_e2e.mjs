@@ -14,17 +14,17 @@ const keytar = createRequire(pathToFileURL("C:/Users/DELL/AppData/Roaming/npm/no
 const NETWORK = "testnet-bradbury";
 const CHAIN_ID = 4221;
 const VERSION = "tendercouncil.evaluator.v1";
-const TENDER_ID = "analytics-dashboard-2026";
+const TENDER_ID = "analytics-dashboard-2026-recovery";
 const RESPONSE_WINDOW = 7200;
 const BUDGET = 80_000_000_000_000_000n;
 const BIDDER_FUNDING = 20_000_000_000_000_000n;
 const BRIEF_URL = "https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/fdb255d11f67f7ca449f3a2e7b6c204c03abfeb7/fixtures/live/blobs/brief.json";
 const BRIEF_HASH = "sha256:44bb3d24956a4ea2d9a8828afc7f6cde822c7f0c06708aea3fa9f7d365a33f8e";
-const FIXTURE_COMMIT = "a4dff59f3803198f6724a31392464cd5807dfa1d";
-const BLOB_COMMIT = "fdb255d11f67f7ca449f3a2e7b6c204c03abfeb7";
-const CHALLENGE_COMMIT = "1c10be9fde812aba326d60db3fe9b6c0bb60e413";
-const CHALLENGE_URL = `https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/${CHALLENGE_COMMIT}/fixtures/live/challenge_a.json`;
-const CHALLENGE_HASH = "sha256:699b727a8ce9a074f77a13d6b0d59a691463cd047d4562258e56be84c6145ca2";
+const FIXTURE_COMMIT = "c294f3f63f920eed8f662c59843f1e35338fc68d";
+const BLOB_COMMIT = "bfddc6c4c2fcd16431af6da797213c0f42ade4fb";
+const CHALLENGE_COMMIT = FIXTURE_COMMIT;
+const CHALLENGE_URL = `https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/${CHALLENGE_COMMIT}/fixtures/live/recovery/challenge_a.json`;
+const CHALLENGE_HASH = "sha256:9ff88485d37235f5a0455c67b99259edad40529b98e78ae99fdff9f436a8d384";
 const E2E_PATH = path.join(ROOT, "artifacts/tender_council_bradbury_e2e.json");
 const REPLACEMENT_DEPLOYMENT_PATH = path.join(ROOT, "artifacts/tender_council_bradbury_corrected_deployment.json");
 const LAST_FAILURE_PATH = path.join(ROOT, "artifacts/tender_council_bradbury_e2e_failure_2026-08-12T070125233Z.json");
@@ -41,11 +41,11 @@ const KNOWN_BID_TXS = {
 };
 
 const BID_DEFS = [
-  ["A", "bidder_a", 62_000_000_000_000_000n, 26, 90, "bid_a.json", "sha256:7400bb115fbdb4fa80b1c31910946cb90abe6b0d3d224f885ed99a672e7c6fbd", "a-capability|CAPABILITY|capability|1|https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/fdb255d11f67f7ca449f3a2e7b6c204c03abfeb7/fixtures/live/blobs/a_capability.json|sha256:999c266ed1dd81a07ea519d4fd997683c88f9be22e23b0c6995d963ddb51a153"],
-  ["B", "bidder_b", 74_000_000_000_000_000n, 27, 120, "bid_b.json", "sha256:0b0d8be698b82ae285e6d0f3d5b2c83f71b618b3721ac6021bbea019428c8837", "b-capability|CAPABILITY|capability|1|https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/fdb255d11f67f7ca449f3a2e7b6c204c03abfeb7/fixtures/live/blobs/b_capability.json|sha256:b480be749f5462c9223adf51ccf1de9bf1eb2f039916e57727139f45e33cd0a0"],
-  ["C", "bidder_c", 43_000_000_000_000_000n, 20, 90, "bid_c.json", "sha256:f17a5263e9c6edca7e361366bc64acc25ff4e43cc8cdb3eb9dd010e497cc0763", "c-capability|CAPABILITY|capability|1|https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/fdb255d11f67f7ca449f3a2e7b6c204c03abfeb7/fixtures/live/blobs/c_capability.json|sha256:42257f097c64c030b79a3203a8ebedea937c2c582898fe646c46576c9275908a"],
-  ["D", "bidder_d", 87_000_000_000_000_000n, 22, 120, "bid_d.json", "sha256:d355065fc7fc8f0b963c3d475796f76d31841238aa60dcea0ba1502abe74babe", "d-capability|CAPABILITY|capability|1|https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/fdb255d11f67f7ca449f3a2e7b6c204c03abfeb7/fixtures/live/blobs/b_capability.json|sha256:b480be749f5462c9223adf51ccf1de9bf1eb2f039916e57727139f45e33cd0a0"],
-  ["E", "bidder_e", 69_000_000_000_000_000n, 45, 120, "bid_e.json", "sha256:a8a72af7f1bab0dfcb1101581b87d78d49c590a8cacfad58570b55e6c1c7d859", "e-capability|CAPABILITY|capability|1|https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/fdb255d11f67f7ca449f3a2e7b6c204c03abfeb7/fixtures/live/blobs/a_capability.json|sha256:999c266ed1dd81a07ea519d4fd997683c88f9be22e23b0c6995d963ddb51a153"],
+  ["A", "bidder_a", 62_000_000_000_000_000n, 26, 90, "bid_a.json", "sha256:9ff8d118c5584ca9d44b76285530f99eca9e74a8a19958b7609e74ef5565acd5", "a-capability|CAPABILITY|capability|1|https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/bfddc6c4c2fcd16431af6da797213c0f42ade4fb/fixtures/live/blobs/a_capability.json|sha256:83366c33c2cf2257f0a920f6cc6a51c61dfdf7cae7256cda922f759aa36cd8de"],
+  ["B", "bidder_b", 74_000_000_000_000_000n, 27, 120, "bid_b.json", "sha256:8a0a97e0eee8ed44bc054cef118a6221e61a73c89ef1cfa51ff77ef736eebc6e", "b-capability|CAPABILITY|capability|1|https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/bfddc6c4c2fcd16431af6da797213c0f42ade4fb/fixtures/live/blobs/b_capability.json|sha256:50ccede1e2904873ce72abcfb8c6b7c277ae5b782dd45d38ed48e86a25a56ce5"],
+  ["C", "bidder_c", 43_000_000_000_000_000n, 20, 90, "bid_c.json", "sha256:3a9cb339098de7211705e30af1ab33f25a325cfec296085d8e760ae4a91565c5", "c-capability|CAPABILITY|capability|1|https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/bfddc6c4c2fcd16431af6da797213c0f42ade4fb/fixtures/live/blobs/c_capability.json|sha256:32d6ff0845c8f719aa183b89fe7e7bfa88787230151b61b26e43ae12bd9ba8f4"],
+  ["D", "bidder_d", 87_000_000_000_000_000n, 22, 120, "bid_d.json", "sha256:c392d16b8387a27c489142ecb503b04ef908b91e10d5e6a5186b92d07731eccb", "d-capability|CAPABILITY|capability|1|https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/bfddc6c4c2fcd16431af6da797213c0f42ade4fb/fixtures/live/blobs/b_capability.json|sha256:50ccede1e2904873ce72abcfb8c6b7c277ae5b782dd45d38ed48e86a25a56ce5"],
+  ["E", "bidder_e", 69_000_000_000_000_000n, 45, 120, "bid_e.json", "sha256:5ba06345c76336512bed4f10221f9533a88943db15dcfcc095715de7af490baf", "e-capability|CAPABILITY|capability|1|https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/bfddc6c4c2fcd16431af6da797213c0f42ade4fb/fixtures/live/blobs/a_capability.json|sha256:83366c33c2cf2257f0a920f6cc6a51c61dfdf7cae7256cda922f759aa36cd8de"],
 ];
 
 function jsonSafe(value) {
@@ -277,7 +277,7 @@ async function run() {
     for (const [id, label, price, delivery, support, file, proposalHash, commitment] of BID_DEFS) {
       const address = bidders[label];
       const client = clientFor(bidderAccounts[label]);
-      const proposalUrl = `https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/${FIXTURE_COMMIT}/fixtures/live/manifests/${file}`;
+      const proposalUrl = `https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/${FIXTURE_COMMIT}/fixtures/live/recovery/manifests/${file}`;
       const bidId = `bid-${id.toLowerCase()}`;
       const existingBid = await readMaybe(readClient, core, "get_bid", [bidId]);
       if (existingBid) {

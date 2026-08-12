@@ -51,11 +51,13 @@ def check_manifests(snapshot: dict) -> None:
 def main() -> None:
     manifest = json.loads(SNAPSHOT_ARTIFACT.read_text(encoding="utf-8"))
     snapshot = json.loads(manifest["snapshot"]["canonical_json"])
+    snapshot["tender_id"] = "analytics-dashboard-2026-recovery"
     web = {}
     for bid in snapshot["bids"]:
-        proposal_url = bid["proposal_url"]
-        proposal_path = ROOT / "fixtures" / "live" / "manifests" / (bid["bid_id"].replace("bid-", "bid_") + ".json")
+        proposal_url = "https://fixture.example/recovery/" + bid["bid_id"] + ".json"
+        proposal_path = ROOT / "fixtures" / "live" / "recovery" / "manifests" / (bid["bid_id"].replace("bid-", "bid_") + ".json")
         proposal = json.loads(proposal_path.read_text(encoding="utf-8"))
+        proposal["tender_id"] = snapshot["tender_id"]
         for evidence in proposal["evidence"]:
             evidence_path = ROOT / "fixtures" / "live" / "blobs" / evidence["url"].rsplit("/", 1)[1]
             evidence_raw = evidence_path.read_bytes()
@@ -63,6 +65,7 @@ def main() -> None:
             web[evidence["url"]] = {"status": 200, "body": evidence_raw.decode("utf-8")}
         proposal_raw = json.dumps(proposal, sort_keys=True, separators=(",", ":")).encode("utf-8")
         bid["proposal_sha256"] = digest(proposal_raw)
+        bid["proposal_url"] = proposal_url
         bid["evidence_commitments"] = ";".join(
             item["evidence_id"] + "|" + item["kind"] + "|" + item["criterion"] + "|"
             + ("1" if item["required"] else "0") + "|" + item["url"] + "|" + item["sha256"]
