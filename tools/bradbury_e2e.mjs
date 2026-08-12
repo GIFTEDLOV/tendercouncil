@@ -314,11 +314,14 @@ async function run() {
     if (manifest.snapshot.independent_sha256 !== manifest.snapshot.onchain_digest) throw new Error("closed snapshot digest mismatch");
 
     manifest.transactions.start_evaluation = await writeFinal(buyer, core, "start_evaluation", [TENDER_ID]);
+    const evaluatingTender = await read(readClient, core, "get_tender", [TENDER_ID]);
+    const evaluationNonce = Number(evaluatingTender.evaluation_nonce);
+    if (!evaluationNonce) throw new Error("start_evaluation did not create a non-zero evaluation nonce");
     const evalChildren = await children(readClient, manifest.transactions.start_evaluation.hash, "evaluation_parent", evaluator, "start_evaluation_job");
     manifest.transactions.evaluator_job = await waitAcceptedFinalized(readClient, evalChildren[0]);
     const callbackChildren = await children(readClient, evalChildren[0], "evaluator_job", core, "receive_evaluation_result");
     manifest.transactions.evaluation_callback = await waitAcceptedFinalized(readClient, callbackChildren[0]);
-    const resultPayload = await read(readClient, evaluator, "get_evaluation_result", [TENDER_ID, closedTender.evaluation_nonce]);
+    const resultPayload = await read(readClient, evaluator, "get_evaluation_result", [TENDER_ID, evaluationNonce]);
     manifest.evaluation = { result_digest: `sha256:${sha256(Buffer.from(resultPayload, "utf8"))}`, onchain_result_digest: (await read(readClient, core, "get_tender", [TENDER_ID])).evaluation_result_digest, bounded_result: parseJson(resultPayload), parent: manifest.transactions.start_evaluation.hash, evaluator_job: evalChildren[0], callback: callbackChildren[0] };
     const result = manifest.evaluation.bounded_result;
     if (result.winner_bid_id !== "bid-b" || result.valid_bid_ids.sort().join(",") !== "bid-a,bid-b" || !result.semantic_disqualified_bid_ids.includes("bid-c") || !result.deterministic_disqualified_bid_ids.includes("bid-d") || !result.deterministic_disqualified_bid_ids.includes("bid-e")) throw new Error("canonical comparative result did not meet required classifications");
