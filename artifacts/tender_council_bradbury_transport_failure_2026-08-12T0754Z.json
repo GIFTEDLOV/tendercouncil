@@ -1,0 +1,21 @@
+{
+  "artifact_type": "BRADBURY_DEPLOYMENT_FAILURE_PROVENANCE",
+  "classification": "DEPLOYMENT_TRANSPORT_FAILURE",
+  "network": "testnet-bradbury",
+  "chain_id": 4221,
+  "rpc": "https://rpc-bradbury.genlayer.com",
+  "git_commit": "06291bb4ea1237e91351077e4cbe7a561a8ff40e",
+  "invocation": "genlayer deploy --contract deploy/01_deploy_split_bradbury.ts",
+  "root_cause": "The installed CLI treats --contract as Intelligent Contract source. It did not execute the deploy script; it submitted the TypeScript wrapper source as a contract deployment.",
+  "transaction": {
+    "hash": "0x43de69911946d5cf5962928abdb2302155642ee30b15bb876cb55f194f98e367",
+    "contract_address": "0x549F6f89A68780EE2e5175370E19cf4aDe0871ef",
+    "accepted_status_code": 5,
+    "consensus": "AGREE",
+    "validator_votes": ["DISAGREE", "DISAGREE", "DISAGREE", "DISAGREE", "DISAGREE"],
+    "execution": "FINISHED_WITH_ERROR",
+    "finality": "not a usable deployment; no TenderCouncil Core was created"
+  },
+  "financial_effect": "none",
+  "corrective_action": "Invoke the reviewed deploySplitBradbury(client) default export directly with the installed genlayer-js client; do not use --contract for a script file."
+}
