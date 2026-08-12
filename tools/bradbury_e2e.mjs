@@ -27,6 +27,17 @@ const CHALLENGE_URL = `https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil
 const CHALLENGE_HASH = "sha256:699b727a8ce9a074f77a13d6b0d59a691463cd047d4562258e56be84c6145ca2";
 const E2E_PATH = path.join(ROOT, "artifacts/tender_council_bradbury_e2e.json");
 const REPLACEMENT_DEPLOYMENT_PATH = path.join(ROOT, "artifacts/tender_council_bradbury_replacement_deployment.json");
+const LAST_FAILURE_PATH = path.join(ROOT, "artifacts/tender_council_bradbury_e2e_failure_2026-08-12T011155901Z.json");
+
+// These are the five immutable bid envelopes already submitted before the
+// transient RPC outage. They allow a recovery run to poll rather than resubmit.
+const KNOWN_BID_TXS = {
+  A: "0xce784b7ae81dd5fea3f1a0fe5440c9eef268e278031d207d2eb6281e0547d2b6",
+  B: "0x436fdb7fdef1bad697c370f73c4fe33055ade0dc65d69e94c0beabb1d816c54e",
+  C: "0xa8b8418648cc5af0b4f4cbc5fd2c8241a99d7e3372d9db17bbe60665da27eec9",
+  D: "0xe50eb1f7ceec40d8239740c6ea892b3ca19a752a60f20c673ede7d74acfa0bd5",
+  E: "0x45d2e566a7c1a4ac6a3966158aeb654a655dc956d11f0a2d4fd3faa2cb068223",
+};
 
 const BID_DEFS = [
   ["A", "bidder_a", 62_000_000_000_000_000n, 26, 90, "bid_a.json", "sha256:7400bb115fbdb4fa80b1c31910946cb90abe6b0d3d224f885ed99a672e7c6fbd", "a-capability|CAPABILITY|capability|1|https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/fdb255d11f67f7ca449f3a2e7b6c204c03abfeb7/fixtures/live/blobs/a_capability.json|sha256:999c266ed1dd81a07ea519d4fd997683c88f9be22e23b0c6995d963ddb51a153"],
@@ -54,13 +65,33 @@ function clientFor(account) { return sdk.createClient({ chain: testnetBradbury, 
 
 async function waitStatus(client, hash, status) {
   console.log(`waiting ${status}: ${hash}`);
-  return client.waitForTransactionReceipt({ hash, status, fullTransaction: true, retries: status === "FINALIZED" ? 720 : 240, interval: 5000 });
+  const maxAttempts = status === "FINALIZED" ? 720 : 240;
+  let lastError = null;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      const receipt = await client.getTransaction({ hash });
+      const current = statusName(receipt);
+      if (current === status || (status === "ACCEPTED" && current === "FINALIZED")) return receipt;
+      lastError = new Error(`transaction ${hash} is ${current}, waiting for ${status}`);
+    } catch (error) {
+      lastError = error;
+      console.log(`genlayer_poll_error=${String(error?.shortMessage || error?.message || error)}`);
+    }
+    if (attempt % 2 === 0) console.log(`waiting ${status} attempt=${attempt}: ${hash}`);
+    await sleep(5000);
+  }
+  throw new Error(`timed out waiting ${status}: ${hash}: ${String(lastError?.message || lastError)}`);
 }
 async function waitEvmFinal(client, hash) {
   for (let attempt = 1; attempt <= 720; attempt += 1) {
-    const receipt = await client.request({ method: "eth_getTransactionReceipt", params: [hash] });
-    if (receipt?.status === "0x1") return { hash, evm_receipt: jsonSafe(receipt), finality: "EVM_RECEIPT" };
-    if (receipt?.status === "0x0") throw new Error(`native funding transfer reverted: ${hash}`);
+    try {
+      const receipt = await client.request({ method: "eth_getTransactionReceipt", params: [hash] });
+      if (receipt?.status === "0x1") return { hash, evm_receipt: jsonSafe(receipt), finality: "EVM_RECEIPT" };
+      if (receipt?.status === "0x0") throw new Error(`native funding transfer reverted: ${hash}`);
+    } catch (error) {
+      if (String(error?.message || error).includes("reverted")) throw error;
+      console.log(`evm_poll_error=${String(error?.shortMessage || error?.message || error)}`);
+    }
     if (attempt % 2 === 0) console.log(`waiting EVM receipt: ${hash}`);
     await sleep(5000);
   }
@@ -73,6 +104,19 @@ async function waitAcceptedFinalized(client, hash) {
   return { hash, accepted: jsonSafe(accepted), finalized: jsonSafe(finalized) };
 }
 async function read(client, address, functionName, args = []) { return jsonSafe(await client.readContract({ address, functionName, args })); }
+async function readMaybe(client, address, functionName, args = []) {
+  for (let attempt = 1; attempt <= 12; attempt += 1) {
+    try { return await read(client, address, functionName, args); }
+    catch (error) {
+      const message = String(error?.shortMessage || error?.message || error);
+      const transient = /fetch failed|ENOTFOUND|ECONNRESET|ETIMEDOUT|timeout|network|503|502/i.test(message);
+      if (!transient) return null;
+      console.log(`read_poll_error=${message}`);
+      await sleep(5000);
+    }
+  }
+  throw new Error(`read did not recover: ${functionName}`);
+}
 async function writeHash(client, address, functionName, args = [], value = 0n) {
   return client.writeContract({ account: client.account, address, functionName, args, value, leaderOnly: false });
 }
@@ -164,6 +208,13 @@ async function run() {
     manifest.core = replacement.core;
     manifest.evaluator = replacement.evaluator;
     manifest.binding = replacement.binding;
+    try {
+      const prior = JSON.parse(await fs.readFile(LAST_FAILURE_PATH, "utf8"));
+      manifest.recovery = { prior_failure_artifact: path.relative(ROOT, LAST_FAILURE_PATH).replaceAll("\\", "/"), prior_failures: prior.failures || [], prior_transactions: prior.transactions || {} };
+      manifest.transactions = jsonSafe(prior.transactions || {});
+    } catch {
+      manifest.transactions = {};
+    }
     const core = replacement.core.address;
     const evaluator = replacement.evaluator.address;
     const readClient = sdk.createClient({ chain: testnetBradbury });
@@ -183,13 +234,21 @@ async function run() {
       manifest.funding.push({ bidder: item.address, amount_wei: BIDDER_FUNDING.toString(), ...tx });
     }
 
-    const deadline = (await chainTime(readClient)) + 21_600;
-    const create = await writeFinal(buyer, core, "create_tender", [TENDER_ID, "Analytics Dashboard Development", BRIEF_URL, BRIEF_HASH, BUDGET, 30, 90, deadline, RESPONSE_WINDOW, "authentication;CSV export;responsive/mobile support;dashboard/chart functionality", 35, 20, 20, 15, 10, "capability:required;delivery:optional;support:optional;technical:optional"], BUDGET);
-    manifest.transactions.create_tender = create;
-    manifest.tender = { tender_id: TENDER_ID, budget_gen: "0.08", budget_wei: BUDGET.toString(), max_delivery_days: 30, min_support_days: 90, bidding_deadline: deadline, response_window_seconds: RESPONSE_WINDOW, rubric: { technical: 35, delivery: 20, price: 20, capability: 15, support: 10 } };
-    const open = await writeFinal(buyer, core, "open_tender", [TENDER_ID]);
-    manifest.transactions.open_tender = open;
-    manifest.tender.open_readback = await read(readClient, core, "get_tender", [TENDER_ID]);
+    let currentTender = await readMaybe(readClient, core, "get_tender", [TENDER_ID]);
+    if (!currentTender) {
+      const deadline = (await chainTime(readClient)) + 21_600;
+      const create = await writeFinal(buyer, core, "create_tender", [TENDER_ID, "Analytics Dashboard Development", BRIEF_URL, BRIEF_HASH, BUDGET, 30, 90, deadline, RESPONSE_WINDOW, "authentication;CSV export;responsive/mobile support;dashboard/chart functionality", 35, 20, 20, 15, 10, "capability:required;delivery:optional;support:optional;technical:optional"], BUDGET);
+      manifest.transactions.create_tender = create;
+      currentTender = await read(readClient, core, "get_tender", [TENDER_ID]);
+    }
+    manifest.tender = { tender_id: TENDER_ID, budget_gen: "0.08", budget_wei: BUDGET.toString(), max_delivery_days: 30, min_support_days: 90, bidding_deadline: Number(currentTender.bidding_deadline), response_window_seconds: Number(currentTender.response_window_seconds), rubric: { technical: 35, delivery: 20, price: 20, capability: 15, support: 10 }, existing_tender_resumed: Boolean(manifest.recovery) };
+    if (currentTender.status === "DRAFT") {
+      const open = await writeFinal(buyer, core, "open_tender", [TENDER_ID]);
+      manifest.transactions.open_tender = open;
+      currentTender = await read(readClient, core, "get_tender", [TENDER_ID]);
+    }
+    if (!["OPEN", "CLOSED", "EVALUATING", "PROVISIONAL_AWARD", "RESPONSE_WINDOW", "REVIEWING_CHALLENGES", "AWARDED", "SETTLED", "NO_VALID_BID"].includes(currentTender.status)) throw new Error(`unexpected existing tender status: ${currentTender.status}`);
+    manifest.tender.open_readback = currentTender;
 
     manifest.bids = [];
     const bidHashes = [];
@@ -197,12 +256,22 @@ async function run() {
       const address = bidders[label];
       const client = clientFor(bidderAccounts[label]);
       const proposalUrl = `https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/${FIXTURE_COMMIT}/fixtures/live/manifests/${file}`;
-      const hash = await writeHash(client, core, "submit_bid", [`bid-${id.toLowerCase()}`, TENDER_ID, price, delivery, support, proposalUrl, proposalHash, commitment, "tendercouncil.bid.v1"]);
-      bidHashes.push({ id, label, address, hash, client, price, delivery, support, proposalUrl, proposalHash, commitment });
-      console.log(`bid_submitted=${id}:${hash}`);
+      const bidId = `bid-${id.toLowerCase()}`;
+      const existingBid = await readMaybe(readClient, core, "get_bid", [bidId]);
+      if (existingBid) {
+        bidHashes.push({ id, label, address, hash: KNOWN_BID_TXS[id], client, price, delivery, support, proposalUrl, proposalHash, commitment, existing: existingBid });
+        console.log(`bid_existing=${id}`);
+      } else {
+        const hash = KNOWN_BID_TXS[id];
+        if (!hash) throw new Error(`missing known immutable bid transaction for ${id}`);
+        bidHashes.push({ id, label, address, hash, client, price, delivery, support, proposalUrl, proposalHash, commitment });
+        console.log(`bid_recovery_poll=${id}:${hash}`);
+      }
     }
     for (const item of bidHashes) {
-      const tx = await waitAcceptedFinalized(item.client, item.hash);
+      const tx = item.existing ? { hash: item.hash, existing_onchain: true } : await waitAcceptedFinalized(item.client, item.hash);
+      const onchain = item.existing || await read(readClient, core, "get_bid", [`bid-${item.id.toLowerCase()}`]);
+      if (!onchain || onchain.bidder?.toLowerCase() !== item.address.toLowerCase() || String(onchain.price_wei) !== item.price.toString()) throw new Error(`bid readback mismatch: ${item.id}`);
       manifest.bids.push({ bid_id: `bid-${item.id.toLowerCase()}`, bidder: item.address, price_wei: item.price.toString(), delivery_days: item.delivery, support_days: item.support, proposal_url: item.proposalUrl, proposal_sha256: item.proposalHash, evidence_commitment: item.commitment, ...tx });
     }
     manifest.tender.after_bids = await read(readClient, core, "get_tender", [TENDER_ID]);
