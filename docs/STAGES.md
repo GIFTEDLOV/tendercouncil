@@ -15,8 +15,8 @@
 | Generated artifacts/size gate | GREEN locally | Preferred 40 KB target; conservative 42 KB fallback remains below Bradbury boundary and exact RPC estimate is required |
 | Direct tests | IMPLEMENTED locally | Existing direct suite plus real all-semantic-fail and financial simulator trials |
 | Mutation/security tests | IMPLEMENTED locally | Original suite plus split, semantic NO_VALID_BID, challenge, integrity, payout, and outflow-lock mutants |
-| Bradbury replacement pair deployment/binding | DONE | Finalized Core, Evaluator, and one-time binding are recorded in `artifacts/tender_council_bradbury_replacement_deployment.json` |
-| Bradbury funded canonical E2E | IN PROGRESS | `analytics-dashboard-2026` is funded/open; five immutable bid submissions are recorded; deadline wait is active |
+| Bradbury replacement pair deployment/binding | DONE | Corrected finalized Core, Evaluator, and one-time binding are recorded in `artifacts/tender_council_bradbury_corrected_deployment.json` |
+| Bradbury funded canonical E2E | IN PROGRESS | `analytics-dashboard-2026` is funded/open; five finalized immutable bid submissions are recorded; deadline wait is active |
 | Bradbury evaluation/settlement proof | PENDING | Close, asynchronous evaluation, challenge/review, exact payout, remainder refund, and final settlement remain to be recorded |
 | Final UI | STOPPED | UI stop gate remains closed |
 

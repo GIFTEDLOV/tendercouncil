@@ -55,9 +55,11 @@ changes):
 Failed monolith and evaluator-boundary attempts remain under `artifacts/`.
 The earlier finalized pair in `artifacts/tender_council_bradbury_deployment.json`
 is preserved as `FINALIZED_DEPLOYMENT_PROOF_SUPERSEDED_BEFORE_E2E`. The
-replacement pair is separately recorded and is the only pair approved for the
-canonical E2E. The funded tender and subsequent live evidence must be recorded
-in `artifacts/tender_council_bradbury_e2e.json` only after completion.
+corrected finalized pair is recorded in
+`artifacts/tender_council_bradbury_corrected_deployment.json` and is the only
+pair approved for the canonical E2E. The funded tender and subsequent live
+evidence must be recorded in `artifacts/tender_council_bradbury_e2e.json` only
+after completion.
 
 The canonical live demo must use the 7200-second Bradbury response-window
 configuration documented in `docs/BRADBURY_DEMO_POLICY.md`.

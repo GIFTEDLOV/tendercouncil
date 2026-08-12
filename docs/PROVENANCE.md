@@ -33,15 +33,14 @@ production Bradbury deployment attempts remain in
 started. This continuation adds exact GEN-wei escrow/payout/refund accounting,
 serialized Core outflows for multi-tender balance verification, execution-level
 all-semantic-fail `NO_VALID_BID`, exact integrity-set enforcement, and
-deterministic invalid-challenge `UPHOLD` handling. The replacement pair is
-finalized and permanently bound in the separate replacement deployment
-manifest. The funded canonical tender and five immutable bids reached a
-controlled Bradbury E2E, but the first Evaluator child exposed a snapshot-shape
-contract defect before web/LLM evaluation. That pair and the stuck tender are
-preserved in the append-only E2E failure artifact; no payout, refund, or
-settlement occurred. The corrected Evaluator binds manifest tender identity to
-the snapshot-level tender ID, and the E2E runner now discovers internal
-children from finalized `NewTransaction` events because the pinned SDK helper
-returned the parent ID on this network. New close, evaluation, challenge,
-review, payout, refund, and settlement evidence will be appended only after a
-corrected pair reaches finalized readback.
+deterministic invalid-challenge `UPHOLD` handling. The first replacement pair
+is finalized and permanently bound in its separate historical deployment
+manifest, but its funded E2E exposed a snapshot-shape contract defect before
+web/LLM evaluation. That pair and the failed tender are preserved in append-only
+failure artifacts; no payout, refund, or settlement occurred. The corrected pair
+is finalized and permanently bound in
+`artifacts/tender_council_bradbury_corrected_deployment.json`. Its funded
+canonical tender and five finalized immutable bids are the active E2E proof;
+new close, evaluation, challenge, review, payout, refund, and settlement
+evidence is appended only after each corresponding transaction reaches the
+required finalized/readback state.

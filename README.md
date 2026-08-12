@@ -33,6 +33,24 @@ read-only until deployment review.
 
 The frontend remains behind the UI stop gate.
 
+## Why GenLayer
+
+TenderCouncil keeps commercial constraints, escrow, lifecycle, challenge
+admission, and settlement in deterministic Core logic. The difficult
+procurement question is comparative: which compliant proposal best satisfies
+one published rubric? Without GenLayer that decision would depend on one model,
+one SaaS backend, or one centralized committee. Independent validators instead
+derive the bounded semantic comparison while Core remains the financial source
+of truth.
+
+Evidence is never trusted merely because validators agree about it. A bidder's
+wallet authenticates the offer, onchain commitments bind proposal and evidence
+bytes, the Evaluator verifies exact-byte SHA-256 and schemas, deterministic
+admissibility runs before semantic judgment, and only then does comparative
+evaluation occur. A result first becomes provisional, then passes a guaranteed
+response window and at most one bounded integrity-checked review before
+finalized-only payout.
+
 The production pair is in `contracts/tender_council_core.py` and
 `contracts/tender_council_evaluator.py`. The previous contracts remain
 preserved for regression and provenance.
