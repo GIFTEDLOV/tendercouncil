@@ -14,12 +14,15 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "node:path";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const VERSION = "tendercouncil.evaluator.v1";
+const VERSION = "tendercouncil.evaluator.v2";
 const NETWORK = "testnet-bradbury";
 const CHAIN_ID = 4221;
 const RPC = "https://rpc-bradbury.genlayer.com";
 const CONFIRM = "DEPLOY_TWO_CONTRACTS_TO_BRADBURY";
-const MANIFEST_PATH = path.join(ROOT, "artifacts/tender_council_bradbury_corrected_deployment.json");
+// The v2 pair gets its own manifest. writeManifest also runs from the failure
+// path, so pointing this at an existing manifest would overwrite append-only
+// historical deployment evidence on the first error.
+const MANIFEST_PATH = path.join(ROOT, "artifacts/tender_council_bradbury_v2_deployment.json");
 
 const files = {
   coreSource: path.join(ROOT, "contracts/tender_council_core.py"),
