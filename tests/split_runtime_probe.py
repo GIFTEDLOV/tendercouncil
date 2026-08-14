@@ -31,7 +31,7 @@ def new_engine(core_path: Path, fake_path: Path):
     engine.activate()
     core_address, core = engine.deploy(str(core_path), sender=BUYER)
     fake_address, fake = engine.deploy(str(fake_path), args=[core_address], sender=BUYER)
-    engine.call_method(core_address, "bind_evaluator", [type(core.bootstrapper)(fake_address), "tendercouncil.evaluator.v1", HASH], sender=BUYER)
+    engine.call_method(core_address, "bind_evaluator", [type(core.bootstrapper)(fake_address), "tendercouncil.evaluator.v2", HASH], sender=BUYER)
     return engine, core_address, fake_address
 
 
@@ -78,7 +78,7 @@ def evaluation_control(core_path: Path, fake_path: Path, control: str):
     if control == "caller":
         try:
             engine.call_method(core, "receive_evaluation_result", [
-                "probe", nonce, snapshot, "tendercouncil.evaluator.v1", "NO_VALID_BID", "", correct_digest,
+                "probe", nonce, snapshot, "tendercouncil.evaluator.v2", "NO_VALID_BID", "", correct_digest,
             ], sender=ATTACKER)
         except Exception:
             return True

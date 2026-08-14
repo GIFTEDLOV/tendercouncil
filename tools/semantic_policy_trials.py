@@ -11,11 +11,14 @@ from pathlib import Path
 
 def load_normalizer(source: Path):
     tree = ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
-    wanted = {"_canonical", "_same_ids", "_normalize_llm"}
+    wanted = {
+        "_canonical", "_same_ids", "_string_list",
+        "_try_normalize_evaluation_model",
+    }
     nodes = [node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name in wanted]
-    namespace = {"json": json, "MAX_RATIONALE": 2000}
+    namespace = {"json": json, "MAX_RATIONALE": 2000, "MAX_BIDS": 32}
     exec(compile(ast.Module(body=nodes, type_ignores=[]), str(source), "exec"), namespace)
-    return namespace["_normalize_llm"]
+    return namespace["_try_normalize_evaluation_model"]
 
 
 def result() -> dict:
@@ -76,11 +79,7 @@ def run(source: Path) -> None:
     resurrected["semantic_classifications"].append({"bid_id": "D", "mandatory_requirements_pass": True})
     resurrected["valid_bid_ids"] = ["A", "B", "D"]
     resurrected["disqualified_bid_ids"] = ["C", "E"]
-    try:
-        normalize(resurrected, ["A", "B", "C", "D", "E"], ["D", "E"], [], ["A", "B", "C", "D"], [35, 20, 20, 15, 10])
-    except Exception:
-        pass
-    else:
+    if normalize(resurrected, ["A", "B", "C", "D", "E"], ["D", "E"], [], ["A", "B", "C", "D"], [35, 20, 20, 15, 10]) is not None:
         raise SystemExit("deterministically invalid bid was resurrected")
     no_valid = normalize(all_semantic_fail_result(), ["A", "B", "C", "D", "E"], ["D", "E"], [], ["A", "B", "C"], [35, 20, 20, 15, 10])
     if no_valid["status"] != "NO_VALID_BID" or no_valid["semantic_candidate_ids"] != ["A", "B", "C"] or no_valid["valid_bid_ids"]:
@@ -99,11 +98,7 @@ def run(source: Path) -> None:
     normalize(integrity_result, ["A", "B", "C", "D", "E"], ["D", "E"], ["C"], ["A", "B"], [35, 20, 20, 15, 10])
     tampered_integrity = copy.deepcopy(integrity_result)
     tampered_integrity["integrity_disqualified_bid_ids"] = []
-    try:
-        normalize(tampered_integrity, ["A", "B", "C", "D", "E"], ["D", "E"], ["C"], ["A", "B"], [35, 20, 20, 15, 10])
-    except Exception:
-        pass
-    else:
+    if normalize(tampered_integrity, ["A", "B", "C", "D", "E"], ["D", "E"], ["C"], ["A", "B"], [35, 20, 20, 15, 10]) is not None:
         raise SystemExit("LLM changed independently computed integrity set")
     print("semantic policy trials: PASS (A/B valid, C semantic-disqualified, D/E deterministic, all-fail NO_VALID_BID)")
 

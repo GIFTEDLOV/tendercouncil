@@ -1,23 +1,27 @@
 /* Estimate-only probe for the two generated TenderCouncil deployments. */
 import fs from "node:fs/promises";
 import { pathToFileURL } from "node:url";
+import { resolveGenlayerModulePaths } from "./genlayer_module_paths.mjs";
 
-const ROOT = "C:/Users/DELL/tendercouncil";
-const GENLAYER_ROOT = "C:/Users/DELL/AppData/Roaming/npm/node_modules/genlayer";
-const GENLAYER_JS = `${GENLAYER_ROOT}/node_modules/genlayer-js`;
-const VIEM = `${GENLAYER_ROOT}/node_modules/viem/_esm/index.js`;
+const {
+  repositoryRoot: ROOT, sdkRoot: GENLAYER_JS, viem: VIEM,
+} = resolveGenlayerModulePaths();
 const RPC = process.env.BRADBURY_RPC || "https://rpc-bradbury.genlayer.com";
 const SENDER = (process.env.BRADBURY_PROBE_SENDER ||
   "0xe0f17bef0587c3b66d2eb4bbe705dff821abdde7").toLowerCase();
 const OUTPUT = process.env.BRADBURY_SPLIT_PROBE_OUTPUT ||
   "artifacts/bradbury-split-deployment-probe.json";
-const SOURCES = (process.env.BRADBURY_SPLIT_SOURCES ||
-  "artifacts/tender_council_core_deployable.py,artifacts/tender_council_evaluator_deployable.py")
-  .split(",").map((item) => item.trim()).filter(Boolean);
+const COMPONENTS = [
+  { path: "artifacts/tender_council_core_deployable.py", args: [] },
+  {
+    path: "artifacts/tender_council_evaluator_deployable.py",
+    args: [SENDER, "tendercouncil.evaluator.v2"],
+  },
+];
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const [{ testnetBradbury }, genlayer, viem] = await Promise.all([
-  import(pathToFileURL(`${GENLAYER_JS}/dist/chunk-XCQTIUTU.js`)),
-  import(pathToFileURL(`${GENLAYER_JS}/dist/index.js`)),
+  import(pathToFileURL(`${GENLAYER_JS}/chains/index.js`)),
+  import(pathToFileURL(`${GENLAYER_JS}/index.js`)),
   import(pathToFileURL(VIEM)),
 ]);
 const calldata = genlayer.abi.calldata;
@@ -42,20 +46,20 @@ function stats(hex) {
   return { bytes: bytes.length, zero_bytes: zero, nonzero_bytes: bytes.length - zero };
 }
 
-function encode(source) {
-  const constructorBytes = calldata.encode(calldata.makeCalldataObject(undefined, [], undefined));
+function encode(source, args) {
+  const constructorBytes = calldata.encode(calldata.makeCalldataObject(undefined, args, undefined));
   const appData = transactions.serialize([source, constructorBytes, false]);
-  const args = [SENDER, ZERO_ADDRESS,
+  const txArgs = [SENDER, ZERO_ADDRESS,
     BigInt(testnetBradbury.defaultNumberOfInitialValidators),
     BigInt(testnetBradbury.defaultConsensusMaxRotations), appData];
-  if (addTransaction.inputs.length >= 6) args.push(BigInt(Math.floor(Date.now() / 1000) + 3600));
-  const data = viem.encodeFunctionData({ abi: [addTransaction], functionName: "addTransaction", args });
+  if (addTransaction.inputs.length >= 6) txArgs.push(BigInt(Math.floor(Date.now() / 1000) + 3600));
+  const data = viem.encodeFunctionData({ abi: [addTransaction], functionName: "addTransaction", args: txArgs });
   return { appData, data };
 }
 
-async function probe(path) {
+async function probe({ path, args }) {
   const source = await fs.readFile(`${ROOT}/${path}`, "utf8");
-  const encoded = encode(source);
+  const encoded = encode(source, args);
   const request = { from: SENDER, to: testnetBradbury.consensusMainContract.address, data: encoded.data, value: "0x0" };
   const [chainId, blockNumber, gasPrice, block, estimate] = await Promise.all([
     rpc("eth_chainId"), rpc("eth_blockNumber"), rpc("eth_gasPrice"),
@@ -63,6 +67,7 @@ async function probe(path) {
   ]);
   return {
     path,
+    constructor_args: args,
     captured_at_utc: new Date().toISOString(),
     source_utf8_bytes: Buffer.byteLength(source, "utf8"),
     app_data: stats(encoded.appData),
@@ -76,10 +81,10 @@ async function probe(path) {
 }
 
 const results = [];
-for (const path of SOURCES) {
-  results.push(await probe(path));
+for (const component of COMPONENTS) {
+  results.push(await probe(component));
   const latest = results.at(-1);
-  console.log(JSON.stringify({ path, source_bytes: latest.source_utf8_bytes, outer_bytes: latest.outer_deployment_data.bytes, estimate: latest.estimate }));
+  console.log(JSON.stringify({ path: component.path, source_bytes: latest.source_utf8_bytes, outer_bytes: latest.outer_deployment_data.bytes, estimate: latest.estimate }));
 }
 const output = {
   probe_type: "TenderCouncil two-contract Bradbury deployment estimate; no signing or broadcast",
@@ -88,7 +93,7 @@ const output = {
   genlayer_cli_version: "0.39.1",
   genlayer_js_version: "1.1.8",
   chain: { name: testnetBradbury.name, chain_id: testnetBradbury.id, consensus_main: testnetBradbury.consensusMainContract.address, add_transaction_input_count: addTransaction.inputs.length },
-  encoding: { source_encoding: "UTF-8", transaction: "transactions.serialize([source, constructorBytes, false])", outer_call: "ConsensusMain.addTransaction(sender, zeroAddress, 5, 3, appData, validUntil)" },
+  encoding: { source_encoding: "UTF-8", transaction: "transactions.serialize([source, constructorBytes, false])", constructor: "Core []; Evaluator [nonzero placeholder Core address, tendercouncil.evaluator.v2]", outer_call: "ConsensusMain.addTransaction(sender, zeroAddress, 5, 3, appData, validUntil)" },
   measured_boundary: { largest_known_success_outer_bytes: 53316, smallest_known_failure_outer_bytes: 53348 },
   results,
 };

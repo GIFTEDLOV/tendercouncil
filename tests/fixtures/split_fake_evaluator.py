@@ -16,6 +16,12 @@ class CoreInterface:
                                   snapshot_digest, original_result_digest,
                                   challenge_set_digest, decision, winner_bid_id,
                                   result_digest): ...
+        def receive_evaluation_failure(self, tender_id, nonce, snapshot_digest,
+                                       failure_code, failure_digest): ...
+        def receive_review_failure(self, tender_id, evaluation_nonce, review_nonce,
+                                   snapshot_digest, original_result_digest,
+                                   challenge_set_digest, failure_code,
+                                   failure_digest): ...
 
 
 class SplitFakeEvaluator(gl.Contract):
@@ -59,8 +65,19 @@ class SplitFakeEvaluator(gl.Contract):
     def emit_evaluation(self, tender_id, nonce, snapshot_digest, result_digest):
         result = json.loads(self.evaluation_result)
         CoreInterface(self.core_address).emit(on="finalized").receive_evaluation_result(
-            tender_id, nonce, snapshot_digest, "tendercouncil.evaluator.v1",
+            tender_id, nonce, snapshot_digest, "tendercouncil.evaluator.v2",
             result["status"], result.get("winner_bid_id", ""), result_digest,
+        )
+
+    @gl.public.write
+    def emit_evaluation_failure(self, tender_id, nonce, snapshot_digest, failure_code):
+        self.evaluation_result = json.dumps(
+            {"state": failure_code, "result": {}},
+            sort_keys=True, separators=(",", ":"),
+        )
+        CoreInterface(self.core_address).emit(on="finalized").receive_evaluation_failure(
+            tender_id, nonce, snapshot_digest, failure_code,
+            self._digest(self.evaluation_result),
         )
 
     @gl.public.write
@@ -80,4 +97,18 @@ class SplitFakeEvaluator(gl.Contract):
             tender_id, evaluation_nonce, review_nonce, snapshot_digest,
             original_result_digest, challenge_set_digest, "UPHOLD", "bid",
             result_digest,
+        )
+
+    @gl.public.write
+    def emit_review_failure(self, tender_id, evaluation_nonce, review_nonce,
+                            snapshot_digest, original_result_digest,
+                            challenge_set_digest, failure_code):
+        self.review_result = json.dumps(
+            {"state": failure_code, "result": {}},
+            sort_keys=True, separators=(",", ":"),
+        )
+        CoreInterface(self.core_address).emit(on="finalized").receive_review_failure(
+            tender_id, evaluation_nonce, review_nonce, snapshot_digest,
+            original_result_digest, challenge_set_digest, failure_code,
+            self._digest(self.review_result),
         )

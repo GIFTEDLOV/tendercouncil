@@ -12,22 +12,23 @@
 | Evidence integrity/schema | IMPLEMENTED locally | Evaluator exact-byte hash and bounded manifest/evidence validation |
 | Response/challenge/review | IMPLEMENTED locally | One bounded review round and external challenge hash boundary |
 | Finalized settlement/refunds | IMPLEMENTED locally | Winner-price wei payout, remainder refund, serialized outflow lock, pending confirmation, balance delta |
-| Generated artifacts/size gate | GREEN locally | Preferred 40 KB target; conservative 42 KB fallback remains below Bradbury boundary and exact RPC estimate is required |
+| Generated v2 artifacts/size gate | GREEN locally | Exact encoded Core 40,292 bytes and Evaluator 32,292 bytes; both below the 42 KB fail-closed boundary |
 | Direct tests | IMPLEMENTED locally | Existing direct suite plus real all-semantic-fail and financial simulator trials |
 | Mutation/security tests | IMPLEMENTED locally | Original suite plus split, semantic NO_VALID_BID, challenge, integrity, payout, and outflow-lock mutants |
-| Bradbury replacement pair deployment/binding | DONE | Corrected finalized Core, Evaluator, and one-time binding are recorded in `artifacts/tender_council_bradbury_corrected_deployment.json` |
-| Bradbury funded canonical E2E | IN PROGRESS | `analytics-dashboard-2026` is funded/open; five finalized immutable bid submissions are recorded; deadline wait is active |
-| Bradbury evaluation/settlement proof | PENDING | Close, asynchronous evaluation, challenge/review, exact payout, remainder refund, and final settlement remain to be recorded |
+| Five-validator GenVM simulation | GREEN locally | Generated Core + Evaluator finalize 5/5 AGREE through evaluation/callback, `NO_VALID_BID`, malformed evaluation/retry, review/callback, malformed review/retry, and stale/duplicate rejection; pinned calldata agrees at every captured boundary |
+| Bradbury exact estimate gate | GREEN / NO BROADCAST | Core `0x1ea6b25`, Evaluator `0x18b01b8`; both RPC estimates returned HTTP 200 without signing |
+| Historical v1 pair/funded tenders | PRESERVED / BLOCKED | Existing Core/Evaluator and tenders are immutable evidence and must not receive new transactions |
+| Bradbury v2 deployment/binding | NOT STARTED | No v2 Core or Evaluator has been deployed |
+| Bradbury v2 canonical E2E | NOT ALLOWED | No v2 tender exists; pre-broadcast and multi-validator gates remain closed |
 | Final UI | STOPPED | UI stop gate remains closed |
 
 ## Locked next gates
 
-1. Wait for the immutable live bidding deadline and close the funded tender.
-2. Record the finalized Core → Evaluator → Core evaluation graph and canonical
-   classifications.
-3. Prove the 7200-second response window, authenticated challenge, bounded
-   review, exact winner-price payout, and exact buyer remainder refund.
-4. Run the final local/CI/security/provenance release gate.
+1. Review the exact v2 sources, artifacts, hashes, proof artifacts, and CI.
+2. Commit the reviewed tree so the clean-worktree release preflight can bind an
+   immutable HEAD to the generated artifacts.
+3. Explicitly open the v2 deployment gate; deploy and bind a new pair only.
+4. Reconcile the durable journal before every later E2E write.
 
 The UI cannot begin until the complete backend/security/Bradbury stop gate is
 explicitly opened.

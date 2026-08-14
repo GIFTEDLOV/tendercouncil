@@ -1,0 +1,393 @@
+{
+  "release": {
+    "network": "testnet-bradbury",
+    "chain_id": 4221,
+    "rpc": "https://rpc-bradbury.genlayer.com",
+    "deployment_wallet": "0xe0f17BEf0587c3b66d2eb4bbe705dff821abdde7",
+    "bidder_addresses": {
+      "bidder_a": "0xC8732D516AD35CB7A137548878358856dBD9D8f2",
+      "bidder_b": "0x4cB46003f11755feCfFCfe119824C420d3dc059B",
+      "bidder_c": "0xC0c60A43fb1A893B12CB188Ff822ee93878760fe",
+      "bidder_d": "0x452F17798c5717302Ffb723Fd53bDe63D4CBE1Cb",
+      "bidder_e": "0xa8a4Ee51a295c0f880487ECA14ed89f4637a21b5"
+    },
+    "git_commit": "729ae1791778ef7ad82fd67b32322ee83db21a48",
+    "canonical_core_source_sha256": "06a903f0381fb8017a76381c298e61cce39a0db0a5adee969a403cd1f1b105f7",
+    "deployable_core_artifact_sha256": "1fffc2e4e3c8309858ca1ad45f6bd76cc2003c238175da77b71757e44c99dc55",
+    "canonical_evaluator_source_sha256": "2a8d866b142199dcfb828dd18d3e54ff108a197217d130558ea8fa316e098e71",
+    "deployable_evaluator_artifact_sha256": "3ceda15c629867f7c3aad42ed10961b73fda2306c8026a1279d234cd25e531f6"
+  },
+  "fixtures": {
+    "blob_commit": "bfddc6c4c2fcd16431af6da797213c0f42ade4fb",
+    "manifest_commit": "c294f3f63f920eed8f662c59843f1e35338fc68d",
+    "challenge_commit": "c294f3f63f920eed8f662c59843f1e35338fc68d",
+    "brief_url": "https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/fdb255d11f67f7ca449f3a2e7b6c204c03abfeb7/fixtures/live/blobs/brief.json",
+    "brief_sha256": "sha256:44bb3d24956a4ea2d9a8828afc7f6cde822c7f0c06708aea3fa9f7d365a33f8e",
+    "challenge_url": "https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/c294f3f63f920eed8f662c59843f1e35338fc68d/fixtures/live/recovery/challenge_a.json",
+    "challenge_sha256": "sha256:9ff88485d37235f5a0455c67b99259edad40529b98e78ae99fdff9f436a8d384"
+  },
+  "failures": [
+    {
+      "at_utc": "2026-08-13T15:00:54.113Z",
+      "error": "UnknownRpcError: An unknown RPC error occurred.\n\nDetails: fetch failed\nVersion: viem@2.51.0\n    at withRetry.delay.count.count (file:///C:/Users/DELL/AppData/Roaming/npm/node_modules/genlayer/node_modules/viem/_esm/utils/buildRequest.js:127:31)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async attemptRetry (file:///C:/Users/DELL/AppData/Roaming/npm/node_modules/genlayer/node_modules/viem/_esm/utils/promise/withRetry.js:24:30)"
+    }
+  ],
+  "transactions": {
+    "start_evaluation": {
+      "hash": "0xaed3688e3f14d76469083651812e2039dce6bdf0cddad1da5ee3c0b31c114d19",
+      "status": "FINALIZED",
+      "consensus": "AGREE",
+      "validator_votes": [
+        "AGREE",
+        "AGREE",
+        "AGREE",
+        "AGREE",
+        "AGREE"
+      ]
+    },
+    "evaluator_job": {
+      "hash": "0xa08713f91af74fe576ece76df737063070f8793479c8b63ca864a2989507a242",
+      "recipient": "0xEF30f069A8Be376D40F18758b9bfDa54D7c04Ec7",
+      "status": "UNDETERMINED",
+      "status_code": 6,
+      "consensus_result": "DISAGREE",
+      "execution": "FINISHED_WITH_ERROR",
+      "created_timestamp": "1786518078",
+      "last_vote_timestamp": "1786518090",
+      "validator_votes": [
+        "DETERMINISTIC_VIOLATION",
+        "DETERMINISTIC_VIOLATION",
+        "DETERMINISTIC_VIOLATION",
+        "DETERMINISTIC_VIOLATION",
+        "DETERMINISTIC_VIOLATION"
+      ],
+      "initial_rotations": 0,
+      "rotations": 0
+    }
+  },
+  "core": {
+    "address": "0x8d776cE2c5Ed60e5e9E229669eaf91DE7f3Ae257",
+    "deployment_tx": "0x9a6ee8477b17e7d8809f7db85d5e187190b313631360b8bae2586c101bfad982",
+    "evm_deployment_tx": "0x2f7bbd7a0e545a3d0736c6d3202bbaa8b703ea4552f7f8a855258f3cd4bb17fb",
+    "artifact_bytes": 40527,
+    "outer_bytes": 40772,
+    "estimate": "0x1ef9a30",
+    "status": "FINALIZED",
+    "result": "AGREE",
+    "execution": "FINISHED_WITH_RETURN",
+    "validator_votes": [
+      "AGREE",
+      "AGREE",
+      "AGREE",
+      "AGREE",
+      "AGREE"
+    ],
+    "created_timestamp": "1786522993",
+    "finalized_observed_at_utc": "2026-08-12T09:00:16.797Z",
+    "initial_readback": {
+      "get_production_ready": false,
+      "evaluator_bound": false,
+      "balance_wei": "0"
+    }
+  },
+  "evaluator": {
+    "address": "0xcb4c472a9bB15103b885eC361701152Ec03b2681",
+    "deployment_tx": "0xfd1e5f13118657daa79b0ee08152010c71a97d64cb275da0098126f9611ecd77",
+    "evm_deployment_tx": "0xe91c2e22de51b820c2effe26b2f39c2ecf59842da18c95eea55398da05577606",
+    "constructor_core": "0x8d776cE2c5Ed60e5e9E229669eaf91DE7f3Ae257",
+    "version": "tendercouncil.evaluator.v1",
+    "artifact_bytes": 30604,
+    "outer_bytes": 30852,
+    "estimate": "0x17b5657",
+    "status": "FINALIZED",
+    "result": "AGREE",
+    "execution": "FINISHED_WITH_RETURN",
+    "validator_votes": [
+      "AGREE",
+      "AGREE",
+      "AGREE",
+      "AGREE",
+      "AGREE"
+    ],
+    "created_timestamp": "1786525218",
+    "finalized_observed_at_utc": "2026-08-12T09:30:36.157Z",
+    "constructor_readback": {
+      "core_address": "0x8d776cE2c5Ed60e5e9E229669eaf91DE7f3Ae257",
+      "version": "tendercouncil.evaluator.v1"
+    }
+  },
+  "binding": {
+    "tx": "0x413da290184b901291235dcdb849ae42eedd783ab9aba52fecd5b20e315657bd",
+    "evm_tx": "0x3721d472602072b00037242d3f51cc0fc67ec740995aed4cfb1e93fd175d5b3e",
+    "evaluator_address": "0xcb4c472a9bB15103b885eC361701152Ec03b2681",
+    "version": "tendercouncil.evaluator.v1",
+    "evaluator_code_hash": "sha256:3ceda15c629867f7c3aad42ed10961b73fda2306c8026a1279d234cd25e531f6",
+    "status": "FINALIZED",
+    "consensus": "AGREE",
+    "execution": "FINISHED_WITH_RETURN",
+    "validator_votes": [
+      "AGREE",
+      "AGREE",
+      "AGREE",
+      "AGREE",
+      "AGREE"
+    ],
+    "created_timestamp": "1786527094",
+    "finalized_observed_at_utc": "2026-08-12T10:03:55.187Z"
+  },
+  "recovery": {
+    "prior_failure_artifact": "artifacts/tender_council_bradbury_e2e_failure_2026-08-12T070125233Z.json",
+    "prior_failures": [],
+    "prior_transactions": {
+      "start_evaluation": {
+        "hash": "0xaed3688e3f14d76469083651812e2039dce6bdf0cddad1da5ee3c0b31c114d19",
+        "status": "FINALIZED",
+        "consensus": "AGREE",
+        "validator_votes": [
+          "AGREE",
+          "AGREE",
+          "AGREE",
+          "AGREE",
+          "AGREE"
+        ]
+      },
+      "evaluator_job": {
+        "hash": "0xa08713f91af74fe576ece76df737063070f8793479c8b63ca864a2989507a242",
+        "recipient": "0xEF30f069A8Be376D40F18758b9bfDa54D7c04Ec7",
+        "status": "UNDETERMINED",
+        "status_code": 6,
+        "consensus_result": "DISAGREE",
+        "execution": "FINISHED_WITH_ERROR",
+        "created_timestamp": "1786518078",
+        "last_vote_timestamp": "1786518090",
+        "validator_votes": [
+          "DETERMINISTIC_VIOLATION",
+          "DETERMINISTIC_VIOLATION",
+          "DETERMINISTIC_VIOLATION",
+          "DETERMINISTIC_VIOLATION",
+          "DETERMINISTIC_VIOLATION"
+        ],
+        "initial_rotations": 0,
+        "rotations": 0
+      }
+    }
+  },
+  "live_binding": {
+    "production_ready": true,
+    "binding": {
+      "address": "0xcb4c472a9bB15103b885eC361701152Ec03b2681",
+      "bound": true,
+      "evaluator_code_hash": "sha256:3ceda15c629867f7c3aad42ed10961b73fda2306c8026a1279d234cd25e531f6",
+      "version": "tendercouncil.evaluator.v1"
+    },
+    "evaluator_core": "0x8d776ce2c5ed60e5e9e229669eaf91de7f3ae257",
+    "evaluator_version": "tendercouncil.evaluator.v1",
+    "core_balance": "160000000000000000"
+  },
+  "funding": [
+    {
+      "bidder": "0xC8732D516AD35CB7A137548878358856dBD9D8f2",
+      "amount_wei": "20000000000000000",
+      "existing_balance_wei": "39589115054456200",
+      "skipped_existing_funding": true,
+      "note": "preserved from an earlier interrupted funding phase"
+    },
+    {
+      "bidder": "0x4cB46003f11755feCfFCfe119824C420d3dc059B",
+      "amount_wei": "20000000000000000",
+      "existing_balance_wei": "39598551308492500",
+      "skipped_existing_funding": true,
+      "note": "preserved from an earlier interrupted funding phase"
+    },
+    {
+      "bidder": "0xC0c60A43fb1A893B12CB188Ff822ee93878760fe",
+      "amount_wei": "20000000000000000",
+      "existing_balance_wei": "39598551308492500",
+      "skipped_existing_funding": true,
+      "note": "preserved from an earlier interrupted funding phase"
+    },
+    {
+      "bidder": "0x452F17798c5717302Ffb723Fd53bDe63D4CBE1Cb",
+      "amount_wei": "20000000000000000",
+      "existing_balance_wei": "39598551308492500",
+      "skipped_existing_funding": true,
+      "note": "preserved from an earlier interrupted funding phase"
+    },
+    {
+      "bidder": "0xa8a4Ee51a295c0f880487ECA14ed89f4637a21b5",
+      "amount_wei": "20000000000000000",
+      "existing_balance_wei": "39598551308492500",
+      "skipped_existing_funding": true,
+      "note": "preserved from an earlier interrupted funding phase"
+    }
+  ],
+  "tender": {
+    "tender_id": "analytics-dashboard-2026-recovery",
+    "budget_gen": "0.08",
+    "budget_wei": "80000000000000000",
+    "max_delivery_days": 30,
+    "min_support_days": 90,
+    "bidding_deadline": 1786640196,
+    "response_window_seconds": 7200,
+    "rubric": {
+      "technical": 35,
+      "delivery": 20,
+      "price": 20,
+      "capability": 15,
+      "support": 10
+    },
+    "existing_tender_resumed": true,
+    "open_readback": {
+      "bidding_deadline": 1786640196,
+      "brief_sha256": "sha256:44bb3d24956a4ea2d9a8828afc7f6cde822c7f0c06708aea3fa9f7d365a33f8e",
+      "brief_url": "https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/fdb255d11f67f7ca449f3a2e7b6c204c03abfeb7/fixtures/live/blobs/brief.json",
+      "buyer": "0xe0f17bef0587c3b66d2eb4bbe705dff821abdde7",
+      "buyer_refund_amount": 0,
+      "challenge_set_digest": "",
+      "closed_snapshot_digest": "",
+      "escrow_deposited": "80000000000000000",
+      "evaluation_nonce": 0,
+      "evaluation_result_digest": "",
+      "evidence_policy": "capability:required;delivery:optional;support:optional;technical:optional",
+      "final_winner": "",
+      "max_budget_wei": "80000000000000000",
+      "max_delivery_days": 30,
+      "min_support_days": 90,
+      "payout_confirmed": false,
+      "payout_pending": false,
+      "provisional_winner": "",
+      "refund_confirmed": false,
+      "refund_kind": "",
+      "refund_pending": false,
+      "requirements": "authentication;CSV export;responsive/mobile support;dashboard/chart functionality",
+      "response_window_end": 0,
+      "response_window_seconds": 7200,
+      "response_window_start": 0,
+      "review_nonce": 0,
+      "rubric": "technical=35;delivery=20;price=20;capability=15;support=10",
+      "settlement_state": "ESCROWED",
+      "status": "OPEN",
+      "tender_id": "analytics-dashboard-2026-recovery",
+      "title": "Analytics Dashboard Development",
+      "winner_payout_amount": 0
+    },
+    "after_bids": {
+      "bidding_deadline": 1786640196,
+      "brief_sha256": "sha256:44bb3d24956a4ea2d9a8828afc7f6cde822c7f0c06708aea3fa9f7d365a33f8e",
+      "brief_url": "https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/fdb255d11f67f7ca449f3a2e7b6c204c03abfeb7/fixtures/live/blobs/brief.json",
+      "buyer": "0xe0f17bef0587c3b66d2eb4bbe705dff821abdde7",
+      "buyer_refund_amount": 0,
+      "challenge_set_digest": "",
+      "closed_snapshot_digest": "",
+      "escrow_deposited": "80000000000000000",
+      "evaluation_nonce": 0,
+      "evaluation_result_digest": "",
+      "evidence_policy": "capability:required;delivery:optional;support:optional;technical:optional",
+      "final_winner": "",
+      "max_budget_wei": "80000000000000000",
+      "max_delivery_days": 30,
+      "min_support_days": 90,
+      "payout_confirmed": false,
+      "payout_pending": false,
+      "provisional_winner": "",
+      "refund_confirmed": false,
+      "refund_kind": "",
+      "refund_pending": false,
+      "requirements": "authentication;CSV export;responsive/mobile support;dashboard/chart functionality",
+      "response_window_end": 0,
+      "response_window_seconds": 7200,
+      "response_window_start": 0,
+      "review_nonce": 0,
+      "rubric": "technical=35;delivery=20;price=20;capability=15;support=10",
+      "settlement_state": "ESCROWED",
+      "status": "OPEN",
+      "tender_id": "analytics-dashboard-2026-recovery",
+      "title": "Analytics Dashboard Development",
+      "winner_payout_amount": 0
+    }
+  },
+  "bids": [
+    {
+      "bid_id": "bid-a",
+      "bidder": "0xC8732D516AD35CB7A137548878358856dBD9D8f2",
+      "price_wei": "62000000000000000",
+      "delivery_days": 26,
+      "support_days": 90,
+      "proposal_url": "https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/c294f3f63f920eed8f662c59843f1e35338fc68d/fixtures/live/recovery/manifests/bid_a.json",
+      "proposal_sha256": "sha256:9ff8d118c5584ca9d44b76285530f99eca9e74a8a19958b7609e74ef5565acd5",
+      "evidence_commitment": "a-capability|CAPABILITY|capability|1|https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/bfddc6c4c2fcd16431af6da797213c0f42ade4fb/fixtures/live/blobs/a_capability.json|sha256:83366c33c2cf2257f0a920f6cc6a51c61dfdf7cae7256cda922f759aa36cd8de",
+      "hash": null,
+      "existing_onchain": true
+    },
+    {
+      "bid_id": "bid-b",
+      "bidder": "0x4cB46003f11755feCfFCfe119824C420d3dc059B",
+      "price_wei": "74000000000000000",
+      "delivery_days": 27,
+      "support_days": 120,
+      "proposal_url": "https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/c294f3f63f920eed8f662c59843f1e35338fc68d/fixtures/live/recovery/manifests/bid_b.json",
+      "proposal_sha256": "sha256:8a0a97e0eee8ed44bc054cef118a6221e61a73c89ef1cfa51ff77ef736eebc6e",
+      "evidence_commitment": "b-capability|CAPABILITY|capability|1|https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/bfddc6c4c2fcd16431af6da797213c0f42ade4fb/fixtures/live/blobs/b_capability.json|sha256:50ccede1e2904873ce72abcfb8c6b7c277ae5b782dd45d38ed48e86a25a56ce5",
+      "hash": null,
+      "existing_onchain": true
+    },
+    {
+      "bid_id": "bid-c",
+      "bidder": "0xC0c60A43fb1A893B12CB188Ff822ee93878760fe",
+      "price_wei": "43000000000000000",
+      "delivery_days": 20,
+      "support_days": 90,
+      "proposal_url": "https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/c294f3f63f920eed8f662c59843f1e35338fc68d/fixtures/live/recovery/manifests/bid_c.json",
+      "proposal_sha256": "sha256:3a9cb339098de7211705e30af1ab33f25a325cfec296085d8e760ae4a91565c5",
+      "evidence_commitment": "c-capability|CAPABILITY|capability|1|https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/bfddc6c4c2fcd16431af6da797213c0f42ade4fb/fixtures/live/blobs/c_capability.json|sha256:32d6ff0845c8f719aa183b89fe7e7bfa88787230151b61b26e43ae12bd9ba8f4",
+      "hash": null,
+      "existing_onchain": true
+    },
+    {
+      "bid_id": "bid-d",
+      "bidder": "0x452F17798c5717302Ffb723Fd53bDe63D4CBE1Cb",
+      "price_wei": "87000000000000000",
+      "delivery_days": 22,
+      "support_days": 120,
+      "proposal_url": "https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/c294f3f63f920eed8f662c59843f1e35338fc68d/fixtures/live/recovery/manifests/bid_d.json",
+      "proposal_sha256": "sha256:c392d16b8387a27c489142ecb503b04ef908b91e10d5e6a5186b92d07731eccb",
+      "evidence_commitment": "d-capability|CAPABILITY|capability|1|https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/bfddc6c4c2fcd16431af6da797213c0f42ade4fb/fixtures/live/blobs/b_capability.json|sha256:50ccede1e2904873ce72abcfb8c6b7c277ae5b782dd45d38ed48e86a25a56ce5",
+      "hash": null,
+      "existing_onchain": true
+    },
+    {
+      "bid_id": "bid-e",
+      "bidder": "0xa8a4Ee51a295c0f880487ECA14ed89f4637a21b5",
+      "price_wei": "69000000000000000",
+      "delivery_days": 45,
+      "support_days": 120,
+      "proposal_url": "https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/c294f3f63f920eed8f662c59843f1e35338fc68d/fixtures/live/recovery/manifests/bid_e.json",
+      "proposal_sha256": "sha256:5ba06345c76336512bed4f10221f9533a88943db15dcfcc095715de7af490baf",
+      "evidence_commitment": "e-capability|CAPABILITY|capability|1|https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/bfddc6c4c2fcd16431af6da797213c0f42ade4fb/fixtures/live/blobs/a_capability.json|sha256:83366c33c2cf2257f0a920f6cc6a51c61dfdf7cae7256cda922f759aa36cd8de",
+      "hash": null,
+      "existing_onchain": true
+    }
+  ],
+  "source": {
+    "coreSource": {
+      "path": "contracts/tender_council_core.py",
+      "bytes": 44782,
+      "sha256": "06a903f0381fb8017a76381c298e61cce39a0db0a5adee969a403cd1f1b105f7"
+    },
+    "coreArtifact": {
+      "path": "artifacts/tender_council_core_deployable.py",
+      "bytes": 40527,
+      "sha256": "1fffc2e4e3c8309858ca1ad45f6bd76cc2003c238175da77b71757e44c99dc55"
+    },
+    "evaluatorSource": {
+      "path": "contracts/tender_council_evaluator.py",
+      "bytes": 34788,
+      "sha256": "2a8d866b142199dcfb828dd18d3e54ff108a197217d130558ea8fa316e098e71"
+    },
+    "evaluatorArtifact": {
+      "path": "artifacts/tender_council_evaluator_deployable.py",
+      "bytes": 30604,
+      "sha256": "3ceda15c629867f7c3aad42ed10961b73fda2306c8026a1279d234cd25e531f6"
+    }
+  }
+}

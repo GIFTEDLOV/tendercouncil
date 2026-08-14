@@ -120,8 +120,8 @@ PYTHON_PROBE_MUTATIONS = (
     ),
     (
         "integrity-set-exactness-weakened",
-        '    if not _same_ids(value["integrity_disqualified_bid_ids"], integrity_ids):',
-        '    if not set(value["integrity_disqualified_bid_ids"]).issubset(set(integrity_ids)):',
+        "    if not _same_ids(model_integrity, integrity_ids):",
+        "    if not set(model_integrity).issubset(set(integrity_ids)):",
         "tools/semantic_policy_trials.py",
     ),
     (
@@ -206,9 +206,9 @@ def run_direct_mutant(name, needle, replacement, selector, component):
             _copy_fixture(mutant_root, relative)
         path = mutant_root / ("contracts/tender_council_evaluator.py" if component == "evaluator" else "contracts/tender_council_core.py")
         source = path.read_text(encoding="utf-8")
-        if source.count(needle) != 1:
-            raise RuntimeError(f"{name}: mutation target count is {source.count(needle)}")
-        path.write_text(source.replace(needle, replacement), encoding="utf-8")
+        if source.count(needle) < 1:
+            raise RuntimeError(f"{name}: mutation target is missing")
+        path.write_text(source.replace(needle, replacement, 1), encoding="utf-8")
         result = _run([sys.executable, "-m", "pytest", "-q", "tests/direct/test_split_contracts.py", "-k", selector], mutant_root)
         if result.returncode == 0:
             raise RuntimeError(f"{name}: mutant survived\n{result.stdout}\n{result.stderr}")
@@ -228,9 +228,9 @@ def run_runtime_mutant(name, needle, replacement, control, component):
             _copy_fixture(mutant_root, relative)
         path = mutant_root / ("contracts/tender_council_evaluator.py" if component == "evaluator" else "contracts/tender_council_core.py")
         source = path.read_text(encoding="utf-8")
-        if source.count(needle) != 1:
-            raise RuntimeError(f"{name}: mutation target count is {source.count(needle)}")
-        path.write_text(source.replace(needle, replacement), encoding="utf-8")
+        if source.count(needle) < 1:
+            raise RuntimeError(f"{name}: mutation target is missing")
+        path.write_text(source.replace(needle, replacement, 1), encoding="utf-8")
         result = _run([
             sys.executable, "tests/split_runtime_probe.py", "--core",
             "contracts/tender_council_core.py", "--fake",

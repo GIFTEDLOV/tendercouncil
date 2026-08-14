@@ -10,7 +10,15 @@ class EvaluatorCoreFixture(gl.Contract):
 
     @gl.public.view
     def get_evaluation_context(self, tender_id: str) -> str:
-        return json.dumps({"evaluation_nonce": 1, "snapshot_digest": self.snapshot_digest, "status": "EVALUATING"}, separators=(",", ":"))
+        return json.dumps({
+            "evaluation_nonce": 1,
+            "snapshot_digest": self.snapshot_digest,
+            "status": "EVALUATING",
+            "evaluation_attempt_status": "REQUESTED",
+            "evaluation_evaluator": str(gl.message.sender_address),
+            "evaluation_requested_at": 1,
+            "evaluation_timeout_at": 21601,
+        }, separators=(",", ":"))
 
     @gl.public.view
     def get_closed_snapshot(self, tender_id: str) -> str:
@@ -18,12 +26,32 @@ class EvaluatorCoreFixture(gl.Contract):
 
     @gl.public.view
     def get_review_context(self, tender_id: str, review_nonce: u64) -> str:
-        return json.dumps({"evaluation_nonce": 1, "snapshot_digest": self.snapshot_digest, "original_result_digest": "", "challenge_set_digest": "", "challenges": []}, separators=(",", ":"))
+        return json.dumps({
+            "status": "REVIEWING_CHALLENGES",
+            "evaluation_nonce": 1,
+            "review_nonce": int(review_nonce),
+            "snapshot_digest": self.snapshot_digest,
+            "original_result_digest": "",
+            "challenge_set_digest": "",
+            "review_attempt_status": "REQUESTED",
+            "review_evaluator": str(gl.message.sender_address),
+            "review_requested_at": 1,
+            "review_timeout_at": 21601,
+            "challenges": [],
+        }, separators=(",", ":"))
 
     @gl.public.write
     def receive_evaluation_result(self, tender_id: str, nonce: u64, snapshot_digest: str, evaluator_schema_version: str, result_type: str, winner_bid_id: str, result_digest: str):
         self.callback_status = result_type
 
     @gl.public.write
+    def receive_evaluation_failure(self, tender_id: str, nonce: u64, snapshot_digest: str, failure_code: str, failure_digest: str):
+        self.callback_status = failure_code
+
+    @gl.public.write
     def receive_review_result(self, tender_id: str, evaluation_nonce: u64, review_nonce: u64, snapshot_digest: str, original_result_digest: str, challenge_set_digest: str, decision: str, winner_bid_id: str, result_digest: str):
         self.callback_status = decision
+
+    @gl.public.write
+    def receive_review_failure(self, tender_id: str, evaluation_nonce: u64, review_nonce: u64, snapshot_digest: str, original_result_digest: str, challenge_set_digest: str, failure_code: str, failure_digest: str):
+        self.callback_status = failure_code

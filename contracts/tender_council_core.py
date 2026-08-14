@@ -18,9 +18,12 @@ STATUS_DRAFT = "DRAFT"
 STATUS_OPEN = "OPEN"
 STATUS_CLOSED = "CLOSED"
 STATUS_EVALUATING = "EVALUATING"
+STATUS_EVALUATION_RETRYABLE = "EVALUATION_RETRYABLE"
+STATUS_EVALUATION_FAILED = "EVALUATION_FAILED"
 STATUS_PROVISIONAL_AWARD = "PROVISIONAL_AWARD"
 STATUS_RESPONSE_WINDOW = "RESPONSE_WINDOW"
 STATUS_REVIEWING_CHALLENGES = "REVIEWING_CHALLENGES"
+STATUS_REVIEW_RETRYABLE = "REVIEW_RETRYABLE"
 STATUS_AWARDED = "AWARDED"
 STATUS_SETTLEMENT_PENDING = "SETTLEMENT_PENDING"
 STATUS_SETTLED = "SETTLED"
@@ -47,10 +50,14 @@ ALLOWED_CHALLENGES = (
     CHALLENGE_INTEGRITY,
 )
 
-CORE_SCHEMA_VERSION = "tendercouncil.core.v1"
-EVALUATOR_SCHEMA_VERSION = "tendercouncil.evaluator.v1"
+CORE_SCHEMA_VERSION = "tendercouncil.core.v2"
+EVALUATOR_SCHEMA_VERSION = "tendercouncil.evaluator.v2"
 SNAPSHOT_SCHEMA_VERSION = "tendercouncil.snapshot.v1"
 MIN_RESPONSE_WINDOW_SECONDS = 600
+EVALUATION_ATTEMPT_TIMEOUT_SECONDS = 21600
+MAX_EVALUATION_ATTEMPTS = 3
+REVIEW_ATTEMPT_TIMEOUT_SECONDS = 21600
+MAX_REVIEW_ATTEMPTS = 3
 MAX_ID = 96
 MAX_TITLE = 200
 MAX_URL = 512
@@ -140,12 +147,14 @@ class CoreTender:
     escrow_deposited: u256
     closed_snapshot_digest: str
     evaluation_nonce: u64
+    evaluation_timeout_at: u64
     evaluation_result_digest: str
     provisional_winner: str
     final_winner: str
     response_window_start: u64
     response_window_end: u64
     review_nonce: u64
+    review_timeout_at: u64
     challenge_set_digest: str
     settlement_state: str
     winner_payout_amount: u256
@@ -287,11 +296,75 @@ class TenderCouncilCore(gl.Contract):
         self.financial_outflow_amount = u256(0)
         self.financial_outflow_balance_before = u256(0)
 
+    def _begin_failed_process_refund(self, tender: CoreTender, kind: str):
+        self._require_no_financial_outflow()
+        if tender.settlement_state != SETTLEMENT_UNSETTLED:
+            raise gl.vm.UserError("failed process escrow is not refundable")
+        tender.winner_payout_amount = u256(0)
+        tender.buyer_refund_amount = tender.escrow_deposited
+        if tender.buyer_refund_amount != tender.escrow_deposited:
+            raise gl.vm.UserError("failed process refund invariant failed")
+        tender.refund_pending = True
+        tender.refund_kind = kind
+        self._begin_financial_outflow(
+            tender.tender_id, kind, tender.buyer_refund_amount
+        )
+        Recipient(tender.buyer).emit_transfer(
+            value=tender.buyer_refund_amount, on="finalized"
+        )
+        tender.status = STATUS_REFUND_PENDING
+        tender.settlement_state = SETTLEMENT_REFUND_PENDING
+        self.tenders[tender.tender_id] = tender
+
     def _tender(self, tender_id: str) -> CoreTender:
         tender = self.tenders.get(tender_id)
         if tender is None:
             raise gl.vm.UserError("tender does not exist")
         return tender
+
+    def _request_evaluation(self, tender: CoreTender):
+        if int(tender.evaluation_nonce) >= MAX_EVALUATION_ATTEMPTS:
+            raise gl.vm.UserError("maximum evaluation attempts reached")
+        tender.evaluation_nonce = tender.evaluation_nonce + u64(1)
+        now = self._now()
+        tender.evaluation_timeout_at = now + u64(EVALUATION_ATTEMPT_TIMEOUT_SECONDS)
+        tender.status = STATUS_EVALUATING
+        self.tenders[tender.tender_id] = tender
+        EvaluatorInterface(self.evaluator_address).emit(on="finalized").start_evaluation_job(
+            tender.tender_id, tender.evaluation_nonce,
+            tender.closed_snapshot_digest,
+        )
+
+    def _evaluation_failed_or_retryable(self, tender: CoreTender):
+        if int(tender.evaluation_nonce) >= MAX_EVALUATION_ATTEMPTS:
+            tender.status = STATUS_EVALUATION_FAILED
+            tender.settlement_state = SETTLEMENT_UNSETTLED
+        else:
+            tender.status = STATUS_EVALUATION_RETRYABLE
+
+    def _request_review(self, tender: CoreTender):
+        if int(tender.review_nonce) >= MAX_REVIEW_ATTEMPTS:
+            raise gl.vm.UserError("maximum review attempts reached")
+        tender.review_nonce = tender.review_nonce + u64(1)
+        now = self._now()
+        tender.review_timeout_at = now + u64(REVIEW_ATTEMPT_TIMEOUT_SECONDS)
+        tender.status = STATUS_REVIEWING_CHALLENGES
+        self.tenders[tender.tender_id] = tender
+        EvaluatorInterface(self.evaluator_address).emit(on="finalized").start_review_job(
+            tender.tender_id, tender.evaluation_nonce, tender.review_nonce,
+            tender.closed_snapshot_digest, tender.evaluation_result_digest,
+            tender.challenge_set_digest,
+        )
+
+    def _review_failed_or_retryable(self, tender: CoreTender):
+        if int(tender.review_nonce) >= MAX_REVIEW_ATTEMPTS:
+            if tender.provisional_winner == "":
+                raise gl.vm.UserError("review fallback has no provisional winner")
+            tender.final_winner = tender.provisional_winner
+            tender.status = STATUS_AWARDED
+            tender.settlement_state = SETTLEMENT_UNSETTLED
+        else:
+            tender.status = STATUS_REVIEW_RETRYABLE
 
     def _snapshot(self, tender_id: str) -> str:
         tender = self._tender(tender_id)
@@ -522,12 +595,21 @@ class TenderCouncilCore(gl.Contract):
             "status": tender.status,
             "evaluation_nonce": int(tender.evaluation_nonce),
             "snapshot_digest": tender.closed_snapshot_digest,
+            "evaluation_evaluator": str(self.evaluator_address),
+            "evaluation_timeout_at": int(tender.evaluation_timeout_at),
         })
 
     @gl.public.view
     def get_closed_snapshot(self, tender_id: str) -> str:
         tender = self._tender(tender_id)
-        if tender.status not in (STATUS_CLOSED, STATUS_EVALUATING, STATUS_PROVISIONAL_AWARD, STATUS_RESPONSE_WINDOW, STATUS_REVIEWING_CHALLENGES, STATUS_AWARDED, STATUS_SETTLEMENT_PENDING, STATUS_SETTLED, STATUS_NO_VALID_BID):
+        if tender.status not in (
+            STATUS_CLOSED, STATUS_EVALUATING, STATUS_EVALUATION_RETRYABLE,
+            STATUS_EVALUATION_FAILED, STATUS_PROVISIONAL_AWARD,
+            STATUS_RESPONSE_WINDOW, STATUS_REVIEWING_CHALLENGES,
+            STATUS_REVIEW_RETRYABLE, STATUS_AWARDED,
+            STATUS_SETTLEMENT_PENDING, STATUS_SETTLED, STATUS_NO_VALID_BID,
+            STATUS_REFUND_PENDING,
+        ):
             raise gl.vm.UserError("closed snapshot is unavailable")
         return self._snapshot(tender_id)
 
@@ -555,11 +637,14 @@ class TenderCouncilCore(gl.Contract):
                 })
         return _canonical({
             "tender_id": tender_id,
+            "status": tender.status,
             "evaluation_nonce": int(tender.evaluation_nonce),
             "review_nonce": int(review_nonce),
             "snapshot_digest": tender.closed_snapshot_digest,
             "original_result_digest": tender.evaluation_result_digest,
             "challenge_set_digest": tender.challenge_set_digest,
+            "review_evaluator": str(self.evaluator_address),
+            "review_timeout_at": int(tender.review_timeout_at),
             "challenges": rows,
         })
 
@@ -571,7 +656,8 @@ class TenderCouncilCore(gl.Contract):
             raise gl.vm.UserError("only the deployment bootstrapper may bind evaluator")
         if evaluator_address == ZERO_ADDRESS:
             raise gl.vm.UserError("evaluator address is zero")
-        self._require_length(evaluator_version, 96, "evaluator_version")
+        if evaluator_version != EVALUATOR_SCHEMA_VERSION:
+            raise gl.vm.UserError("unsupported evaluator version")
         if not _is_hash(evaluator_code_hash):
             raise gl.vm.UserError("invalid evaluator code hash")
         self.evaluator_address = evaluator_address
@@ -621,8 +707,9 @@ class TenderCouncilCore(gl.Contract):
             tender_id, gl.message.sender_address, title, brief_url, brief_sha256,
             max_budget_wei, max_delivery_days, min_support_days,
             bidding_deadline, response_window_seconds, STATUS_DRAFT, requirements,
-            rubric, evidence_policy, gl.message.value, "", u64(0), "", "", "",
-            u64(0), u64(0), u64(0), "", SETTLEMENT_ESCROWED,
+            rubric, evidence_policy, gl.message.value, "", u64(0), u64(0),
+            "", "", "", u64(0), u64(0), u64(0), u64(0), "",
+            SETTLEMENT_ESCROWED,
             u256(0), u256(0), False, False, False, False, "",
         )
         self.tender_ids.append(tender_id)
@@ -689,12 +776,27 @@ class TenderCouncilCore(gl.Contract):
         self._require_buyer(tender)
         if tender.status != STATUS_CLOSED:
             raise gl.vm.UserError("only closed tenders may be evaluated")
-        tender.evaluation_nonce = tender.evaluation_nonce + u64(1)
-        tender.status = STATUS_EVALUATING
+        self._request_evaluation(tender)
+
+    @gl.public.write
+    def expire_evaluation_attempt(self, tender_id: str):
+        tender = self._tender(tender_id)
+        if tender.status != STATUS_EVALUATING:
+            raise gl.vm.UserError("evaluation is not awaiting a callback")
+        if self._now() <= tender.evaluation_timeout_at:
+            raise gl.vm.UserError("evaluation attempt timeout has not elapsed")
+        self._evaluation_failed_or_retryable(tender)
         self.tenders[tender_id] = tender
-        EvaluatorInterface(self.evaluator_address).emit(on="finalized").start_evaluation_job(
-            tender_id, tender.evaluation_nonce, tender.closed_snapshot_digest,
-        )
+
+    @gl.public.write
+    def retry_evaluation(self, tender_id: str):
+        self._require_ready()
+        tender = self._tender(tender_id)
+        if tender.status != STATUS_EVALUATION_RETRYABLE:
+            raise gl.vm.UserError("evaluation is not retryable")
+        if _sha256(self._snapshot(tender_id)) != tender.closed_snapshot_digest:
+            raise gl.vm.UserError("closed snapshot changed before retry")
+        self._request_evaluation(tender)
 
     @gl.public.write
     def receive_evaluation_result(
@@ -732,9 +834,36 @@ class TenderCouncilCore(gl.Contract):
         self.tenders[tender_id] = tender
 
     @gl.public.write
+    def receive_evaluation_failure(
+        self, tender_id: str, nonce: u64, snapshot_digest: str,
+        failure_code: str, failure_digest: str,
+    ):
+        if gl.message.sender_address != self.evaluator_address:
+            raise gl.vm.UserError("caller is not the bound evaluator")
+        tender = self._tender(tender_id)
+        if tender.status != STATUS_EVALUATING or tender.evaluation_nonce != nonce:
+            raise gl.vm.UserError("evaluation failure callback is stale")
+        if (snapshot_digest != tender.closed_snapshot_digest
+                or failure_code not in (
+                    "MODEL_CANDIDATE_INVALID", "MODEL_PROVIDER_UNAVAILABLE",
+                )):
+            raise gl.vm.UserError("evaluation failure correlation failed")
+        payload = EvaluatorInterface(self.evaluator_address).view().get_evaluation_result(
+            tender_id, nonce
+        )
+        if _sha256(payload) != failure_digest:
+            raise gl.vm.UserError("evaluation failure digest mismatch")
+        failure = json.loads(payload)
+        if (not isinstance(failure, dict) or len(failure) != 2
+                or failure.get("state") != failure_code
+                or failure.get("result") != {}):
+            raise gl.vm.UserError("malformed evaluation failure")
+        self._evaluation_failed_or_retryable(tender)
+        self.tenders[tender_id] = tender
+
+    @gl.public.write
     def start_response_window(self, tender_id: str):
         tender = self._tender(tender_id)
-        self._require_buyer(tender)
         if tender.status != STATUS_PROVISIONAL_AWARD:
             raise gl.vm.UserError("no provisional award exists")
         tender.response_window_start = self._now()
@@ -792,7 +921,6 @@ class TenderCouncilCore(gl.Contract):
     @gl.public.write
     def advance_after_response(self, tender_id: str):
         tender = self._tender(tender_id)
-        self._require_buyer(tender)
         if tender.status != STATUS_RESPONSE_WINDOW or self._now() <= tender.response_window_end:
             raise gl.vm.UserError("response window is still open")
         admitted = 0
@@ -807,15 +935,8 @@ class TenderCouncilCore(gl.Contract):
             tender.status = STATUS_AWARDED
             tender.settlement_state = SETTLEMENT_UNSETTLED
         else:
-            tender.review_nonce = tender.review_nonce + u64(1)
             tender.challenge_set_digest = self._challenge_digest(tender_id)
-            tender.status = STATUS_REVIEWING_CHALLENGES
-            self.tenders[tender_id] = tender
-            EvaluatorInterface(self.evaluator_address).emit(on="finalized").start_review_job(
-                tender_id, tender.evaluation_nonce, tender.review_nonce,
-                tender.closed_snapshot_digest, tender.evaluation_result_digest,
-                tender.challenge_set_digest,
-            )
+            self._request_review(tender)
             return
         self.tenders[tender_id] = tender
 
@@ -844,6 +965,7 @@ class TenderCouncilCore(gl.Contract):
         if decision == "NO_VALID_BID":
             tender.status = STATUS_NO_VALID_BID
             tender.final_winner = ""
+            tender.settlement_state = SETTLEMENT_UNSETTLED
         elif decision in ("UPHOLD", "REPLACE_WINNER"):
             if winner_bid_id == "" or winner_bid_id not in [bid_id for bid_id in self.bid_ids if self.bids[bid_id].tender_id == tender_id]:
                 raise gl.vm.UserError("review winner is not a tender bid")
@@ -859,6 +981,60 @@ class TenderCouncilCore(gl.Contract):
         else:
             raise gl.vm.UserError("invalid review decision")
         self.tenders[tender_id] = tender
+
+    @gl.public.write
+    def receive_review_failure(
+        self, tender_id: str, evaluation_nonce: u64, review_nonce: u64,
+        snapshot_digest: str, original_result_digest: str,
+        challenge_set_digest: str, failure_code: str, failure_digest: str,
+    ):
+        if gl.message.sender_address != self.evaluator_address:
+            raise gl.vm.UserError("caller is not the bound evaluator")
+        tender = self._tender(tender_id)
+        if (tender.status != STATUS_REVIEWING_CHALLENGES
+                or tender.evaluation_nonce != evaluation_nonce
+                or tender.review_nonce != review_nonce):
+            raise gl.vm.UserError("review failure callback is stale")
+        if (snapshot_digest != tender.closed_snapshot_digest
+                or original_result_digest != tender.evaluation_result_digest
+                or challenge_set_digest != tender.challenge_set_digest
+                or failure_code not in (
+                    "MODEL_CANDIDATE_INVALID", "MODEL_PROVIDER_UNAVAILABLE",
+                )):
+            raise gl.vm.UserError("review failure correlation failed")
+        payload = EvaluatorInterface(self.evaluator_address).view().get_review_result(
+            tender_id, review_nonce
+        )
+        if _sha256(payload) != failure_digest:
+            raise gl.vm.UserError("review failure digest mismatch")
+        failure = json.loads(payload)
+        if (not isinstance(failure, dict) or len(failure) != 2
+                or failure.get("state") != failure_code
+                or failure.get("result") != {}):
+            raise gl.vm.UserError("malformed review failure")
+        self._review_failed_or_retryable(tender)
+        self.tenders[tender_id] = tender
+
+    @gl.public.write
+    def expire_review_attempt(self, tender_id: str):
+        tender = self._tender(tender_id)
+        if tender.status != STATUS_REVIEWING_CHALLENGES:
+            raise gl.vm.UserError("review is not awaiting a callback")
+        if self._now() <= tender.review_timeout_at:
+            raise gl.vm.UserError("review attempt timeout has not elapsed")
+        self._review_failed_or_retryable(tender)
+        self.tenders[tender_id] = tender
+
+    @gl.public.write
+    def retry_review(self, tender_id: str):
+        self._require_ready()
+        tender = self._tender(tender_id)
+        if tender.status != STATUS_REVIEW_RETRYABLE:
+            raise gl.vm.UserError("review is not retryable")
+        if (_sha256(self._snapshot(tender_id)) != tender.closed_snapshot_digest
+                or self._challenge_digest(tender_id) != tender.challenge_set_digest):
+            raise gl.vm.UserError("immutable review inputs changed before retry")
+        self._request_review(tender)
 
     @gl.public.write
     def settle_award(self, tender_id: str):
@@ -936,7 +1112,10 @@ class TenderCouncilCore(gl.Contract):
             raise gl.vm.UserError("refund is not pending")
         if (not self.financial_outflow_pending
                 or self.financial_outflow_tender_id != tender_id
-                or self.financial_outflow_kind not in ("CANCEL_REFUND", "NO_VALID_REFUND", "REFUND")):
+                or self.financial_outflow_kind not in (
+                    "CANCEL_REFUND", "NO_VALID_REFUND", "REFUND",
+                    "EVALUATION_FAILED_REFUND",
+                )):
             raise gl.vm.UserError("refund outflow correlation failed")
         if self.balance != self.financial_outflow_balance_before - self.financial_outflow_amount:
             raise gl.vm.UserError("refund transfer was not verified")
@@ -946,7 +1125,18 @@ class TenderCouncilCore(gl.Contract):
         self.total_locked_escrow = self.total_locked_escrow - tender.escrow_deposited
         if tender.winner_payout_amount == u256(0) and tender.status == STATUS_REFUND_PENDING:
             if tender.settlement_state == SETTLEMENT_REFUND_PENDING and tender.buyer_refund_amount == tender.escrow_deposited:
-                tender.status = STATUS_CANCELLED if tender.refund_kind == "CANCEL_REFUND" else STATUS_NO_VALID_BID
+                if tender.refund_kind == "CANCEL_REFUND":
+                    tender.status = STATUS_CANCELLED
+                elif tender.refund_kind == "EVALUATION_FAILED_REFUND":
+                    tender.status = STATUS_EVALUATION_FAILED
+                else:
+                    tender.status = STATUS_NO_VALID_BID
+        elif (tender.winner_payout_amount > u256(0)
+                and tender.status == STATUS_SETTLEMENT_PENDING
+                and tender.refund_kind == "REFUND" and tender.payout_confirmed
+                and tender.escrow_deposited
+                == tender.winner_payout_amount + tender.buyer_refund_amount):
+            tender.status = STATUS_SETTLED
         tender.settlement_state = SETTLEMENT_SETTLED
         self.tenders[tender_id] = tender
 
@@ -970,3 +1160,11 @@ class TenderCouncilCore(gl.Contract):
     @gl.public.write
     def confirm_no_valid_refund(self, tender_id: str):
         self.confirm_refund(tender_id)
+
+    @gl.public.write
+    def refund_failed_evaluation(self, tender_id: str):
+        tender = self._tender(tender_id)
+        if (tender.status != STATUS_EVALUATION_FAILED
+                or int(tender.evaluation_nonce) < MAX_EVALUATION_ATTEMPTS):
+            raise gl.vm.UserError("bounded evaluation failure is not established")
+        self._begin_failed_process_refund(tender, "EVALUATION_FAILED_REFUND")

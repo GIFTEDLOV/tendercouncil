@@ -14,7 +14,7 @@ import json
 from genlayer import *
 
 
-EVALUATOR_SCHEMA_VERSION = "tendercouncil.evaluator.v1"
+EVALUATOR_SCHEMA_VERSION = "tendercouncil.evaluator.v2"
 SNAPSHOT_SCHEMA_VERSION = "tendercouncil.snapshot.v1"
 MANIFEST_SCHEMA_VERSION = "tendercouncil.bid.v1"
 EVIDENCE_SCHEMA_VERSION = "tendercouncil.evidence.v1"
@@ -29,6 +29,12 @@ MAX_RATIONALE = 2000
 # smallest stable tolerance for subjective criterion drift while preserving
 # exact winner/classification agreement.  A winner change is never tolerated.
 SCORE_TOLERANCE = 2
+MODEL_VALID = "VALID"
+MODEL_CANDIDATE_INVALID = "MODEL_CANDIDATE_INVALID"
+MODEL_PROVIDER_UNAVAILABLE = "MODEL_PROVIDER_UNAVAILABLE"
+FETCH_OK = "OK"
+FETCH_TOO_LARGE = "TOO_LARGE"
+FETCH_UNAVAILABLE = "UNAVAILABLE"
 
 
 def _hash_bytes(data: bytes) -> str:
@@ -127,10 +133,10 @@ def _fetch(url: str, maximum: int):
             if not isinstance(body, bytes):
                 body = str(body).encode("utf-8")
             if len(body) > stable_maximum:
-                return ("TOO_LARGE", b"")
-            return ("OK", body)
+                return {"state": FETCH_TOO_LARGE, "body": b""}
+            return {"state": FETCH_OK, "body": body}
         except Exception:
-            return ("UNAVAILABLE", b"")
+            return {"state": FETCH_UNAVAILABLE, "body": b""}
 
     def validator_fn(leader_result) -> bool:
         if not isinstance(leader_result, gl.vm.Return):
@@ -249,9 +255,9 @@ def _validate_external_challenge(raw: bytes, challenge: dict):
 
 def _resolve_external_challenge(fetched, challenge: dict):
     """Map bounded retrieval and integrity/schema outcomes to explicit states."""
-    if fetched[0] != "OK":
+    if fetched["state"] != FETCH_OK:
         return "UNAVAILABLE", ""
-    return _validate_external_challenge(fetched[1], challenge)
+    return _validate_external_challenge(fetched["body"], challenge)
 
 
 def _required(policy: str, criterion: str) -> bool:
@@ -275,7 +281,23 @@ def _deterministic_uphold_review(original_winner: str, challenge_states: list):
     }
 
 
-def _normalize_llm(value, all_ids, deterministic_ids, integrity_ids, candidate_ids, weights):
+def _string_list(value, maximum: int):
+    if (not isinstance(value, list) or len(value) > maximum
+            or any(not isinstance(item, str) or not item for item in value)
+            or len(set(value)) != len(value)):
+        return None
+    return list(value)
+
+
+def _try_normalize_evaluation_model(
+    value, all_ids, deterministic_ids, integrity_ids, candidate_ids, weights
+):
+    """Return a fresh canonical model candidate, or None without throwing.
+
+    Every branch treats the model response as bounded untrusted data.  Model
+    noncompliance is a technical candidate failure, never a procurement
+    classification and never a UserError/ValueError escaping run_nondet.
+    """
     expected = (
         "confidence", "deterministic_disqualified_bid_ids",
         "integrity_disqualified_bid_ids", "semantic_candidate_ids",
@@ -284,80 +306,205 @@ def _normalize_llm(value, all_ids, deterministic_ids, integrity_ids, candidate_i
         "runner_up_score", "scores", "status", "valid_bid_ids",
         "winner_bid_id", "winner_total_score",
     )
-    if not isinstance(value, dict) or tuple(sorted(value)) != tuple(sorted(expected)):
-        raise ValueError("malformed comparative output")
+    if (not isinstance(value, dict) or len(value) != len(expected)
+            or any(key not in value for key in expected)):
+        return None
     if value["status"] not in ("COMPARATIVE", "NO_VALID_BID"):
-        raise ValueError("unknown evaluation status")
-    valid = value["valid_bid_ids"]
-    disqualified = value["disqualified_bid_ids"]
-    if not _same_ids(value["deterministic_disqualified_bid_ids"], deterministic_ids):
-        raise ValueError("semantic output changed deterministic set")
-    if not _same_ids(value["integrity_disqualified_bid_ids"], integrity_ids):
-        raise ValueError("semantic output changed integrity set")
-    if not _same_ids(value["semantic_candidate_ids"], candidate_ids):
-        raise ValueError("semantic output changed candidate set")
+        return None
+    all_ids = _string_list(list(all_ids), MAX_BIDS)
+    deterministic_ids = _string_list(list(deterministic_ids), MAX_BIDS)
+    integrity_ids = _string_list(list(integrity_ids), MAX_BIDS)
+    candidate_ids = _string_list(list(candidate_ids), MAX_BIDS)
+    valid = _string_list(value["valid_bid_ids"], MAX_BIDS)
+    disqualified = _string_list(value["disqualified_bid_ids"], MAX_BIDS)
+    model_deterministic = _string_list(
+        value["deterministic_disqualified_bid_ids"], MAX_BIDS
+    )
+    model_integrity = _string_list(value["integrity_disqualified_bid_ids"], MAX_BIDS)
+    model_candidates = _string_list(value["semantic_candidate_ids"], MAX_BIDS)
+    model_semantic_bad = _string_list(
+        value["semantic_disqualified_bid_ids"], MAX_BIDS
+    )
+    if any(item is None for item in (
+        all_ids, deterministic_ids, integrity_ids, candidate_ids, valid,
+        disqualified, model_deterministic, model_integrity, model_candidates,
+        model_semantic_bad,
+    )):
+        return None
+    if not _same_ids(model_deterministic, deterministic_ids):
+        return None
+    if not _same_ids(model_integrity, integrity_ids):
+        return None
+    if not _same_ids(model_candidates, candidate_ids):
+        return None
     expected_candidates = set(all_ids) - set(deterministic_ids) - set(integrity_ids)
     if set(candidate_ids) != expected_candidates:
-        raise ValueError("deterministic or integrity bid entered semantic candidates")
+        return None
     classifications = value["semantic_classifications"]
     if not isinstance(classifications, list) or len(classifications) != len(candidate_ids):
-        raise ValueError("semantic classification coverage mismatch")
+        return None
     classified = {}
     for item in classifications:
         if (not isinstance(item, dict)
-                or tuple(sorted(item)) != ("bid_id", "mandatory_requirements_pass")
+                or len(item) != 2 or "bid_id" not in item
+                or "mandatory_requirements_pass" not in item
+                or not isinstance(item["bid_id"], str)
                 or item["bid_id"] in classified
                 or item["bid_id"] not in candidate_ids
                 or not isinstance(item["mandatory_requirements_pass"], bool)):
-            raise ValueError("malformed semantic classification")
+            return None
         classified[item["bid_id"]] = item["mandatory_requirements_pass"]
     semantic_bad = sorted(bid_id for bid_id in candidate_ids if not classified[bid_id])
-    if not _same_ids(value["semantic_disqualified_bid_ids"], semantic_bad):
-        raise ValueError("semantic disqualification mismatch")
+    if not _same_ids(model_semantic_bad, semantic_bad):
+        return None
     expected_valid = sorted(set(candidate_ids) - set(semantic_bad))
     expected_disqualified = sorted(set(deterministic_ids) | set(integrity_ids) | set(semantic_bad))
     if not _same_ids(valid, expected_valid) or not _same_ids(disqualified, expected_disqualified):
-        raise ValueError("final bid classification mismatch")
+        return None
     if set(valid) & set(disqualified) or set(valid) | set(disqualified) != set(all_ids):
-        raise ValueError("final bid partition mismatch")
+        return None
+    confidence = value["confidence"]
+    rationale = value["rationale"]
+    if (confidence not in ("HIGH", "MEDIUM", "LOW")
+            or not isinstance(rationale, str) or len(rationale) > MAX_RATIONALE):
+        return None
+    canonical = {
+        "status": value["status"],
+        "deterministic_disqualified_bid_ids": sorted(deterministic_ids),
+        "integrity_disqualified_bid_ids": sorted(integrity_ids),
+        "semantic_candidate_ids": sorted(candidate_ids),
+        "semantic_disqualified_bid_ids": semantic_bad,
+        "semantic_classifications": [
+            {"bid_id": bid_id, "mandatory_requirements_pass": classified[bid_id]}
+            for bid_id in sorted(classified)
+        ],
+        "valid_bid_ids": expected_valid,
+        "disqualified_bid_ids": expected_disqualified,
+        "winner_bid_id": value["winner_bid_id"],
+        "winner_total_score": value["winner_total_score"],
+        "runner_up_bid_id": value["runner_up_bid_id"],
+        "runner_up_score": value["runner_up_score"],
+        "scores": [],
+        "confidence": confidence,
+        "rationale": rationale,
+    }
     if value["status"] == "NO_VALID_BID":
-        if (valid or value["scores"] or value["winner_bid_id"] != ""
+        if (expected_valid or not isinstance(value["scores"], list) or value["scores"]
+                or value["winner_bid_id"] != ""
                 or value["winner_total_score"] != 0
                 or value["runner_up_bid_id"] != ""
                 or value["runner_up_score"] != 0
-                or set(value["semantic_disqualified_bid_ids"]) != set(candidate_ids)):
-            raise ValueError("NO_VALID_BID result contains a winner or live candidate")
-        if value["confidence"] not in ("HIGH", "MEDIUM", "LOW") or not isinstance(value["rationale"], str) or len(value["rationale"]) > MAX_RATIONALE:
-            raise ValueError("invalid confidence or rationale")
-        return value
+                or set(model_semantic_bad) != set(candidate_ids)):
+            return None
+        canonical["winner_bid_id"] = ""
+        canonical["winner_total_score"] = 0
+        canonical["runner_up_bid_id"] = ""
+        canonical["runner_up_score"] = 0
+        return canonical
     scores = value["scores"]
     if not isinstance(scores, list) or len(scores) != len(valid):
-        raise ValueError("score coverage mismatch")
+        return None
     by_id = {}
     for score in scores:
         keys = ("bid_id", "capability", "delivery", "price", "support", "technical", "total")
-        if not isinstance(score, dict) or tuple(sorted(score)) != keys or score["bid_id"] in by_id:
-            raise ValueError("malformed score")
+        if (not isinstance(score, dict) or len(score) != len(keys)
+                or any(key not in score for key in keys)
+                or not isinstance(score["bid_id"], str)
+                or score["bid_id"] in by_id):
+            return None
         if score["bid_id"] not in valid:
-            raise ValueError("score is not for a valid bid")
+            return None
         for name, limit in zip(("technical", "delivery", "price", "capability", "support"), weights):
-            if not isinstance(score[name], int) or score[name] < 0 or score[name] > limit:
-                raise ValueError("score outside rubric")
+            if (not isinstance(score[name], int) or isinstance(score[name], bool)
+                    or score[name] < 0 or score[name] > limit):
+                return None
         total = sum(score[name] for name in ("technical", "delivery", "price", "capability", "support"))
-        if score["total"] != total:
-            raise ValueError("score arithmetic mismatch")
-        by_id[score["bid_id"]] = score
+        if (not isinstance(score["total"], int) or isinstance(score["total"], bool)
+                or score["total"] != total):
+            return None
+        by_id[score["bid_id"]] = {
+            "bid_id": score["bid_id"], "technical": score["technical"],
+            "delivery": score["delivery"], "price": score["price"],
+            "capability": score["capability"], "support": score["support"],
+            "total": total,
+        }
     ordered = sorted(by_id.values(), key=lambda item: (-item["total"], item["bid_id"]))
-    if not ordered or value["winner_bid_id"] != ordered[0]["bid_id"] or value["winner_total_score"] != ordered[0]["total"]:
-        raise ValueError("winner mismatch")
+    if (not ordered or not isinstance(value["winner_bid_id"], str)
+            or value["winner_bid_id"] != ordered[0]["bid_id"]
+            or not isinstance(value["winner_total_score"], int)
+            or isinstance(value["winner_total_score"], bool)
+            or value["winner_total_score"] != ordered[0]["total"]):
+        return None
     if len(ordered) > 1:
-        if ordered[0]["total"] <= ordered[1]["total"] or value["runner_up_bid_id"] != ordered[1]["bid_id"] or value["runner_up_score"] != ordered[1]["total"]:
-            raise ValueError("runner-up mismatch")
+        if (ordered[0]["total"] <= ordered[1]["total"]
+                or not isinstance(value["runner_up_bid_id"], str)
+                or value["runner_up_bid_id"] != ordered[1]["bid_id"]
+                or not isinstance(value["runner_up_score"], int)
+                or isinstance(value["runner_up_score"], bool)
+                or value["runner_up_score"] != ordered[1]["total"]):
+            return None
     elif value["runner_up_bid_id"] != "" or value["runner_up_score"] != 0:
-        raise ValueError("single bid runner-up mismatch")
-    if value["confidence"] not in ("HIGH", "MEDIUM", "LOW") or not isinstance(value["rationale"], str) or len(value["rationale"]) > MAX_RATIONALE:
-        raise ValueError("invalid confidence or rationale")
-    return value
+        return None
+    canonical["scores"] = [by_id[bid_id] for bid_id in sorted(by_id)]
+    return canonical
+
+
+def _evaluation_model_envelope(
+    prompt: str, all_ids, deterministic_ids, integrity_ids, candidate_ids, weights
+):
+    try:
+        raw = gl.nondet.exec_prompt(prompt, response_format="json")
+    except Exception:
+        return {"state": MODEL_PROVIDER_UNAVAILABLE, "result": {}}
+    candidate = _try_normalize_evaluation_model(
+        raw, all_ids, deterministic_ids, integrity_ids, candidate_ids, weights
+    )
+    if candidate is None:
+        return {"state": MODEL_CANDIDATE_INVALID, "result": {}}
+    return {"state": MODEL_VALID, "result": candidate}
+
+
+def _try_normalize_review_model(
+    value, original_winner: str, valid_ids, challenge_states
+):
+    expected = ("decision", "rationale", "winner_bid_id")
+    if (not isinstance(value, dict) or len(value) != len(expected)
+            or any(key not in value for key in expected)):
+        return None
+    decision = value["decision"]
+    winner = value["winner_bid_id"]
+    rationale = value["rationale"]
+    if (decision not in ("UPHOLD", "REPLACE_WINNER", "NO_VALID_BID")
+            or not isinstance(winner, str) or not isinstance(rationale, str)
+            or len(rationale) > MAX_RATIONALE):
+        return None
+    if decision == "UPHOLD" and winner != original_winner:
+        return None
+    if decision == "REPLACE_WINNER" and winner not in valid_ids:
+        return None
+    if decision == "NO_VALID_BID":
+        winner = ""
+    return {
+        "decision": decision,
+        "winner_bid_id": winner,
+        "rationale": rationale,
+        "challenge_states": sorted(list(challenge_states)),
+    }
+
+
+def _review_model_envelope(
+    prompt: str, original_winner: str, valid_ids, challenge_states
+):
+    try:
+        raw = gl.nondet.exec_prompt(prompt, response_format="json")
+    except Exception:
+        return {"state": MODEL_PROVIDER_UNAVAILABLE, "result": {}}
+    candidate = _try_normalize_review_model(
+        raw, original_winner, valid_ids, challenge_states
+    )
+    if candidate is None:
+        return {"state": MODEL_CANDIDATE_INVALID, "result": {}}
+    return {"state": MODEL_VALID, "result": candidate}
 
 
 @allow_storage
@@ -391,11 +538,21 @@ class CoreInterface:
             evaluator_schema_version: str, result_type: str, winner_bid_id: str,
             result_digest: str,
         ): ...
+        def receive_evaluation_failure(
+            self, tender_id: str, nonce: u64, snapshot_digest: str,
+            failure_code: str, failure_digest: str,
+        ): ...
         def receive_review_result(
             self, tender_id: str, evaluation_nonce: u64, review_nonce: u64,
             snapshot_digest: str, original_result_digest: str,
             challenge_set_digest: str, decision: str, winner_bid_id: str,
             result_digest: str,
+        ): ...
+        def receive_review_failure(
+            self, tender_id: str, evaluation_nonce: u64, review_nonce: u64,
+            snapshot_digest: str, original_result_digest: str,
+            challenge_set_digest: str, failure_code: str,
+            failure_digest: str,
         ): ...
 
 
@@ -410,6 +567,8 @@ class TenderCouncilEvaluator(gl.Contract):
             core_address = Address(core_address)
         if core_address == Address("0x" + "0" * 40):
             raise gl.vm.UserError("core address is zero")
+        if evaluator_version != EVALUATOR_SCHEMA_VERSION:
+            raise gl.vm.UserError("unsupported evaluator version")
         self.core_address = core_address
         self.evaluator_version = evaluator_version
 
@@ -488,11 +647,15 @@ class TenderCouncilEvaluator(gl.Contract):
         evidence_states = []
         for bid in candidates:
             manifest_fetch = _fetch(bid["proposal_url"], MAX_MANIFEST_BYTES)
-            if manifest_fetch[0] != "OK":
+            if manifest_fetch["state"] != FETCH_OK:
                 integrity_bad.append(bid["bid_id"])
-                evidence_states.append(bid["bid_id"] + ":MANIFEST:" + manifest_fetch[0])
+                evidence_states.append(
+                    bid["bid_id"] + ":MANIFEST:" + manifest_fetch["state"]
+                )
                 continue
-            manifest = _validate_manifest(manifest_fetch[1], bid, snapshot["tender_id"])
+            manifest = _validate_manifest(
+                manifest_fetch["body"], bid, snapshot["tender_id"]
+            )
             if manifest is None:
                 integrity_bad.append(bid["bid_id"])
                 evidence_states.append(bid["bid_id"] + ":MANIFEST:INVALID")
@@ -503,13 +666,15 @@ class TenderCouncilEvaluator(gl.Contract):
             for item in manifest["evidence"]:
                 by_criterion[item["criterion"]] = item
                 evidence_fetch = _fetch(item["url"], MAX_EVIDENCE_BYTES)
-                if evidence_fetch[0] != "OK":
-                    state = evidence_fetch[0]
+                if evidence_fetch["state"] != FETCH_OK:
+                    state = evidence_fetch["state"]
                     evidence_states.append(bid["bid_id"] + ":" + item["evidence_id"] + ":" + state)
                     if item["required"] or _required(snapshot["evidence_policy"], item["criterion"]):
                         failed = True
                     continue
-                evidence_claims = _validate_evidence(evidence_fetch[1], item["sha256"], item["kind"])
+                evidence_claims = _validate_evidence(
+                    evidence_fetch["body"], item["sha256"], item["kind"]
+                )
                 if evidence_claims is None:
                     state = "HASH_OR_SCHEMA_INVALID"
                     evidence_states.append(bid["bid_id"] + ":" + item["evidence_id"] + ":" + state)
@@ -535,10 +700,14 @@ class TenderCouncilEvaluator(gl.Contract):
                 + "\nUNTRUSTED_VALID_EVIDENCE=" + " || ".join(claims)
             )
         if not semantic_ids:
-            return self._no_valid(
-                snapshot["tender_id"], all_ids, deterministic_bad, integrity_bad,
-                "No bid survived deterministic, integrity, schema, and evidence policy checks",
-            )
+            return {
+                "state": MODEL_VALID,
+                "result": self._no_valid(
+                    snapshot["tender_id"], all_ids, deterministic_bad,
+                    integrity_bad,
+                    "No bid survived deterministic, integrity, schema, and evidence policy checks",
+                ),
+            }
         trusted_policy = (
             "TRUSTED PROCUREMENT POLICY\nrequirements=" + snapshot["requirements"]
             + "\nrubric=" + snapshot["rubric"]
@@ -560,15 +729,15 @@ class TenderCouncilEvaluator(gl.Contract):
             + " winner_bid_id, valid_bid_ids, disqualified_bid_ids, scores, winner_total_score,"
             + " runner_up_bid_id, runner_up_score, confidence, rationale."
         )
-        immutable_ids = tuple(semantic_ids)
-        immutable_all_ids = tuple(all_ids)
-        immutable_deterministic = tuple(sorted(set(deterministic_bad)))
-        immutable_integrity = tuple(sorted(set(integrity_bad)))
-        immutable_weights = tuple(weights)
+        immutable_ids = list(semantic_ids)
+        immutable_all_ids = list(all_ids)
+        immutable_deterministic = sorted(set(deterministic_bad))
+        immutable_integrity = sorted(set(integrity_bad))
+        immutable_weights = list(weights)
 
         def leader_fn():
-            return _normalize_llm(
-                gl.nondet.exec_prompt(prompt, response_format="json"), immutable_all_ids,
+            return _evaluation_model_envelope(
+                prompt, immutable_all_ids,
                 immutable_deterministic, immutable_integrity, immutable_ids, immutable_weights,
             )
 
@@ -578,24 +747,43 @@ class TenderCouncilEvaluator(gl.Contract):
             try:
                 expected = leader_fn()
                 actual = leader_result.calldata
-                return _comparative_equivalent(actual, expected)
+                if (not isinstance(actual, dict) or not isinstance(expected, dict)
+                        or actual.get("state") != expected.get("state")):
+                    return False
+                if actual.get("state") != MODEL_VALID:
+                    return actual.get("result") == {} and expected.get("result") == {}
+                return _comparative_equivalent(
+                    actual.get("result", {}), expected.get("result", {})
+                )
             except Exception:
                 return False
 
-        result = gl.vm.run_nondet_unsafe(leader_fn, validator_fn)
-        return result
+        return gl.vm.run_nondet_unsafe(leader_fn, validator_fn)
 
     @gl.public.write
     def start_evaluation_job(self, tender_id: str, nonce: u64, snapshot_digest: str):
         self._require_core()
         context = json.loads(CoreInterface(self.core_address).view().get_evaluation_context(tender_id))
-        if context["status"] != "EVALUATING" or context["evaluation_nonce"] != int(nonce) or context["snapshot_digest"] != snapshot_digest:
+        if (context["status"] != "EVALUATING"
+                or context["evaluation_nonce"] != int(nonce)
+                or context["snapshot_digest"] != snapshot_digest
+                or context["evaluation_evaluator"].lower()
+                != str(gl.message.contract_address).lower()):
             raise gl.vm.UserError("evaluation job is stale or mismatched")
         key = self._key(tender_id, nonce)
         if self.results.get(key) is not None:
             raise gl.vm.UserError("duplicate evaluation job")
         snapshot = CoreInterface(self.core_address).view().get_closed_snapshot(tender_id)
-        result = self._evaluate_snapshot(snapshot, snapshot_digest)
+        outcome = self._evaluate_snapshot(snapshot, snapshot_digest)
+        if outcome.get("state") != MODEL_VALID:
+            payload = _canonical(outcome)
+            digest = _hash_text(payload)
+            self.results[key] = EvaluationRecord(tender_id, nonce, payload, digest)
+            CoreInterface(self.core_address).emit(on="finalized").receive_evaluation_failure(
+                tender_id, nonce, snapshot_digest, outcome["state"], digest,
+            )
+            return
+        result = outcome["result"]
         payload = _canonical(result)
         digest = _hash_text(payload)
         self.results[key] = EvaluationRecord(tender_id, nonce, payload, digest)
@@ -611,7 +799,10 @@ class TenderCouncilEvaluator(gl.Contract):
     ):
         self._require_core()
         context = json.loads(CoreInterface(self.core_address).view().get_review_context(tender_id, review_nonce))
-        if (context["evaluation_nonce"] != int(evaluation_nonce)
+        if (context["status"] != "REVIEWING_CHALLENGES"
+                or context["review_evaluator"].lower()
+                != str(gl.message.contract_address).lower()
+                or context["evaluation_nonce"] != int(evaluation_nonce)
                 or context["snapshot_digest"] != snapshot_digest
                 or context["original_result_digest"] != original_result_digest
                 or context["challenge_set_digest"] != challenge_set_digest):
@@ -624,7 +815,7 @@ class TenderCouncilEvaluator(gl.Contract):
             original = _load_original_result(record, tender_id, evaluation_nonce, original_result_digest)
         except Exception:
             raise gl.vm.UserError("original evaluation record is missing or mismatched")
-        valid_ids = tuple(original["valid_bid_ids"])
+        valid_ids = list(original["valid_bid_ids"])
         challenge_text = []
         challenge_states = []
         for challenge in context["challenges"]:
@@ -666,27 +857,13 @@ class TenderCouncilEvaluator(gl.Contract):
             " winner_bid_id, rationale."
         )
 
-        immutable_challenge_states = tuple(sorted(challenge_states))
-
-        def normalize(value):
-            expected = ("decision", "rationale", "winner_bid_id")
-            if not isinstance(value, dict) or tuple(sorted(value)) != tuple(sorted(expected)):
-                raise gl.vm.UserError("malformed review result")
-            if value["decision"] not in ("UPHOLD", "REPLACE_WINNER", "NO_VALID_BID"):
-                raise gl.vm.UserError("invalid review decision")
-            if value["decision"] == "UPHOLD" and value["winner_bid_id"] != original["winner_bid_id"]:
-                raise gl.vm.UserError("uphold changed winner")
-            if value["decision"] == "REPLACE_WINNER" and value["winner_bid_id"] not in valid_ids:
-                raise gl.vm.UserError("replacement is not an original valid bid")
-            if value["decision"] == "NO_VALID_BID":
-                value["winner_bid_id"] = ""
-            if not isinstance(value["rationale"], str) or len(value["rationale"]) > MAX_RATIONALE:
-                raise gl.vm.UserError("invalid review rationale")
-            value["challenge_states"] = list(immutable_challenge_states)
-            return value
+        immutable_challenge_states = sorted(challenge_states)
 
         def leader_fn():
-            return normalize(gl.nondet.exec_prompt(prompt, response_format="json"))
+            return _review_model_envelope(
+                prompt, original["winner_bid_id"], valid_ids,
+                immutable_challenge_states,
+            )
 
         def validator_fn(leader_result) -> bool:
             if not isinstance(leader_result, gl.vm.Return):
@@ -694,16 +871,35 @@ class TenderCouncilEvaluator(gl.Contract):
             try:
                 actual = leader_result.calldata
                 expected = leader_fn()
+                if (not isinstance(actual, dict) or not isinstance(expected, dict)
+                        or actual.get("state") != expected.get("state")):
+                    return False
+                if actual.get("state") != MODEL_VALID:
+                    return actual.get("result") == {} and expected.get("result") == {}
+                actual_result = actual.get("result", {})
+                expected_result = expected.get("result", {})
                 return (
-                    actual.get("decision") == expected.get("decision")
-                    and actual.get("winner_bid_id") == expected.get("winner_bid_id")
-                    and _canonical(actual.get("challenge_states", []))
-                    == _canonical(expected.get("challenge_states", []))
+                    actual_result.get("decision") == expected_result.get("decision")
+                    and actual_result.get("winner_bid_id")
+                    == expected_result.get("winner_bid_id")
+                    and _canonical(actual_result.get("challenge_states", []))
+                    == _canonical(expected_result.get("challenge_states", []))
                 )
             except Exception:
                 return False
 
-        result = gl.vm.run_nondet_unsafe(leader_fn, validator_fn)
+        outcome = gl.vm.run_nondet_unsafe(leader_fn, validator_fn)
+        if outcome.get("state") != MODEL_VALID:
+            payload = _canonical(outcome)
+            digest = _hash_text(payload)
+            self.reviews[key] = ReviewRecord(tender_id, review_nonce, payload, digest)
+            CoreInterface(self.core_address).emit(on="finalized").receive_review_failure(
+                tender_id, evaluation_nonce, review_nonce, snapshot_digest,
+                original_result_digest, challenge_set_digest, outcome["state"],
+                digest,
+            )
+            return
+        result = outcome["result"]
         payload = _canonical(result)
         digest = _hash_text(payload)
         self.reviews[key] = ReviewRecord(tender_id, review_nonce, payload, digest)

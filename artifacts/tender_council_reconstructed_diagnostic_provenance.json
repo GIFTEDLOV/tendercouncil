@@ -1,0 +1,25 @@
+{
+  "classification": "RECONSTRUCTED_AFTER_LOCAL_TEST_ARTIFACT_CLEAR",
+  "artifact": "artifacts/tender_council_bradbury_e2e_failure_2026-08-13T150054150Z.json",
+  "authoritative": false,
+  "byte_identical_to_lost_original": false,
+  "reconstructed_sha256": "4b42ecd5e0ceb5da9f24cb31634b6ce36678bbd4267a47e01f2fc773a0a381e7",
+  "known_historical_original_sha256": "d2ebc3efe53fe9b369b11154c1b65e3f6403f5c707ed53f8f49363f2f2b3bfdf",
+  "parity_status": "UNPROVABLE",
+  "reason": "The installed genlayer-test pytest plugin recursively cleared the repository artifacts directory. Tracked artifacts were restored from Git, but the diagnostic was untracked and had no recoverable Git blob; its bytes were reconstructed from previously captured output.",
+  "independent_refetch": {
+    "audit_date": "2026-08-14",
+    "network": "testnet-bradbury",
+    "core": "0x8d776cE2c5Ed60e5e9E229669eaf91DE7f3Ae257",
+    "evaluator": "0xcb4c472a9bB15103b885eC361701152Ec03b2681",
+    "facts_refetched": [
+      "tender states",
+      "escrow totals and Core balance",
+      "bid records and parent tender IDs",
+      "Core start-evaluation transaction and receipt",
+      "Evaluator child transaction, rounds, votes, and traces",
+      "child callback attempt and absence of a consumed Core callback"
+    ]
+  },
+  "release_rule": "Fresh canonical machine-readable Bradbury reads are required; this reconstructed artifact is historical context only."
+}

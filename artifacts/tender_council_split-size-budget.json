@@ -1,49 +1,29 @@
 {
-  "generated_at_utc": "2026-08-13T06:34:55.827Z",
-  "chain": {
-    "name": "Genlayer Bradbury Testnet",
-    "chain_id": 4221
-  },
-  "preferred_target_outer_bytes": 40000,
+  "method": "artifact bytes plus conservative 1024-byte outer-encoding bound",
   "target_outer_bytes": 42000,
-  "measured_historical_boundary": {
-    "accepted": 53316,
-    "failed": 53348
+  "preferred_target_outer_bytes": 40000,
+  "measured_network_boundary": {
+    "accepted_outer_bytes": 53316,
+    "failed_outer_bytes": 53348
   },
   "components": [
     {
-      "path": "artifacts/tender_council_core_deployable.py",
-      "source_utf8_bytes": 40527,
-      "app_data": {
-        "bytes": 40535,
-        "zero_bytes": 1,
-        "nonzero_bytes": 40534
-      },
-      "outer_deployment_data": {
-        "bytes": 40772,
-        "zero_bytes": 209,
-        "nonzero_bytes": 40563
-      },
+      "name": "core",
+      "source_bytes": 54219,
+      "artifact_bytes": 40258,
+      "conservative_outer_bytes": 41282,
+      "target_outer_bytes": 42000,
       "preferred_target_outer_bytes": 40000,
-      "safety_target_outer_bytes": 42000,
       "within_preferred_target": false,
       "within_target": true
     },
     {
-      "path": "artifacts/tender_council_evaluator_deployable.py",
-      "source_utf8_bytes": 30604,
-      "app_data": {
-        "bytes": 30612,
-        "zero_bytes": 1,
-        "nonzero_bytes": 30611
-      },
-      "outer_deployment_data": {
-        "bytes": 30852,
-        "zero_bytes": 212,
-        "nonzero_bytes": 30640
-      },
+      "name": "evaluator",
+      "source_bytes": 41852,
+      "artifact_bytes": 31952,
+      "conservative_outer_bytes": 32976,
+      "target_outer_bytes": 42000,
       "preferred_target_outer_bytes": 40000,
-      "safety_target_outer_bytes": 42000,
       "within_preferred_target": true,
       "within_target": true
     }

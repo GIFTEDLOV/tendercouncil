@@ -1,19 +1,19 @@
 /* Local, no-RPC deployment encoding and safety-envelope check. */
 import fs from "node:fs/promises";
 import { pathToFileURL } from "node:url";
+import { resolveGenlayerModulePaths } from "./genlayer_module_paths.mjs";
 
-const ROOT = "C:/Users/DELL/tendercouncil";
-const GENLAYER_ROOT = "C:/Users/DELL/AppData/Roaming/npm/node_modules/genlayer";
-const GENLAYER_JS = `${GENLAYER_ROOT}/node_modules/genlayer-js`;
-const VIEM = `${GENLAYER_ROOT}/node_modules/viem/_esm/index.js`;
+const {
+  repositoryRoot: ROOT, sdkRoot: GENLAYER_JS, viem: VIEM,
+} = resolveGenlayerModulePaths();
 const OUTPUT = process.env.TENDERCOUNCIL_SPLIT_SIZE_OUTPUT || "artifacts/tender_council_split-size-budget.json";
 const PREFERRED_TARGET = 40000;
 const TARGET = Number(process.env.TENDERCOUNCIL_OUTER_SIZE_TARGET || 42000);
 const SENDER = "0xe0f17bef0587c3b66d2eb4bbe705dff821abdde7";
 const ZERO = "0x0000000000000000000000000000000000000000";
 const [{ testnetBradbury }, genlayer, viem] = await Promise.all([
-  import(pathToFileURL(`${GENLAYER_JS}/dist/chunk-XCQTIUTU.js`)),
-  import(pathToFileURL(`${GENLAYER_JS}/dist/index.js`)),
+  import(pathToFileURL(`${GENLAYER_JS}/chains/index.js`)),
+  import(pathToFileURL(`${GENLAYER_JS}/index.js`)),
   import(pathToFileURL(VIEM)),
 ]);
 const add = testnetBradbury.consensusMainContract.abi.find((item) => item.type === "function" && item.name === "addTransaction");
@@ -24,20 +24,23 @@ function stats(hex) {
   const zero = bytes.reduce((sum, item) => sum + (item === 0 ? 1 : 0), 0);
   return { bytes: bytes.length, zero_bytes: zero, nonzero_bytes: bytes.length - zero };
 }
-function encode(source) {
-  const ctor = calldata.encode(calldata.makeCalldataObject(undefined, [], undefined));
+function encode(source, args) {
+  const ctor = calldata.encode(calldata.makeCalldataObject(undefined, args, undefined));
   const app = transactions.serialize([source, ctor, false]);
-  const args = [SENDER, ZERO, BigInt(testnetBradbury.defaultNumberOfInitialValidators), BigInt(testnetBradbury.defaultConsensusMaxRotations), app];
-  if (add.inputs.length >= 6) args.push(0n);
-  const outer = viem.encodeFunctionData({ abi: [add], functionName: "addTransaction", args });
+  const txArgs = [SENDER, ZERO, BigInt(testnetBradbury.defaultNumberOfInitialValidators), BigInt(testnetBradbury.defaultConsensusMaxRotations), app];
+  if (add.inputs.length >= 6) txArgs.push(0n);
+  const outer = viem.encodeFunctionData({ abi: [add], functionName: "addTransaction", args: txArgs });
   return { app, outer };
 }
-const paths = ["artifacts/tender_council_core_deployable.py", "artifacts/tender_council_evaluator_deployable.py"];
+const componentsToEncode = [
+  { path: "artifacts/tender_council_core_deployable.py", args: [] },
+  { path: "artifacts/tender_council_evaluator_deployable.py", args: [SENDER, "tendercouncil.evaluator.v2"] },
+];
 const components = [];
-for (const path of paths) {
+for (const { path, args } of componentsToEncode) {
   const source = await fs.readFile(`${ROOT}/${path}`, "utf8");
-  const encoded = encode(source);
-  components.push({ path, source_utf8_bytes: Buffer.byteLength(source, "utf8"), app_data: stats(encoded.app), outer_deployment_data: stats(encoded.outer), preferred_target_outer_bytes: PREFERRED_TARGET, safety_target_outer_bytes: TARGET, within_preferred_target: stats(encoded.outer).bytes < PREFERRED_TARGET, within_target: stats(encoded.outer).bytes < TARGET });
+  const encoded = encode(source, args);
+  components.push({ path, constructor_args: args, source_utf8_bytes: Buffer.byteLength(source, "utf8"), app_data: stats(encoded.app), outer_deployment_data: stats(encoded.outer), preferred_target_outer_bytes: PREFERRED_TARGET, safety_target_outer_bytes: TARGET, within_preferred_target: stats(encoded.outer).bytes < PREFERRED_TARGET, within_target: stats(encoded.outer).bytes < TARGET });
 }
 const result = { generated_at_utc: new Date().toISOString(), chain: { name: testnetBradbury.name, chain_id: testnetBradbury.id }, preferred_target_outer_bytes: PREFERRED_TARGET, target_outer_bytes: TARGET, measured_historical_boundary: { accepted: 53316, failed: 53348 }, components };
 await fs.writeFile(OUTPUT, `${JSON.stringify(result, null, 2)}\n`, "utf8");

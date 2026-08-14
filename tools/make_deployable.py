@@ -47,6 +47,103 @@ class StripDocstrings(ast.NodeTransformer):
     visit_AsyncFunctionDef = _strip
 
 
+class CompactIdentifiers(ast.NodeTransformer):
+    """Alpha-rename deployment-internal symbols without changing the ABI."""
+
+    LOCAL_NAMES = (
+        "tender", "result", "value", "challenge", "bid", "payload",
+        "failure", "item", "score", "ordered", "valid", "field", "kind",
+        "amount", "now", "rows", "keys", "expected", "required",
+        "leader_fn", "validator_fn", "values", "name", "payout",
+    )
+    LOCAL_REPLACEMENTS = tuple("trvcbpfiqoxzkanywedljghm")
+
+    @staticmethod
+    def _short(index: int) -> str:
+        """Return A..Z, AA..AZ, BA.. for module-internal globals."""
+        result = ""
+        while True:
+            result = chr(65 + index % 26) + result
+            index = index // 26 - 1
+            if index < 0:
+                return result
+
+    def __init__(self, tree: ast.Module):
+        self.names = dict(zip(self.LOCAL_NAMES, self.LOCAL_REPLACEMENTS))
+        constants = []
+        helpers = []
+        private_methods = []
+        interfaces = []
+        for node in tree.body:
+            if isinstance(node, (ast.Assign, ast.AnnAssign)):
+                targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+                constants.extend(
+                    target.id for target in targets
+                    if isinstance(target, ast.Name) and target.id.isupper()
+                )
+            elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                helpers.append(node.name)
+            elif isinstance(node, ast.ClassDef):
+                if node.name in ("EvaluatorInterface", "CoreInterface", "Recipient"):
+                    interfaces.append(node.name)
+                for child in node.body:
+                    if (isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef))
+                            and child.name.startswith("_")
+                            and child.name != "__init__"):
+                        private_methods.append(child.name)
+        globals_to_compact = constants + helpers + interfaces
+        self.names.update({
+            name: self._short(index)
+            for index, name in enumerate(globals_to_compact)
+        })
+        private_name_map = {
+            name: chr(97 + index) if index < 26 else "m" + str(index)
+            for index, name in enumerate(private_methods)
+        }
+        self.names.update(private_name_map)
+        self.attributes = private_name_map
+
+    def visit_Name(self, node: ast.Name):
+        node.id = self.names.get(node.id, node.id)
+        return node
+
+    def visit_arg(self, node: ast.arg):
+        node.arg = self.names.get(node.arg, node.arg)
+        return self.generic_visit(node)
+
+    def visit_FunctionDef(self, node: ast.FunctionDef):
+        node.name = self.names.get(node.name, node.name)
+        return self.generic_visit(node)
+
+    visit_AsyncFunctionDef = visit_FunctionDef
+
+    def visit_ClassDef(self, node: ast.ClassDef):
+        node.name = self.names.get(node.name, node.name)
+        return self.generic_visit(node)
+
+    def visit_Attribute(self, node: ast.Attribute):
+        node.attr = self.attributes.get(node.attr, node.attr)
+        return self.generic_visit(node)
+
+
+class ShareUserError(ast.NodeTransformer):
+    """Use one generated helper for the repeated UserError constructor path."""
+
+    @staticmethod
+    def _is_user_error(node: ast.AST) -> bool:
+        return (
+            isinstance(node, ast.Attribute) and node.attr == "UserError"
+            and isinstance(node.value, ast.Attribute) and node.value.attr == "vm"
+            and isinstance(node.value.value, ast.Name) and node.value.value.id == "gl"
+        )
+
+    def visit_Call(self, node: ast.Call):
+        node = self.generic_visit(node)
+        if self._is_user_error(node.func):
+            node.func = ast.Name(id="_user_error", ctx=ast.Load())
+        return node
+
+
 def make_deployable(source: bytes) -> bytes:
     text = source.decode("utf-8")
     lines = text.splitlines()
@@ -58,6 +155,12 @@ def make_deployable(source: bytes) -> bytes:
         if isinstance(node, ast.FunctionDef) and node.name == "_sha256_hex":
             tree.body[index] = compact_sha
             break
+    tree = ShareUserError().visit(tree)
+    tree.body.append(ast.parse(
+        "def _user_error(message: str):\n"
+        "    return gl.vm.UserError(message)\n"
+    ).body[0])
+    tree = CompactIdentifiers(tree).visit(tree)
     ast.fix_missing_locations(tree)
     body = ast.unparse(tree)
     tokens = tokenize.generate_tokens(io.StringIO(body).readline)

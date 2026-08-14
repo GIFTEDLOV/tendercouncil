@@ -14,10 +14,43 @@ are retained rather than erased.
 
 The four JSON files under `artifacts/` preserve deployment addresses,
 transaction IDs, validator votes, GenVM trace versions, and failure causes from
-Stage 0/1. Their worktree hashes are checked against `HEAD` after direct tests
-because the installed test plugin clears `artifacts/` on startup.
+Stage 0/1. Production evidence is append-only. The test runner now writes to
+`.local/gltest-artifacts/`; the installed test plugin recursively clears that
+ephemeral directory at startup and must never target `artifacts/`.
+
+## Reconstructed 2026-08-13 diagnostic
+
+`artifacts/tender_council_bradbury_e2e_failure_2026-08-13T150054150Z.json`
+is classified as `RECONSTRUCTED_AFTER_LOCAL_TEST_ARTIFACT_CLEAR`.
+
+- Reconstructed SHA-256: `4b42ecd5e0ceb5da9f24cb31634b6ce36678bbd4267a47e01f2fc773a0a381e7`
+- Known historical original SHA-256: `d2ebc3efe53fe9b369b11154c1b65e3f6403f5c707ed53f8f49363f2f2b3bfdf`
+- Exact parity: not proven. The installed `genlayer-test` pytest plugin
+  recursively cleared the configured `artifacts/` directory. Tracked evidence
+  was restored byte-for-byte from Git, but this untracked diagnostic had no Git
+  blob to restore. It was reconstructed from previously captured output.
+- Authority: historical and non-authoritative. It must not be used as the sole
+  proof of any chain fact or represented as the lost original.
+- Independent facts: the old Core/Evaluator addresses, tender states, escrow
+  totals, bid parent IDs, evaluation transaction, failed Evaluator child,
+  validator votes, trace outputs, and callback absence were independently read
+  again from Bradbury during the 2026-08-14 forensic audit. Fresh canonical
+  machine-readable evidence is required before any future release.
 
 ## Current changes
+
+The 2026-08-14 v2 remediation is local-only. It adds list-shaped nondeterministic
+calldata, bounded model envelopes, nonce/deadline recovery from failed evaluator
+children, deterministic uphold of an already valid winner after bounded review
+failure, tender-scoped runner reconciliation, and a durable append-only
+operation journal. The generated v2 Core/Evaluator artifacts pass the local
+42 KB size boundary, but no v2 contract, binding, tender, bid, or other live
+transaction exists. The local exact-artifact five-validator proof exercises
+comparative evaluation, Core callback consumption, `NO_VALID_BID`, malformed
+evaluation and review handling, retries, review, and stale/duplicate callback
+rejection. The exact Bradbury
+`eth_estimateGas` probes pass without signing or broadcasting. `NEW LIVE E2E
+ALLOWED` remains false pending review, CI, and an immutable clean-worktree HEAD.
 
 This continuation adds runtime due diligence, a threat model, the exact-byte
 SHA-256 and evaluator-boundary hardening, public funded production tenders,

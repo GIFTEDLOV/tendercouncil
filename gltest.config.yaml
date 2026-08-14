@@ -9,6 +9,9 @@ networks:
 
 paths:
   contracts: "contracts"
-  artifacts: "artifacts"
+  # gltest recursively clears this directory at pytest session start. Keep its
+  # ephemeral output isolated from the append-only production evidence in
+  # artifacts/.
+  artifacts: ".local/gltest-artifacts"
 
 environment: .env

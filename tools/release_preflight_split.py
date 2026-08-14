@@ -89,7 +89,7 @@ def build_manifest(network: str, chain_id: int, sender: str):
         "runner_header": HEADER,
         "artifact_generator": "tools/make_deployable.py",
         "artifact_generator_sha256": digest(ROOT / "tools/make_deployable.py"),
-        "evaluator_schema_version": "tendercouncil.evaluator.v1",
+        "evaluator_schema_version": "tendercouncil.evaluator.v2",
         "components": [core, evaluator],
     }
 

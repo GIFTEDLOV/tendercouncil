@@ -9,18 +9,17 @@ The production pair is deployed in this order:
 
 1. `TenderCouncilCore` unconfigured.
 2. Wait for finalized Core deployment and record its address.
-3. `TenderCouncilEvaluator(core_address, tendercouncil.evaluator.v1)`.
+3. `TenderCouncilEvaluator(core_address, tendercouncil.evaluator.v2)`.
 4. Wait for finalized Evaluator deployment.
 5. One-time Core `bind_evaluator(address, version, evaluator_code_hash)`, where
    the hash is the exact SHA-256 of the generated Evaluator deployment artifact.
 6. Verify the finalized Core binding before opening any tender.
 
 `deploy/deploy_split.py` remains the repeatable dry-run manifest generator and
-does not broadcast. The controlled replacement pair was deployed through the
-reviewed broadcast workflow already recorded in
-`artifacts/tender_council_bradbury_replacement_deployment.json`; future
-redeployments require a new reviewed release pair. The current E2E runner is
-guarded to reuse the approved finalized pair and cannot deploy contracts.
+does not broadcast. The v1 deployment scripts and manifests are historical
+evidence only. No v2 Core or Evaluator has been deployed. A future v2 release
+requires a newly reviewed pair and may not reuse either historical address.
+The v2 E2E runner cannot deploy contracts and rejects the historical pair.
 
 ## Generated artifacts and gates
 
@@ -47,19 +46,17 @@ changes):
 
 | Component | Source | Artifact | Outer deployment | Target |
 |---|---:|---:|---:|---:|
-| Core | current manifest | 40,527 | 40,772 exact probe / 41,551 conservative | <42,000 fallback |
-| Evaluator | current manifest | 30,557 | 30,820 exact probe / 31,581 conservative | <42,000 fallback |
+| Core v2 | current manifest | 40,054 | 40,292 exact encoding / 41,078 conservative | <42,000 fallback |
+| Evaluator v2 | current manifest | 31,952 | 32,292 exact encoding / 32,976 conservative | <42,000 fallback |
 
 ## Historical provenance
 
 Failed monolith and evaluator-boundary attempts remain under `artifacts/`.
-The earlier finalized pair in `artifacts/tender_council_bradbury_deployment.json`
-is preserved as `FINALIZED_DEPLOYMENT_PROOF_SUPERSEDED_BEFORE_E2E`. The
-corrected finalized pair is recorded in
-`artifacts/tender_council_bradbury_corrected_deployment.json` and is the only
-pair approved for the canonical E2E. The funded tender and subsequent live
-evidence must be recorded in `artifacts/tender_council_bradbury_e2e.json` only
-after completion.
+The earlier finalized pairs and funded tenders are immutable v1 historical
+evidence. In particular, Core `0x8d776cE2c5Ed60e5e9E229669eaf91DE7f3Ae257`
+and Evaluator `0xcb4c472a9bB15103b885eC361701152Ec03b2681` must
+not be rebound, reused, or mutated. A v2 E2E remains forbidden until every
+pre-broadcast gate passes and a separately reviewed v2 deployment exists.
 
 The canonical live demo must use the 7200-second Bradbury response-window
 configuration documented in `docs/BRADBURY_DEMO_POLICY.md`.

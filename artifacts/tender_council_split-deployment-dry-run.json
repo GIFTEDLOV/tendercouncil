@@ -1,5 +1,5 @@
 {
-  "created_at_utc": "2026-08-10T17:08:03.864922+00:00",
+  "created_at_utc": "2026-08-14T13:07:35.000594+00:00",
   "mode": "DRY_RUN_NO_BROADCAST",
   "network": "testnet-bradbury",
   "chain_id": 4221,
@@ -16,23 +16,23 @@
       "name": "core",
       "source": "contracts\\tender_council_core.py",
       "artifact": "artifacts\\tender_council_core_deployable.py",
-      "source_sha256": "c0073feacfd6ceb2d455bf56d230a93c934d9dad2f1bfe07bf66d6d377f5b3c4",
-      "artifact_sha256": "e11be233820dceb4895a7d4246b711d2d6bcb937016eac62c2670bca51068eb7",
-      "source_bytes": 37344,
-      "artifact_bytes": 33969,
+      "source_sha256": "538b430e5c00458d938c8338928b7012ef9b6913c8dc923fa97529c3b0854fe6",
+      "artifact_sha256": "ca8a894a6e261d61b1e6b752878be4c12525965d87c3fc90cf799a35f2762102",
+      "source_bytes": 53860,
+      "artifact_bytes": 40054,
       "constructor_args": []
     },
     {
       "name": "evaluator",
       "source": "contracts\\tender_council_evaluator.py",
       "artifact": "artifacts\\tender_council_evaluator_deployable.py",
-      "source_sha256": "ef0c976c5b00bd17d970d4200aee21ef2cdb952afb0cac42538a1ab3eb0f1122",
-      "artifact_sha256": "f73cbdabc9a4af3f0897df17f227671a1ac815a11de3a0d784953f11927865a8",
-      "source_bytes": 24581,
-      "artifact_bytes": 22220,
+      "source_sha256": "47aae18423373ccd43211e1b97d498e2dcb749a974eb2365bec20de2024bc9d6",
+      "artifact_sha256": "73af758e744b6c4c05c9e224d22f64723638af2474e3756e328327893eec62b9",
+      "source_bytes": 41852,
+      "artifact_bytes": 31952,
       "constructor_args": [
         "<CORE_ADDRESS>",
-        "tendercouncil.evaluator.v1"
+        "tendercouncil.evaluator.v2"
       ]
     }
   ],

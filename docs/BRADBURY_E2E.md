@@ -3,10 +3,10 @@
 This document records the controlled production proof. Failed and transient
 attempts remain under `artifacts/`.
 
-## Current live run
+## Preserved v1 run
 
-The corrected replacement pair is finalized and bound, and is the only pair
-authorized for the canonical E2E:
+The following finalized pair and its failed evaluation are historical evidence
+only. They are not authorized for any new transaction:
 
 - Core: `0x8d776cE2c5Ed60e5e9E229669eaf91DE7f3Ae257`
 - Evaluator: `0xcb4c472a9bB15103b885eC361701152Ec03b2681`
@@ -14,12 +14,10 @@ authorized for the canonical E2E:
 - evaluator version: `tendercouncil.evaluator.v1`
 - response-window demo policy: `7200` seconds
 
-The funded tender `analytics-dashboard-2026` is currently `OPEN` with an
-escrow of `80_000_000_000_000_000` wei. Five distinct bidder wallets have
-submitted finalized immutable bid envelopes. The runner is waiting for the
-onchain bidding deadline; close, evaluation, response, challenge, review,
-payout, refund, and final settlement are not claimed until their finalized
-evidence is recorded.
+Its funded tenders, bids, failed child, and escrow state remain untouched. No
+v2 Core or Evaluator has been deployed and no v2 tender exists. The v2 runner
+uses `analytics-dashboard-2026-final-v2`, requires a separate finalized v2
+deployment manifest, and explicitly rejects both historical addresses.
 
 The earlier corrected pair remains preserved as a separate failed E2E artifact
 and is not being reused:
@@ -54,7 +52,5 @@ These are preserved as provenance and are classified as RPC observability or
 E2E tooling failures, not contract execution failures. No duplicate deployment
 or duplicate bid was broadcast during recovery.
 
-The superseded finalized pair and the E2E-defective replacement pair remain
-historical evidence only. No frontend work has begun; the UI STOP GATE remains
-closed until the current pair completes the backend proof and final security
-review.
+The superseded finalized pairs remain historical evidence only. `NEW LIVE E2E
+ALLOWED` is not reached; the UI and live-transaction stop gates remain closed.
