@@ -1,0 +1,6 @@
+# Deployment artifacts are byte-significant: the deployable source bytes are
+# what GenVM stores, what the size budget measures, and what the evaluator code
+# hash binds. A CRLF checkout on Windows silently inflates every artifact by one
+# byte per line, which breaks artifact/source parity and the outer-size gate.
+# Normalise the whole repository to LF in the index and in every working tree.
+* text=auto eol=lf
