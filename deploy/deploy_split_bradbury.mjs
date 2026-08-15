@@ -41,7 +41,22 @@ function jsonSafe(value) {
 }
 
 function statusName(receipt) {
-  return receipt?.statusName || receipt?.status || "UNKNOWN";
+  return receipt?.statusName || receipt?.status_name || receipt?.status || "UNKNOWN";
+}
+
+function resultName(receipt) {
+  return receipt?.resultName || receipt?.result_name || receipt?.result || "UNKNOWN";
+}
+
+function executionName(receipt) {
+  return receipt?.txExecutionResultName || receipt?.tx_execution_result_name
+    || receipt?.txExecutionResult || receipt?.tx_execution_result || "UNKNOWN";
+}
+
+function hasDeterministicViolation(receipt) {
+  return Boolean(receipt?.deterministicViolation || receipt?.deterministic_violation)
+    || resultName(receipt) === "DETERMINISTIC_VIOLATION"
+    || executionName(receipt) === "DETERMINISTIC_VIOLATION";
 }
 
 function contractAddress(receipt) {
@@ -97,6 +112,9 @@ async function waitFinal(client, hash) {
   const accepted = await client.waitForTransactionReceipt({ hash, status: "ACCEPTED", retries: 240, interval: 5000 });
   const finalized = await client.waitForTransactionReceipt({ hash, status: "FINALIZED", retries: 720, interval: 5000 });
   if (statusName(finalized) !== "FINALIZED") throw new Error(`transaction did not finalize: ${hash}`);
+  if (resultName(finalized) !== "AGREE" || executionName(finalized) !== "FINISHED_WITH_RETURN" || hasDeterministicViolation(finalized)) {
+    throw new Error(`deployment transaction outcome gate failed: ${hash}`);
+  }
   return { accepted: jsonSafe(accepted), finalized: jsonSafe(finalized) };
 }
 
