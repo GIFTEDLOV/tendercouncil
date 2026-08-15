@@ -12,10 +12,10 @@ const SENDER = (process.env.BRADBURY_PROBE_SENDER ||
 const OUTPUT = process.env.BRADBURY_SPLIT_PROBE_OUTPUT ||
   "artifacts/bradbury-split-deployment-probe.json";
 const COMPONENTS = [
-  { path: "artifacts/tender_council_core_deployable.py", args: [] },
+  { path: "artifacts/tender_council_core_v21_deployable.py", args: [] },
   {
-    path: "artifacts/tender_council_evaluator_deployable.py",
-    args: [SENDER, "tendercouncil.evaluator.v2"],
+    path: "artifacts/tender_council_evaluator_v21_deployable.py",
+    args: [SENDER, "tendercouncil.evaluator.v2.1"],
   },
 ];
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
@@ -93,7 +93,7 @@ const output = {
   genlayer_cli_version: "0.39.1",
   genlayer_js_version: "1.1.8",
   chain: { name: testnetBradbury.name, chain_id: testnetBradbury.id, consensus_main: testnetBradbury.consensusMainContract.address, add_transaction_input_count: addTransaction.inputs.length },
-  encoding: { source_encoding: "UTF-8", transaction: "transactions.serialize([source, constructorBytes, false])", constructor: "Core []; Evaluator [nonzero placeholder Core address, tendercouncil.evaluator.v2]", outer_call: "ConsensusMain.addTransaction(sender, zeroAddress, 5, 3, appData, validUntil)" },
+  encoding: { source_encoding: "UTF-8", transaction: "transactions.serialize([source, constructorBytes, false])", constructor: "Core []; Evaluator [nonzero placeholder Core address, tendercouncil.evaluator.v2.1]", outer_call: "ConsensusMain.addTransaction(sender, zeroAddress, 5, 3, appData, validUntil)" },
   measured_boundary: { largest_known_success_outer_bytes: 53316, smallest_known_failure_outer_bytes: 53348 },
   results,
 };

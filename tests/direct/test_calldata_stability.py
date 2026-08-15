@@ -21,13 +21,13 @@ def _pinned_calldata(evaluator):
     source = Path(EVALUATOR).read_text(encoding="utf-8")
     assert PINNED_DEPENDENCY in source.splitlines()[0]
     assert "gltest-direct" in str(Path(calldata.__file__).resolve())
-    assert evaluator.get_evaluator_version() == "tendercouncil.evaluator.v2"
+    assert evaluator.get_evaluator_version() == "tendercouncil.evaluator.v2.1"
     return calldata
 
 
 def test_historical_tuple_roundtrip_decodes_as_list(direct_deploy):
     evaluator = direct_deploy(
-        EVALUATOR, "0x" + "12" * 20, "tendercouncil.evaluator.v2"
+        EVALUATOR, "0x" + "12" * 20, "tendercouncil.evaluator.v2.1"
     )
     calldata = _pinned_calldata(evaluator)
 
@@ -45,7 +45,7 @@ def test_real_fetch_equivalence_survives_pinned_calldata_roundtrip(
 ):
     direct_vm.mock_web(FETCH_URL, {"status": 200, "body": b"abc"})
     evaluator = direct_deploy(
-        EVALUATOR, "0x" + "12" * 20, "tendercouncil.evaluator.v2"
+        EVALUATOR, "0x" + "12" * 20, "tendercouncil.evaluator.v2.1"
     )
     calldata = _pinned_calldata(evaluator)
     module = sys.modules[evaluator._instance.__class__.__module__]
@@ -91,9 +91,32 @@ def _evaluation_result():
     }
 
 
+def _evaluation_model_input():
+    return {
+        "classifications": [
+            {
+                "bid_id": "t-bid-a", "mandatory_requirements_pass": True,
+                "technical": 30, "delivery": 17, "price": 14,
+                "capability": 8, "support": 8,
+            },
+            {
+                "bid_id": "t-bid-b", "mandatory_requirements_pass": True,
+                "technical": 34, "delivery": 19, "price": 16,
+                "capability": 15, "support": 10,
+            },
+            {
+                "bid_id": "t-bid-c", "mandatory_requirements_pass": False,
+                "technical": 0, "delivery": 0, "price": 0,
+                "capability": 0, "support": 0,
+            },
+        ],
+        "confidence": "HIGH",
+    }
+
+
 def test_pinned_calldata_roundtrip_matrix(direct_deploy):
     evaluator = direct_deploy(
-        EVALUATOR, "0x" + "12" * 20, "tendercouncil.evaluator.v2"
+        EVALUATOR, "0x" + "12" * 20, "tendercouncil.evaluator.v2.1"
     )
     calldata = _pinned_calldata(evaluator)
     evaluation = _evaluation_result()
@@ -156,26 +179,28 @@ def _parser_module(evaluator):
 @pytest.mark.parametrize(
     "mutation",
     [
-        lambda value: value.pop("status"),
+        lambda value: value.pop("confidence"),
         lambda value: value.update({"extra": "field"}),
-        lambda value: value.update({"status": "INVENTED"}),
-        lambda value: value.update({"winner_total_score": "94"}),
-        lambda value: value.update({"scores": None}),
-        lambda value: value.update({"scores": {}}),
-        lambda value: value.update({"semantic_classifications": []}),
-        lambda value: value.update({"valid_bid_ids": None}),
+        lambda value: value.update({"confidence": "INVENTED"}),
+        lambda value: value.update({"classifications": []}),
+        lambda value: value["classifications"][0].pop("technical"),
+        lambda value: value["classifications"][0].update({"bid_id": "invented"}),
+        lambda value: value["classifications"][0].update({"mandatory_requirements_pass": "true"}),
+        lambda value: value["classifications"][0].update({"technical": "30"}),
+        lambda value: value["classifications"][0].update({"technical": 36}),
+        lambda value: value["classifications"][0].update({"technical": -1}),
+        lambda value: value["classifications"].append(copy.deepcopy(value["classifications"][0])),
         lambda value: value.update({"confidence": None}),
-        lambda value: value.update({"runner_up_score": True}),
     ],
 )
 def test_evaluation_model_parser_is_nonthrowing_and_rejects_malformed_shapes(
     direct_deploy, mutation
 ):
     evaluator = direct_deploy(
-        EVALUATOR, "0x" + "12" * 20, "tendercouncil.evaluator.v2"
+        EVALUATOR, "0x" + "12" * 20, "tendercouncil.evaluator.v2.1"
     )
     module = _parser_module(evaluator)
-    value = copy.deepcopy(_evaluation_result())
+    value = copy.deepcopy(_evaluation_model_input())
     mutation(value)
     assert module._try_normalize_evaluation_model(
         value,
@@ -207,7 +232,7 @@ def test_review_model_parser_is_nonthrowing_and_rejects_malformed_shapes(
     direct_deploy, value
 ):
     evaluator = direct_deploy(
-        EVALUATOR, "0x" + "12" * 20, "tendercouncil.evaluator.v2"
+        EVALUATOR, "0x" + "12" * 20, "tendercouncil.evaluator.v2.1"
     )
     module = _parser_module(evaluator)
     assert module._try_normalize_review_model(
@@ -220,7 +245,7 @@ def test_malformed_and_unavailable_model_envelopes_never_throw(
     direct_deploy, monkeypatch
 ):
     evaluator = direct_deploy(
-        EVALUATOR, "0x" + "12" * 20, "tendercouncil.evaluator.v2"
+        EVALUATOR, "0x" + "12" * 20, "tendercouncil.evaluator.v2.1"
     )
     module = _parser_module(evaluator)
 

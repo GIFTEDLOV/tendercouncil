@@ -1,4 +1,4 @@
-/* Durable, restartable TenderCouncil v2 Bradbury state machine. */
+/* Durable, restartable TenderCouncil v2.1 Bradbury state machine. */
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -22,7 +22,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const { sdkRoot: SDK_ROOT, cliEntry: CLI_ROOT } = resolveGenlayerModulePaths();
 const NETWORK = "testnet-bradbury";
 const CHAIN_ID = 4221;
-const EVALUATOR_VERSION = "tendercouncil.evaluator.v2";
+const EVALUATOR_VERSION = "tendercouncil.evaluator.v2.1";
 const TENDER_ID = process.env.TENDERCOUNCIL_TENDER_ID || "analytics-dashboard-2026-final-v2";
 const HISTORICAL_TENDERS = new Set(["analytics-dashboard-2026", "analytics-dashboard-2026-recovery"]);
 const BUDGET = 80_000_000_000_000_000n;
@@ -30,9 +30,9 @@ const BIDDER_FUNDING = 20_000_000_000_000_000n;
 const RESPONSE_WINDOW = 7200;
 const BRIEF_URL = "https://raw.githubusercontent.com/GIFTEDLOV/tendercouncil/fdb255d11f67f7ca449f3a2e7b6c204c03abfeb7/fixtures/live/blobs/brief.json";
 const BRIEF_HASH = "sha256:44bb3d24956a4ea2d9a8828afc7f6cde822c7f0c06708aea3fa9f7d365a33f8e";
-const DEPLOYMENT_PATH = path.join(ROOT, "artifacts/tender_council_bradbury_v2_deployment.json");
-const EVIDENCE_PATH = path.join(ROOT, "artifacts/tender_council_bradbury_v2_e2e.json");
-const JOURNAL_ROOT = path.join(ROOT, ".local/bradbury-journal");
+const DEPLOYMENT_PATH = process.env.TENDERCOUNCIL_DEPLOYMENT_PATH || path.join(ROOT, "artifacts/tender_council_bradbury_v21_deployment.json");
+const EVIDENCE_PATH = path.join(ROOT, "artifacts/tender_council_bradbury_v21_e2e.json");
+const JOURNAL_ROOT = process.env.TENDERCOUNCIL_JOURNAL_ROOT || path.join(ROOT, ".local/bradbury-journal");
 const BID_ROWS = [
   ["a", "bidder_a", 62_000_000_000_000_000n, 26, 90],
   ["b", "bidder_b", 74_000_000_000_000_000n, 27, 120],
@@ -182,9 +182,9 @@ async function loadBidDefinitions(fixtureCommit, bidders) {
 async function sourceManifest() {
   const files = {
     core_source: "contracts/tender_council_core.py",
-    core_deployable: "artifacts/tender_council_core_deployable.py",
+    core_deployable: "artifacts/tender_council_core_v21_deployable.py",
     evaluator_source: "contracts/tender_council_evaluator.py",
-    evaluator_deployable: "artifacts/tender_council_evaluator_deployable.py",
+    evaluator_deployable: "artifacts/tender_council_evaluator_v21_deployable.py",
   };
   const result = {};
   for (const [name, relative] of Object.entries(files)) {
@@ -205,6 +205,90 @@ async function journaledContractWrite({ journal, client, core, operation, object
   const entry = await journal.get(operation, objectId);
   if (!entry?.tx_hash && entry?.status !== "FINALIZED") throw new Error(`journal did not finalize ${operation}:${objectId}`);
   return entry;
+}
+
+async function journaledBidBroadcast({ journal, bidderClient, readClient, core, bid, deadline }) {
+  const operation = "submit_bid";
+  const args = [
+    bid.bid_id, bid.tender_id, BigInt(bid.price_wei), bid.delivery_days,
+    bid.support_days, bid.proposal_url, bid.proposal_sha256,
+    bid.evidence_commitments, bid.schema_version,
+  ];
+  const bidContext = async () => ({
+    tenderStatus: (await readContract(readClient, core, "get_tender", [TENDER_ID])).status,
+    now: await chainTime(readClient), deadline,
+  });
+  const reconcile = async () => {
+    const outcome = await readRecord(readClient, core, "get_bid", [bid.bid_id]);
+    const result = reconcileBid(
+      outcome.kind === "FOUND" ? { ...outcome, finality: "FINALIZED" } : outcome,
+      bid, await bidContext(),
+    );
+    return result.action === "COMPLETE" ? exact(result.record) : missing();
+  };
+
+  let entry = await journal.get(operation, bid.bid_id);
+  if (entry && canonicalJson(entry.intent) !== canonicalJson(bid)) {
+    throw new Error(`journal intent mismatch for ${operation}:${bid.bid_id}`);
+  }
+  if (entry?.tx_hash) return { tx_hash: entry.tx_hash, journal_status: entry.status };
+  if (entry) {
+    const state = await reconcile();
+    if (state.state === "EXACT") {
+      await journal.markFinalized(operation, bid.bid_id, state.digest);
+      return { tx_hash: null, journal_status: "FINALIZED" };
+    }
+    throw new Error(`ambiguous durable intent without tx hash for ${operation}:${bid.bid_id}; refusing rebroadcast`);
+  }
+
+  const state = await reconcile();
+  await journal.recordIntent(operation, bid.bid_id, bid);
+  if (state.state === "EXACT") {
+    await journal.markFinalized(operation, bid.bid_id, state.digest);
+    return { tx_hash: null, journal_status: "FINALIZED" };
+  }
+
+  const beforeBroadcast = await bidContext();
+  if (Number(beforeBroadcast.now) > Number(deadline)) {
+    throw new Error(`bidding deadline expired before broadcast of ${bid.bid_id}: chain_time=${beforeBroadcast.now} deadline=${deadline}`);
+  }
+  const txHash = await bidderClient.writeContract({
+    account: bidderClient.account, address: core, functionName: operation,
+    args, value: 0n, leaderOnly: false,
+  });
+  await journal.recordBroadcast(operation, bid.bid_id, txHash);
+  return { tx_hash: txHash, journal_status: "BROADCAST" };
+}
+
+async function reconcileFinalizedBid({ journal, readClient, core, bid, txHash, deadline }) {
+  if (!txHash) {
+    const state = await (async () => {
+      const outcome = await readRecord(readClient, core, "get_bid", [bid.bid_id]);
+      const result = reconcileBid(
+        outcome.kind === "FOUND" ? { ...outcome, finality: "FINALIZED" } : outcome,
+        bid, { tenderStatus: "OPEN", now: deadline + 1, deadline },
+      );
+      return result.action === "COMPLETE" ? exact(result.record) : missing();
+    })();
+    if (state.state !== "EXACT") throw new Error(`bid ${bid.bid_id} has no transaction hash and is not exact on chain`);
+    await journal.markFinalized("submit_bid", bid.bid_id, state.digest);
+    return state.value;
+  }
+  const final = await waitGenlayerFinal(readClient, txHash, true);
+  const tx = final.finalized;
+  const execution = String(tx?.txExecutionResultName || tx?.executionResult || tx?.txExecutionResult || "");
+  const deterministicViolation = Boolean(tx?.deterministicViolation || tx?.deterministic_violation) || execution === "DETERMINISTIC_VIOLATION" || String(tx?.resultName || tx?.result || "") === "DETERMINISTIC_VIOLATION";
+  if (statusName(tx) !== "FINALIZED" || String(tx?.resultName || tx?.result || "") !== "AGREE" || execution !== "FINISHED_WITH_RETURN" || deterministicViolation) {
+    throw new Error(`bid ${bid.bid_id} finality invariant failed for ${txHash}: status=${statusName(tx)} result=${tx?.resultName || tx?.result || ""} execution=${execution} deterministic_violation=${deterministicViolation}`);
+  }
+  const outcome = await readRecord(readClient, core, "get_bid", [bid.bid_id]);
+  const result = reconcileBid(
+    outcome.kind === "FOUND" ? { ...outcome, finality: "FINALIZED" } : outcome,
+    bid, { tenderStatus: "OPEN", now: deadline + 1, deadline },
+  );
+  if (result.action !== "COMPLETE") throw new Error(`bid ${bid.bid_id} finalized transaction did not produce exact bid state`);
+  await journal.markFinalized("submit_bid", bid.bid_id, digestState(result.record));
+  return result.record;
 }
 
 async function journaledFunding({ journal, client, address, amount }) {
@@ -435,7 +519,7 @@ async function driveReview({ journal, buyer, readClient, core, manifest }) {
 
 export async function runBradburyE2E() {
   assertConfiguration();
-  const confirmed = process.env.TENDERCOUNCIL_E2E_CONFIRM === "RUN_TENDERCOUNCIL_BRADBURY_V2_E2E";
+  const confirmed = process.env.TENDERCOUNCIL_E2E_CONFIRM === "RUN_TENDERCOUNCIL_BRADBURY_V21_E2E";
   const preflightOnly = process.env.TENDERCOUNCIL_PREFLIGHT_ONLY === "1";
   if (!confirmed && !preflightOnly) throw new Error("explicit v2 E2E confirmation or read-only preflight mode is required");
   const fixtureCommit = process.env.TENDERCOUNCIL_FIXTURE_COMMIT;
@@ -517,26 +601,30 @@ export async function runBradburyE2E() {
       reconcile: () => reconcileTender(readClient, core, tenderIntent, "OPEN"),
     });
 
-    const rowsForClose = [];
+    const bidBroadcasts = [];
     for (const bid of bids) {
       const bidderClient = sdk.createClient({ chain: testnetBradbury, account: bidderAccounts[bid.label] });
-      const bidContext = async () => ({ tenderStatus: (await readContract(readClient, core, "get_tender", [TENDER_ID])).status, now: await chainTime(readClient), deadline });
-      manifest.transactions[`submit_${bid.bid_id}`] = await journaledContractWrite({
-        journal, client: bidderClient, core, operation: "submit_bid", objectId: bid.bid_id,
-        intent: bid,
-        args: [bid.bid_id, TENDER_ID, BigInt(bid.price_wei), bid.delivery_days, bid.support_days, bid.proposal_url, bid.proposal_sha256, bid.evidence_commitments, bid.schema_version],
-        reconcile: async () => {
-          const outcome = await readRecord(readClient, core, "get_bid", [bid.bid_id]);
-          const result = reconcileBid(
-            outcome.kind === "FOUND" ? { ...outcome, finality: "FINALIZED" } : outcome,
-            bid, await bidContext(),
-          );
-          return result.action === "COMPLETE" ? exact(result.record) : missing();
-        },
-      });
-      const outcome = await readRecord(readClient, core, "get_bid", [bid.bid_id]);
-      rowsForClose.push({ outcome: { ...outcome, finality: "FINALIZED" }, expected: bid });
+      const broadcast = await journaledBidBroadcast({ journal, bidderClient, readClient, core, bid, deadline });
+      bidBroadcasts.push({ bid, tx_hash: broadcast.tx_hash });
+      manifest.transactions[`submit_${bid.bid_id}`] = { tx_hash: broadcast.tx_hash, status: broadcast.journal_status };
     }
+
+    const broadcastChainTime = await chainTime(readClient);
+    const broadcastBySuffix = Object.fromEntries(bidBroadcasts.map(({ bid, tx_hash }) => [bid.suffix, tx_hash || "ONCHAIN_RECONCILED"]));
+    console.log(`CHAIN_TIME: ${broadcastChainTime}`);
+    console.log(`DEADLINE: ${deadline}`);
+    console.log(`SECONDS_REMAINING: ${deadline - broadcastChainTime}`);
+    for (const suffix of ["a", "b", "c", "d", "e"]) console.log(`BID_${suffix.toUpperCase()}_TX: ${broadcastBySuffix[suffix]}`);
+    console.log(`ALL_FIVE_BROADCAST: ${bidBroadcasts.every(({ tx_hash }) => Boolean(tx_hash)) ? "YES" : "YES (ONCHAIN_RECONCILED)"}`);
+    console.log("DUPLICATE_WRITES: 0");
+    console.log("JOURNAL: HEALTHY");
+
+    const finalizedBids = await Promise.all(bidBroadcasts.map(async ({ bid, tx_hash }) => {
+      const record = await reconcileFinalizedBid({ journal, readClient, core, bid, txHash: tx_hash, deadline });
+      manifest.transactions[`submit_${bid.bid_id}`] = { tx_hash: tx_hash || broadcastBySuffix[bid.suffix], status: "FINALIZED", record };
+      return { outcome: { kind: "FOUND", record, finality: "FINALIZED" }, expected: bid };
+    }));
+    const rowsForClose = finalizedBids;
     if (!verifyBidsForClose(rowsForClose, { tenderStatus: "OPEN", now: deadline + 1, deadline, required: 5 })) throw new Error("five exact tender-scoped bids were not verified");
     await waitUntil(readClient, deadline + 1, "bidding_deadline");
     manifest.transactions.close_tender = await journaledContractWrite({

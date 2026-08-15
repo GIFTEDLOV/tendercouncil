@@ -1,0 +1,323 @@
+{
+  "classification": "LOCAL_EXACT_ARTIFACT_V21_FULL_GENSIM_MULTI_VALIDATOR_PROOF_NO_LIVE_RPC",
+  "generated_at_utc": "2026-08-15T18:33:42.545351+00:00",
+  "chain_id": 4221,
+  "validators_per_consensus_run": 5,
+  "max_rotations": 3,
+  "core_artifact": "artifacts/tender_council_core_v21_deployable.py",
+  "core_artifact_sha256": "6228d9a14be5d8747ad7935795a86663ee5d599d741a07c6265b029f33eccb63",
+  "core_artifact_bytes": 40262,
+  "evaluator_artifact": "artifacts/tender_council_evaluator_v21_deployable.py",
+  "evaluator_artifact_sha256": "e2042a0176068c471abb993ec7a588d0bfcc41f96226f14aa1ec6dd49d74831b",
+  "evaluator_artifact_bytes": 30524,
+  "external_boundaries": "deterministic web/LLM fixtures; production artifact logic and callbacks",
+  "coverage": {
+    "comparative_evaluation": "PASS",
+    "core_evaluation_callback_consumption": "PASS",
+    "no_valid_bid": "PASS",
+    "malformed_evaluation_model": "PASS",
+    "evaluator_failure_and_bounded_retry": "PASS",
+    "challenge_review": "PASS",
+    "core_review_callback_consumption": "PASS",
+    "malformed_review_model": "PASS",
+    "stale_or_duplicate_callback_rejection": "PASS",
+    "valid_winner_upheld_after_bounded_review_failure": "PASS"
+  },
+  "scenarios": [
+    {
+      "scenario": "production_artifact_comparative_evaluation_and_review",
+      "contracts": "generated Core + generated Evaluator",
+      "evaluation": {
+        "core_request": {
+          "label": "comparative_evaluation_core_request",
+          "status": "FINALIZED",
+          "rotation": 0,
+          "consensus_votes": [
+            "agree",
+            "agree",
+            "agree",
+            "agree",
+            "agree"
+          ],
+          "serialized_calldata_votes": [
+            "agree",
+            "agree",
+            "agree",
+            "agree",
+            "agree"
+          ],
+          "captured_nondeterministic_boundaries": 7
+        },
+        "evaluator_job": "executed_by_finalized_core_message",
+        "core_callback": "consumed_by_finalized_evaluator_message",
+        "nonce": 1,
+        "payload": "{\"confidence\":\"HIGH\",\"deterministic_disqualified_bid_ids\":[\"proof-eval-review-bid-d\",\"proof-eval-review-bid-e\"],\"disqualified_bid_ids\":[\"proof-eval-review-bid-c\",\"proof-eval-review-bid-d\",\"proof-eval-review-bid-e\"],\"integrity_disqualified_bid_ids\":[],\"rationale\":\"Deterministically derived from semantic classifications and rubric scores.\",\"runner_up_bid_id\":\"proof-eval-review-bid-a\",\"runner_up_score\":77,\"scores\":[{\"bid_id\":\"proof-eval-review-bid-a\",\"capability\":8,\"delivery\":17,\"price\":14,\"support\":8,\"technical\":30,\"total\":77},{\"bid_id\":\"proof-eval-review-bid-b\",\"capability\":15,\"delivery\":19,\"price\":16,\"support\":10,\"technical\":34,\"total\":94}],\"semantic_candidate_ids\":[\"proof-eval-review-bid-a\",\"proof-eval-review-bid-b\",\"proof-eval-review-bid-c\"],\"semantic_classifications\":[{\"bid_id\":\"proof-eval-review-bid-a\",\"mandatory_requirements_pass\":true},{\"bid_id\":\"proof-eval-review-bid-b\",\"mandatory_requirements_pass\":true},{\"bid_id\":\"proof-eval-review-bid-c\",\"mandatory_requirements_pass\":false}],\"semantic_disqualified_bid_ids\":[\"proof-eval-review-bid-c\"],\"status\":\"COMPARATIVE\",\"valid_bid_ids\":[\"proof-eval-review-bid-a\",\"proof-eval-review-bid-b\"],\"winner_bid_id\":\"proof-eval-review-bid-b\",\"winner_total_score\":94}"
+      },
+      "review": {
+        "core_request": {
+          "label": "challenge_review_core_request",
+          "status": "FINALIZED",
+          "rotation": 0,
+          "consensus_votes": [
+            "agree",
+            "agree",
+            "agree",
+            "agree",
+            "agree"
+          ],
+          "serialized_calldata_votes": [
+            "agree",
+            "agree",
+            "agree",
+            "agree",
+            "agree"
+          ],
+          "captured_nondeterministic_boundaries": 1
+        },
+        "evaluator_job": "executed_by_finalized_core_message",
+        "core_callback": "consumed_by_finalized_evaluator_message",
+        "review_nonce": 1,
+        "payload": "{\"challenge_states\":[\"proof-eval-review-challenge-a:VALID\"],\"decision\":\"UPHOLD\",\"rationale\":\"Authenticated challenge does not change the winner.\",\"winner_bid_id\":\"proof-eval-review-bid-b\"}"
+      },
+      "evaluation_callback_consumed": true,
+      "review_callback_consumed": true,
+      "duplicate_review_callback_rejected": true,
+      "winner_bid_id": "proof-eval-review-bid-b"
+    },
+    {
+      "scenario": "production_artifact_no_valid_bid",
+      "contracts": "generated Core + generated Evaluator",
+      "run": {
+        "core_request": {
+          "label": "no_valid_bid_core_request",
+          "status": "FINALIZED",
+          "rotation": 0,
+          "consensus_votes": [
+            "agree",
+            "agree",
+            "agree",
+            "agree",
+            "agree"
+          ],
+          "serialized_calldata_votes": [
+            "agree",
+            "agree",
+            "agree",
+            "agree",
+            "agree"
+          ],
+          "captured_nondeterministic_boundaries": 0
+        },
+        "evaluator_job": "executed_by_finalized_core_message",
+        "core_callback": "consumed_by_finalized_evaluator_message",
+        "nonce": 1,
+        "payload": "{\"confidence\":\"LOW\",\"deterministic_disqualified_bid_ids\":[],\"disqualified_bid_ids\":[],\"integrity_disqualified_bid_ids\":[],\"rationale\":\"No bid survived deterministic, integrity, schema, and evidence policy checks\",\"runner_up_bid_id\":\"\",\"runner_up_score\":0,\"scores\":[],\"semantic_candidate_ids\":[],\"semantic_classifications\":[],\"semantic_disqualified_bid_ids\":[],\"status\":\"NO_VALID_BID\",\"valid_bid_ids\":[],\"winner_bid_id\":\"\",\"winner_total_score\":0}"
+      },
+      "no_valid_bid_callback_consumed": true
+    },
+    {
+      "scenario": "production_artifact_malformed_evaluation_recovery",
+      "contracts": "generated Core + generated Evaluator",
+      "runs": [
+        {
+          "core_request": {
+            "label": "malformed_evaluation_attempt_1_core_request",
+            "status": "FINALIZED",
+            "rotation": 0,
+            "consensus_votes": [
+              "agree",
+              "agree",
+              "agree",
+              "agree",
+              "agree"
+            ],
+            "serialized_calldata_votes": [
+              "agree",
+              "agree",
+              "agree",
+              "agree",
+              "agree"
+            ],
+            "captured_nondeterministic_boundaries": 3
+          },
+          "evaluator_job": "executed_by_finalized_core_message",
+          "core_callback": "consumed_by_finalized_evaluator_message",
+          "nonce": 1,
+          "payload": "{\"result\":{},\"state\":\"MODEL_CANDIDATE_INVALID\"}"
+        },
+        {
+          "core_request": {
+            "label": "malformed_evaluation_attempt_2_core_request",
+            "status": "FINALIZED",
+            "rotation": 0,
+            "consensus_votes": [
+              "agree",
+              "agree",
+              "agree",
+              "agree",
+              "agree"
+            ],
+            "serialized_calldata_votes": [
+              "agree",
+              "agree",
+              "agree",
+              "agree",
+              "agree"
+            ],
+            "captured_nondeterministic_boundaries": 3
+          },
+          "evaluator_job": "executed_by_finalized_core_message",
+          "core_callback": "consumed_by_finalized_evaluator_message",
+          "nonce": 2,
+          "payload": "{\"result\":{},\"state\":\"MODEL_CANDIDATE_INVALID\"}"
+        },
+        {
+          "core_request": {
+            "label": "malformed_evaluation_attempt_3_core_request",
+            "status": "FINALIZED",
+            "rotation": 0,
+            "consensus_votes": [
+              "agree",
+              "agree",
+              "agree",
+              "agree",
+              "agree"
+            ],
+            "serialized_calldata_votes": [
+              "agree",
+              "agree",
+              "agree",
+              "agree",
+              "agree"
+            ],
+            "captured_nondeterministic_boundaries": 3
+          },
+          "evaluator_job": "executed_by_finalized_core_message",
+          "core_callback": "consumed_by_finalized_evaluator_message",
+          "nonce": 3,
+          "payload": "{\"result\":{},\"state\":\"MODEL_CANDIDATE_INVALID\"}"
+        }
+      ],
+      "malformed_model_nonthrowing": true,
+      "bounded_retry_reached": 3,
+      "stale_callback_rejected": true,
+      "safe_escrow_exit_available": true
+    },
+    {
+      "scenario": "production_artifact_malformed_review_recovery",
+      "contracts": "generated Core + generated Evaluator",
+      "evaluation": {
+        "core_request": {
+          "label": "pre_review_valid_evaluation_core_request",
+          "status": "FINALIZED",
+          "rotation": 0,
+          "consensus_votes": [
+            "agree",
+            "agree",
+            "agree",
+            "agree",
+            "agree"
+          ],
+          "serialized_calldata_votes": [
+            "agree",
+            "agree",
+            "agree",
+            "agree",
+            "agree"
+          ],
+          "captured_nondeterministic_boundaries": 5
+        },
+        "evaluator_job": "executed_by_finalized_core_message",
+        "core_callback": "consumed_by_finalized_evaluator_message",
+        "nonce": 1,
+        "payload": "{\"confidence\":\"HIGH\",\"deterministic_disqualified_bid_ids\":[],\"disqualified_bid_ids\":[],\"integrity_disqualified_bid_ids\":[],\"rationale\":\"Deterministically derived from semantic classifications and rubric scores.\",\"runner_up_bid_id\":\"proof-malformed-review-bid-a\",\"runner_up_score\":77,\"scores\":[{\"bid_id\":\"proof-malformed-review-bid-a\",\"capability\":8,\"delivery\":17,\"price\":14,\"support\":8,\"technical\":30,\"total\":77},{\"bid_id\":\"proof-malformed-review-bid-b\",\"capability\":15,\"delivery\":19,\"price\":16,\"support\":10,\"technical\":34,\"total\":94}],\"semantic_candidate_ids\":[\"proof-malformed-review-bid-a\",\"proof-malformed-review-bid-b\"],\"semantic_classifications\":[{\"bid_id\":\"proof-malformed-review-bid-a\",\"mandatory_requirements_pass\":true},{\"bid_id\":\"proof-malformed-review-bid-b\",\"mandatory_requirements_pass\":true}],\"semantic_disqualified_bid_ids\":[],\"status\":\"COMPARATIVE\",\"valid_bid_ids\":[\"proof-malformed-review-bid-a\",\"proof-malformed-review-bid-b\"],\"winner_bid_id\":\"proof-malformed-review-bid-b\",\"winner_total_score\":94}"
+      },
+      "review_runs": [
+        {
+          "core_request": {
+            "label": "malformed_review_attempt_1_core_request",
+            "status": "FINALIZED",
+            "rotation": 0,
+            "consensus_votes": [
+              "agree",
+              "agree",
+              "agree",
+              "agree",
+              "agree"
+            ],
+            "serialized_calldata_votes": [
+              "agree",
+              "agree",
+              "agree",
+              "agree",
+              "agree"
+            ],
+            "captured_nondeterministic_boundaries": 1
+          },
+          "evaluator_job": "executed_by_finalized_core_message",
+          "core_callback": "consumed_by_finalized_evaluator_message",
+          "review_nonce": 1,
+          "payload": "{\"result\":{},\"state\":\"MODEL_CANDIDATE_INVALID\"}"
+        },
+        {
+          "core_request": {
+            "label": "malformed_review_attempt_2_core_request",
+            "status": "FINALIZED",
+            "rotation": 0,
+            "consensus_votes": [
+              "agree",
+              "agree",
+              "agree",
+              "agree",
+              "agree"
+            ],
+            "serialized_calldata_votes": [
+              "agree",
+              "agree",
+              "agree",
+              "agree",
+              "agree"
+            ],
+            "captured_nondeterministic_boundaries": 1
+          },
+          "evaluator_job": "executed_by_finalized_core_message",
+          "core_callback": "consumed_by_finalized_evaluator_message",
+          "review_nonce": 2,
+          "payload": "{\"result\":{},\"state\":\"MODEL_CANDIDATE_INVALID\"}"
+        },
+        {
+          "core_request": {
+            "label": "malformed_review_attempt_3_core_request",
+            "status": "FINALIZED",
+            "rotation": 0,
+            "consensus_votes": [
+              "agree",
+              "agree",
+              "agree",
+              "agree",
+              "agree"
+            ],
+            "serialized_calldata_votes": [
+              "agree",
+              "agree",
+              "agree",
+              "agree",
+              "agree"
+            ],
+            "captured_nondeterministic_boundaries": 1
+          },
+          "evaluator_job": "executed_by_finalized_core_message",
+          "core_callback": "consumed_by_finalized_evaluator_message",
+          "review_nonce": 3,
+          "payload": "{\"result\":{},\"state\":\"MODEL_CANDIDATE_INVALID\"}"
+        }
+      ],
+      "malformed_model_nonthrowing": true,
+      "bounded_retry_reached": 3,
+      "valid_winner_upheld": true,
+      "buyer_refund_escape_available": false
+    }
+  ],
+  "live_rpc_used": false,
+  "live_transaction_broadcast": false
+}

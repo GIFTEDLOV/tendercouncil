@@ -42,7 +42,7 @@ def git(*args: str) -> str:
 
 def component(name: str):
     source = ROOT / f"contracts/tender_council_{name}.py"
-    artifact = ROOT / f"artifacts/tender_council_{name}_deployable.py"
+    artifact = ROOT / f"artifacts/tender_council_{name}_v21_deployable.py"
     if not source.is_file() or not artifact.is_file():
         fail(f"missing {name} source or deployable artifact")
     if source.read_text(encoding="utf-8").splitlines()[0] != HEADER:
@@ -89,7 +89,7 @@ def build_manifest(network: str, chain_id: int, sender: str):
         "runner_header": HEADER,
         "artifact_generator": "tools/make_deployable.py",
         "artifact_generator_sha256": digest(ROOT / "tools/make_deployable.py"),
-        "evaluator_schema_version": "tendercouncil.evaluator.v2",
+        "evaluator_schema_version": "tendercouncil.evaluator.v2.1",
         "components": [core, evaluator],
     }
 

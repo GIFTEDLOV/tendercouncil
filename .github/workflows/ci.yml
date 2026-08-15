@@ -34,14 +34,15 @@ jobs:
         run: |
           python tools/equivalence_trials.py
           python tools/semantic_policy_trials.py
+          python tools/diagnostic_evaluation_replay.py --source contracts/tender_council_evaluator.py
           python tools/challenge_integrity_trials.py
           python tools/review_lookup_trials.py
           python tools/evaluator_no_valid_trial.py
           python tools/financial_trials.py
       - name: Generate and check split artifacts
         run: |
-          python tools/make_deployable.py contracts/tender_council_core.py artifacts/tender_council_core_deployable.py
-          python tools/make_deployable.py contracts/tender_council_evaluator.py artifacts/tender_council_evaluator_deployable.py
+          python tools/make_deployable.py contracts/tender_council_core.py artifacts/tender_council_core_v21_deployable.py
+          python tools/make_deployable.py contracts/tender_council_evaluator.py artifacts/tender_council_evaluator_v21_deployable.py
           python tools/split_size_check.py
       - name: Print resolved runtime and run all direct tests
         run: |
@@ -51,3 +52,5 @@ jobs:
         run: python tools/mutation_test.py
       - name: Run split security mutation checks
         run: python tools/split_mutation_test.py
+      - name: Run v2.1 reduced-model mutation checks
+        run: python tools/reduced_model_mutation_test.py

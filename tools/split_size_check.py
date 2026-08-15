@@ -27,7 +27,7 @@ def main() -> None:
     components = []
     for name in ("core", "evaluator"):
         source = ROOT / f"contracts/tender_council_{name}.py"
-        artifact = ROOT / f"artifacts/tender_council_{name}_deployable.py"
+        artifact = ROOT / f"artifacts/tender_council_{name}_v21_deployable.py"
         if artifact.read_bytes() != make_deployable(source.read_bytes()):
             raise SystemExit(f"{name}: artifact/source parity mismatch")
         artifact_bytes = artifact.stat().st_size

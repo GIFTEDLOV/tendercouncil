@@ -33,8 +33,8 @@ function encode(source, args) {
   return { app, outer };
 }
 const componentsToEncode = [
-  { path: "artifacts/tender_council_core_deployable.py", args: [] },
-  { path: "artifacts/tender_council_evaluator_deployable.py", args: [SENDER, "tendercouncil.evaluator.v2"] },
+  { path: "artifacts/tender_council_core_v21_deployable.py", args: [] },
+  { path: "artifacts/tender_council_evaluator_v21_deployable.py", args: [SENDER, "tendercouncil.evaluator.v2.1"] },
 ];
 const components = [];
 for (const { path, args } of componentsToEncode) {

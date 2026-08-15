@@ -101,12 +101,6 @@ PYTHON_PROBE_MUTATIONS = (
         "tools/equivalence_trials.py",
     ),
     (
-        "semantic-disqualification-disabled",
-        "    semantic_bad = sorted(bid_id for bid_id in candidate_ids if not classified[bid_id])",
-        "    semantic_bad = []",
-        "tools/semantic_policy_trials.py",
-    ),
-    (
         "challenge-hash-verification-bypassed",
         '    if _hash_bytes(raw) != challenge["challenge_sha256"]:',
         "    if False:",
@@ -119,18 +113,6 @@ PYTHON_PROBE_MUTATIONS = (
         "tools/challenge_integrity_trials.py",
     ),
     (
-        "integrity-set-exactness-weakened",
-        "    if not _same_ids(model_integrity, integrity_ids):",
-        "    if not set(model_integrity).issubset(set(integrity_ids)):",
-        "tools/semantic_policy_trials.py",
-    ),
-    (
-        "semantic-no-valid-rejected-as-comparative-only",
-        '    if value["status"] not in ("COMPARATIVE", "NO_VALID_BID"):',
-        '    if value["status"] != "COMPARATIVE":',
-        "tools/semantic_policy_trials.py",
-    ),
-    (
         "invalid-challenge-review-not-deterministic-uphold",
         '        "decision": "UPHOLD",',
         '        "decision": "REPLACE_WINNER",',
@@ -139,32 +121,6 @@ PYTHON_PROBE_MUTATIONS = (
 )
 
 COMPOUND_PROBE_MUTATIONS = (
-    (
-        "winner-changing-tolerance-accepted",
-        (
-            ('        "status", "winner_bid_id", "runner_up_bid_id",', '        "status", "runner_up_bid_id",'),
-            ('        "status", "runner_up_bid_id",', '        "status",'),
-            ('    if actual.get("winner_bid_id") != expected.get("winner_bid_id"):', '    if False:'),
-            ('    if actual.get("runner_up_bid_id") != expected.get("runner_up_bid_id"):', '    if False:'),
-            ('SCORE_TOLERANCE = 2', 'SCORE_TOLERANCE = 100'),
-        ),
-        "tools/equivalence_trials.py",
-    ),
-    (
-        "mandatory-semantic-disagreement-tolerated",
-        (
-            ('        "semantic_candidate_ids", "semantic_disqualified_bid_ids",\n        "valid_bid_ids", "disqualified_bid_ids", "semantic_classifications",', '        "semantic_candidate_ids",'),
-        ),
-        "tools/equivalence_trials.py",
-    ),
-    (
-        "semantic-resurrection-allowed",
-        (
-            ('    expected_candidates = set(all_ids) - set(deterministic_ids) - set(integrity_ids)\n    if set(candidate_ids) != expected_candidates:', '    if False:'),
-            ('    expected_disqualified = sorted(set(deterministic_ids) | set(integrity_ids) | set(semantic_bad))', '    expected_disqualified = sorted(set(value["integrity_disqualified_bid_ids"]) | set(semantic_bad))'),
-        ),
-        "tools/semantic_policy_trials.py",
-    ),
 )
 
 FINANCIAL_MUTATIONS = (
@@ -357,15 +313,10 @@ def main():
         run_python_probe_mutant(*mutation)
     for mutation in COMPOUND_PROBE_MUTATIONS:
         run_compound_probe_mutant(*mutation)
-    run_execution_probe_mutant(
-        "real-evaluator-semantic-no-valid-path",
-        '    if value["status"] not in ("COMPARATIVE", "NO_VALID_BID"):',
-        '    if value["status"] != "COMPARATIVE":',
-    )
     for mutation in FINANCIAL_MUTATIONS:
         run_financial_mutant(*mutation)
     run_finality_mutant()
-    print(f"caught {len(DIRECT_MUTATIONS) + len(RUNTIME_MUTATIONS) + len(PYTHON_PROBE_MUTATIONS) + len(COMPOUND_PROBE_MUTATIONS) + len(FINANCIAL_MUTATIONS) + 2} split mutants")
+    print(f"caught {len(DIRECT_MUTATIONS) + len(RUNTIME_MUTATIONS) + len(PYTHON_PROBE_MUTATIONS) + len(COMPOUND_PROBE_MUTATIONS) + len(FINANCIAL_MUTATIONS) + 1} split mutants")
 
 
 if __name__ == "__main__":

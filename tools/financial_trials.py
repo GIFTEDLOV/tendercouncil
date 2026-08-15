@@ -57,7 +57,7 @@ def run(core_path: Path, fake_path: Path) -> None:
     engine.activate()
     core_address, core = engine.deploy(str(core_path), sender=BUYER)
     fake_address, _ = engine.deploy(str(fake_path), args=[core_address], sender=BUYER)
-    call(engine, core_address, "bind_evaluator", [type(core.bootstrapper)(fake_address), "tendercouncil.evaluator.v2", HASH])
+    call(engine, core_address, "bind_evaluator", [type(core.bootstrapper)(fake_address), "tendercouncil.evaluator.v2.1", HASH])
     total_budget = BUDGET_WEI * 3
     for tender_id in ("A", "B", "C"):
         engine.vm.value = BUDGET_WEI

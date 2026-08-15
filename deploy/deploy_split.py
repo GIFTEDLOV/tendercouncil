@@ -21,8 +21,8 @@ from tools.make_deployable import make_deployable
 ROOT = Path(__file__).resolve().parents[1]
 HEADER = '# { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }'
 COMPONENTS = (
-    ("core", ROOT / "contracts/tender_council_core.py", ROOT / "artifacts/tender_council_core_deployable.py", []),
-    ("evaluator", ROOT / "contracts/tender_council_evaluator.py", ROOT / "artifacts/tender_council_evaluator_deployable.py", ["<CORE_ADDRESS>", "tendercouncil.evaluator.v2"]),
+    ("core", ROOT / "contracts/tender_council_core.py", ROOT / "artifacts/tender_council_core_v21_deployable.py", []),
+    ("evaluator", ROOT / "contracts/tender_council_evaluator.py", ROOT / "artifacts/tender_council_evaluator_v21_deployable.py", ["<CORE_ADDRESS>", "tendercouncil.evaluator.v2.1"]),
 )
 
 
@@ -76,7 +76,7 @@ def main() -> None:
         "components": records,
         "binding": {
             "method": "bind_evaluator(evaluator_address, evaluator_version, evaluator_code_hash)",
-            "code_hash_definition": "sha256:<exact bytes of artifacts/tender_council_evaluator_deployable.py>",
+            "code_hash_definition": "sha256:<exact bytes of artifacts/tender_council_evaluator_v21_deployable.py>",
             "one_time": True,
             "core_authority": "Core bootstrapper only",
         },

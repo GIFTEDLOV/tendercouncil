@@ -1,0 +1,31 @@
+{
+  "method": "artifact bytes plus conservative 1024-byte outer-encoding bound",
+  "target_outer_bytes": 42000,
+  "preferred_target_outer_bytes": 40000,
+  "measured_network_boundary": {
+    "accepted_outer_bytes": 53316,
+    "failed_outer_bytes": 53348
+  },
+  "components": [
+    {
+      "name": "core",
+      "source_bytes": 54223,
+      "artifact_bytes": 40262,
+      "conservative_outer_bytes": 41286,
+      "target_outer_bytes": 42000,
+      "preferred_target_outer_bytes": 40000,
+      "within_preferred_target": false,
+      "within_target": true
+    },
+    {
+      "name": "evaluator",
+      "source_bytes": 40165,
+      "artifact_bytes": 30524,
+      "conservative_outer_bytes": 31548,
+      "target_outer_bytes": 42000,
+      "preferred_target_outer_bytes": 40000,
+      "within_preferred_target": true,
+      "within_target": true
+    }
+  ]
+}

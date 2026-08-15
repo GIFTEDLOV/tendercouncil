@@ -1,4 +1,4 @@
-"""Produce the exact-artifact, five-validator TenderCouncil v2 release proof.
+"""Produce the exact-artifact, five-validator TenderCouncil v2.1 release proof.
 
 External web and model responses are deterministic fixtures, but every state
 transition and callback is executed by the generated production Core and
@@ -25,9 +25,9 @@ if hasattr(sys.stderr, "reconfigure"):
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CORE = ROOT / "artifacts" / "tender_council_core_deployable.py"
-EVALUATOR = ROOT / "artifacts" / "tender_council_evaluator_deployable.py"
-PROOF = ROOT / "artifacts" / "tender_council_v2_multi_validator_proof.json"
+CORE = ROOT / "artifacts" / "tender_council_core_v21_deployable.py"
+EVALUATOR = ROOT / "artifacts" / "tender_council_evaluator_v21_deployable.py"
+PROOF = ROOT / "artifacts" / "tender_council_v21_multi_validator_proof.json"
 MANIFESTS = ROOT / "fixtures" / "live" / "final-v2" / "manifests"
 BLOBS = ROOT / "fixtures" / "live" / "blobs"
 
@@ -52,49 +52,29 @@ def canonical(value) -> str:
 
 
 def comparative_result(tender_id: str, suffixes: list[str]) -> dict:
-    valid = [f"{tender_id}-bid-{suffix}" for suffix in suffixes if suffix in ("a", "b")]
-    winner = valid[-1]
-    runner = valid[0] if len(valid) > 1 else ""
-    scores = []
     values = {
         "a": [30, 17, 14, 8, 8],
         "b": [34, 19, 16, 15, 10],
     }
-    for bid_id in valid:
-        row = values[bid_id.rsplit("-", 1)[1]]
-        scores.append({
-            "bid_id": bid_id, "technical": row[0], "delivery": row[1],
-            "price": row[2], "capability": row[3], "support": row[4],
-            "total": sum(row),
+    classifications = []
+    for suffix in suffixes:
+        if suffix not in ("a", "b", "c"):
+            continue
+        row = values.get(suffix, [0, 0, 0, 0, 0])
+        classifications.append({
+            "bid_id": f"{tender_id}-bid-{suffix}",
+            "mandatory_requirements_pass": suffix != "c",
+            "technical": row[0], "delivery": row[1], "price": row[2],
+            "capability": row[3], "support": row[4],
         })
-    semantic = [f"{tender_id}-bid-{suffix}" for suffix in suffixes if suffix in ("a", "b", "c")]
-    semantic_bad = [f"{tender_id}-bid-c"] if "c" in suffixes else []
-    deterministic = [
-        f"{tender_id}-bid-{suffix}" for suffix in suffixes if suffix in ("d", "e")
-    ]
     return {
+        "classifications": classifications,
         "confidence": "HIGH",
-        "deterministic_disqualified_bid_ids": deterministic,
-        "integrity_disqualified_bid_ids": [],
-        "semantic_candidate_ids": semantic,
-        "semantic_disqualified_bid_ids": semantic_bad,
-        "semantic_classifications": [
-            {
-                "bid_id": bid_id,
-                "mandatory_requirements_pass": bid_id not in semantic_bad,
-            }
-            for bid_id in semantic
-        ],
-        "disqualified_bid_ids": sorted(deterministic + semantic_bad),
-        "rationale": "Fixture-bound production-artifact consensus proof.",
-        "runner_up_bid_id": runner,
-        "runner_up_score": scores[0]["total"] if runner else 0,
-        "scores": scores,
-        "status": "COMPARATIVE",
-        "valid_bid_ids": valid,
-        "winner_bid_id": winner,
-        "winner_total_score": scores[-1]["total"],
     }
+
+
+def expected_winner(tender_id: str) -> str:
+    return f"{tender_id}-bid-b"
 
 
 def new_engine(seed: str):
@@ -105,12 +85,12 @@ def new_engine(seed: str):
     core_address, core = engine.deploy(str(CORE), sender=BUYER)
     evaluator_address, _ = engine.deploy(
         str(EVALUATOR),
-        args=[core_address, "tendercouncil.evaluator.v2"],
+        args=[core_address, "tendercouncil.evaluator.v2.1"],
         sender=BUYER,
     )
     engine.call_method(
         core_address, "bind_evaluator",
-        [type(core.bootstrapper)(evaluator_address), "tendercouncil.evaluator.v2", HASH],
+        [type(core.bootstrapper)(evaluator_address), "tendercouncil.evaluator.v2.1", HASH],
         sender=BUYER,
     )
     return engine, core_address, evaluator_address, original_stdin_fd
@@ -279,7 +259,7 @@ def evaluation_attempt(
                     core, "receive_evaluation_result",
                     [
                         tender_id, nonce, requested.closed_snapshot_digest,
-                        "tendercouncil.evaluator.v2", parsed["status"],
+                        "tendercouncil.evaluator.v2.1", parsed["status"],
                         parsed["winner_bid_id"], payload_digest,
                     ],
                     sender=evaluator,
@@ -379,13 +359,14 @@ def evaluation_and_review_scenario() -> dict:
         tender_id = "proof-eval-review"
         bidders = prepare_tender(engine, core, tender_id, ["a", "b", "c", "d", "e"])
         result = comparative_result(tender_id, ["a", "b", "c", "d", "e"])
-        engine.vm.mock_llm("Required fields: status", canonical(result))
+        engine.vm.mock_llm("Output exactly this JSON object shape", canonical(result))
         evaluation = evaluation_attempt(
             engine, core, evaluator, tender_id, retry=False,
             label="comparative_evaluation",
         )
         tender = engine.call_method(core, "get_tender", [tender_id])
-        if tender.status != "PROVISIONAL_AWARD" or tender.provisional_winner != result["winner_bid_id"]:
+        winner_id = expected_winner(tender_id)
+        if tender.status != "PROVISIONAL_AWARD" or tender.provisional_winner != winner_id:
             raise RuntimeError(
                 "production Core did not consume the evaluation callback: "
                 + tender.status + " / " + tender.provisional_winner
@@ -396,7 +377,7 @@ def evaluation_and_review_scenario() -> dict:
             core, "submit_challenge",
             [
                 f"{tender_id}-challenge-a", tender_id, "RUBRIC_MISAPPLIED",
-                result["winner_bid_id"], "", "", "",
+                winner_id, "", "", "",
             ],
             sender=bidders["a"],
         )
@@ -405,7 +386,7 @@ def evaluation_and_review_scenario() -> dict:
             int(response.response_window_end) + 1, timezone.utc
         ).isoformat())
         review_model = {
-            "decision": "UPHOLD", "winner_bid_id": result["winner_bid_id"],
+            "decision": "UPHOLD", "winner_bid_id": winner_id,
             "rationale": "Authenticated challenge does not change the winner.",
         }
         engine.vm.mock_llm("Return exactly decision", canonical(review_model))
@@ -414,7 +395,7 @@ def evaluation_and_review_scenario() -> dict:
             label="challenge_review",
         )
         final = engine.call_method(core, "get_tender", [tender_id])
-        if final.status != "AWARDED" or final.final_winner != result["winner_bid_id"]:
+        if final.status != "AWARDED" or final.final_winner != winner_id:
             raise RuntimeError("production Core did not consume the review callback")
         review_payload = engine.call_method(evaluator, "get_review_result", [tender_id, 1])
         review_digest = digest(review_payload.encode("utf-8"))
@@ -425,7 +406,7 @@ def evaluation_and_review_scenario() -> dict:
                 [
                     tender_id, 1, 1, final.closed_snapshot_digest,
                     final.evaluation_result_digest, final.challenge_set_digest,
-                    "UPHOLD", result["winner_bid_id"], review_digest,
+                    "UPHOLD", winner_id, review_digest,
                 ],
                 sender=evaluator,
             )
@@ -452,6 +433,10 @@ def no_valid_scenario() -> dict:
     try:
         tender_id = "proof-no-valid"
         prepare_tender(engine, core, tender_id, [])
+        engine.vm.mock_llm(
+            "Output exactly this JSON object shape",
+            canonical({"classifications": [], "confidence": "LOW"}),
+        )
         run = evaluation_attempt(
             engine, core, evaluator, tender_id, retry=False,
             label="no_valid_bid",
@@ -474,7 +459,7 @@ def malformed_evaluation_scenario() -> dict:
     try:
         tender_id = "proof-malformed-eval"
         prepare_tender(engine, core, tender_id, ["a"])
-        engine.vm.mock_llm("Required fields: status", "[]")
+        engine.vm.mock_llm("Output exactly this JSON object shape", "[]")
         runs = []
         runs.append(evaluation_attempt(
             engine, core, evaluator, tender_id, retry=False,
@@ -534,7 +519,7 @@ def malformed_review_scenario() -> dict:
         tender_id = "proof-malformed-review"
         bidders = prepare_tender(engine, core, tender_id, ["a", "b"])
         result = comparative_result(tender_id, ["a", "b"])
-        engine.vm.mock_llm("Required fields: status", canonical(result))
+        engine.vm.mock_llm("Output exactly this JSON object shape", canonical(result))
         evaluation = evaluation_attempt(
             engine, core, evaluator, tender_id, retry=False,
             label="pre_review_valid_evaluation",
@@ -544,7 +529,7 @@ def malformed_review_scenario() -> dict:
             core, "submit_challenge",
             [
                 f"{tender_id}-challenge-a", tender_id, "RUBRIC_MISAPPLIED",
-                result["winner_bid_id"], "", "", "",
+                expected_winner(tender_id), "", "", "",
             ],
             sender=bidders["a"],
         )
@@ -563,7 +548,7 @@ def malformed_review_scenario() -> dict:
                 label=f"malformed_review_attempt_{nonce}",
             ))
         final = engine.call_method(core, "get_tender", [tender_id])
-        if final.status != "AWARDED" or final.final_winner != result["winner_bid_id"]:
+        if final.status != "AWARDED" or final.final_winner != expected_winner(tender_id):
             raise RuntimeError("bounded review failure did not uphold the valid winner")
         return {
             "scenario": "production_artifact_malformed_review_recovery",
@@ -587,7 +572,7 @@ def main() -> None:
         malformed_review_scenario(),
     ]
     proof = {
-        "classification": "LOCAL_EXACT_ARTIFACT_FULL_GENSIM_MULTI_VALIDATOR_PROOF_NO_LIVE_RPC",
+        "classification": "LOCAL_EXACT_ARTIFACT_V21_FULL_GENSIM_MULTI_VALIDATOR_PROOF_NO_LIVE_RPC",
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "chain_id": 4221,
         "validators_per_consensus_run": 5,

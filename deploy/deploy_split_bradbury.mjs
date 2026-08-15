@@ -14,21 +14,21 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "node:path";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const VERSION = "tendercouncil.evaluator.v2";
+const VERSION = "tendercouncil.evaluator.v2.1";
 const NETWORK = "testnet-bradbury";
 const CHAIN_ID = 4221;
 const RPC = "https://rpc-bradbury.genlayer.com";
 const CONFIRM = "DEPLOY_TWO_CONTRACTS_TO_BRADBURY";
-// The v2 pair gets its own manifest. writeManifest also runs from the failure
+// The v2.1 pair gets its own manifest. writeManifest also runs from the failure
 // path, so pointing this at an existing manifest would overwrite append-only
 // historical deployment evidence on the first error.
-const MANIFEST_PATH = path.join(ROOT, "artifacts/tender_council_bradbury_v2_deployment.json");
+const MANIFEST_PATH = path.join(ROOT, "artifacts/tender_council_bradbury_v21_deployment.json");
 
 const files = {
   coreSource: path.join(ROOT, "contracts/tender_council_core.py"),
-  coreArtifact: path.join(ROOT, "artifacts/tender_council_core_deployable.py"),
+  coreArtifact: path.join(ROOT, "artifacts/tender_council_core_v21_deployable.py"),
   evaluatorSource: path.join(ROOT, "contracts/tender_council_evaluator.py"),
-  evaluatorArtifact: path.join(ROOT, "artifacts/tender_council_evaluator_deployable.py"),
+  evaluatorArtifact: path.join(ROOT, "artifacts/tender_council_evaluator_v21_deployable.py"),
   generator: path.join(ROOT, "tools/make_deployable.py"),
 };
 
@@ -109,6 +109,30 @@ async function writeManifest(manifest) {
   console.log(`deployment_manifest=${MANIFEST_PATH}`);
 }
 
+async function loadManifest() {
+  try {
+    return JSON.parse(await fs.readFile(MANIFEST_PATH, "utf8"));
+  } catch (error) {
+    if (error?.code === "ENOENT") return null;
+    throw error;
+  }
+}
+
+function appendStep(manifest, step) {
+  if (!manifest.steps.includes(step)) manifest.steps.push(step);
+}
+
+async function broadcastOrResume(manifest, section, txKey, broadcast) {
+  const prior = manifest[section]?.[txKey];
+  if (prior) return prior;
+  const hash = await broadcast();
+  manifest[section] = { ...(manifest[section] || {}), [txKey]: hash };
+  // The hash is durable before any receipt polling. A later process can resume
+  // this exact transaction instead of deploying a duplicate contract.
+  await writeManifest(manifest);
+  return hash;
+}
+
 export default async function deploySplitBradbury(client) {
   const account = client.account;
   const sender = account?.address;
@@ -126,7 +150,7 @@ export default async function deploySplitBradbury(client) {
     evaluatorSource: hashes.canonical_evaluator_source_sha256,
     evaluatorArtifact: hashes.deployable_evaluator_artifact_sha256,
   });
-  const manifest = {
+  const freshManifest = {
     mode: "BROADCAST_TWO_CONTRACTS",
     network: NETWORK,
     chain_id: CHAIN_ID,
@@ -141,14 +165,41 @@ export default async function deploySplitBradbury(client) {
     evaluator_schema_version: VERSION,
     steps: [],
   };
+  const priorManifest = await loadManifest();
+  const manifest = priorManifest || freshManifest;
+  if (priorManifest) {
+    for (const [key, expected] of Object.entries({
+      mode: freshManifest.mode,
+      network: freshManifest.network,
+      chain_id: freshManifest.chain_id,
+      sender: freshManifest.sender,
+      git_commit: freshManifest.git_commit,
+      canonical_core_source_sha256: freshManifest.canonical_core_source_sha256,
+      deployable_core_artifact_sha256: freshManifest.deployable_core_artifact_sha256,
+      canonical_evaluator_source_sha256: freshManifest.canonical_evaluator_source_sha256,
+      deployable_evaluator_artifact_sha256: freshManifest.deployable_evaluator_artifact_sha256,
+      evaluator_schema_version: freshManifest.evaluator_schema_version,
+    })) {
+      if (String(priorManifest[key]) !== String(expected)) throw new Error(`existing deployment manifest ${key} mismatch`);
+    }
+    if (!Array.isArray(manifest.steps)) throw new Error("existing deployment manifest steps are invalid");
+    if (manifest.completed_at_utc) {
+      console.log("deployment already completed; resuming is a no-op");
+      console.log(JSON.stringify(manifest, null, 2));
+      return;
+    }
+  } else {
+    await writeManifest(manifest);
+  }
 
   try {
-    const coreHash = await client.deployContract({ code: hashes.coreArtifact, args: [], leaderOnly: false });
+    const coreHash = await broadcastOrResume(manifest, "core", "deployment_tx", () => client.deployContract({ code: hashes.coreArtifact, args: [], leaderOnly: false }));
     const coreReceipts = await waitFinal(client, coreHash);
     const coreAddress = contractAddress(coreReceipts.finalized);
     if (!coreAddress) throw new Error("Core finalized receipt did not expose contract address");
-    manifest.core = { address: coreAddress, deployment_tx: coreHash, artifact_bytes: hashes.coreArtifact.length, ...coreReceipts };
-    manifest.steps.push("core_deployed_finalized");
+    manifest.core = { ...manifest.core, address: coreAddress, deployment_tx: coreHash, artifact_bytes: hashes.coreArtifact.length, ...coreReceipts };
+    appendStep(manifest, "core_deployed_finalized");
+    await writeManifest(manifest);
 
     const initialReady = await read(client, coreAddress, "get_production_ready");
     const initialBinding = JSON.parse(await read(client, coreAddress, "get_evaluator_binding"));
@@ -157,26 +208,30 @@ export default async function deploySplitBradbury(client) {
       throw new Error("Core initial unconfigured readback failed");
     }
     manifest.core.initial_readback = { get_production_ready: initialReady, binding: initialBinding, balance: String(initialBalance) };
-    manifest.steps.push("core_initial_state_verified");
+    appendStep(manifest, "core_initial_state_verified");
+    await writeManifest(manifest);
 
-    const evaluatorHash = await client.deployContract({ code: hashes.evaluatorArtifact, args: [coreAddress, VERSION], leaderOnly: false });
+    const evaluatorHash = await broadcastOrResume(manifest, "evaluator", "deployment_tx", () => client.deployContract({ code: hashes.evaluatorArtifact, args: [coreAddress, VERSION], leaderOnly: false }));
     const evaluatorReceipts = await waitFinal(client, evaluatorHash);
     const evaluatorAddress = contractAddress(evaluatorReceipts.finalized);
     if (!evaluatorAddress) throw new Error("Evaluator finalized receipt did not expose contract address");
-    manifest.evaluator = { address: evaluatorAddress, deployment_tx: evaluatorHash, constructor_core: coreAddress, version: VERSION, artifact_bytes: hashes.evaluatorArtifact.length, ...evaluatorReceipts };
-    manifest.steps.push("evaluator_deployed_finalized");
+    manifest.evaluator = { ...manifest.evaluator, address: evaluatorAddress, deployment_tx: evaluatorHash, constructor_core: coreAddress, version: VERSION, artifact_bytes: hashes.evaluatorArtifact.length, ...evaluatorReceipts };
+    appendStep(manifest, "evaluator_deployed_finalized");
+    await writeManifest(manifest);
 
     const configuredCore = await read(client, evaluatorAddress, "get_core_address");
     const configuredVersion = await read(client, evaluatorAddress, "get_evaluator_version");
     if (configuredCore.toLowerCase() !== coreAddress.toLowerCase() || configuredVersion !== VERSION) throw new Error("Evaluator constructor readback failed");
     manifest.evaluator.constructor_readback = { core_address: configuredCore, version: configuredVersion };
-    manifest.steps.push("evaluator_constructor_verified");
+    appendStep(manifest, "evaluator_constructor_verified");
+    await writeManifest(manifest);
 
     const codeHash = `sha256:${hashes.deployable_evaluator_artifact_sha256}`;
-    const bindHash = await client.writeContract({ address: coreAddress, functionName: "bind_evaluator", args: [evaluatorAddress, VERSION, codeHash], value: 0n, leaderOnly: false });
+    const bindHash = await broadcastOrResume(manifest, "binding", "tx", () => client.writeContract({ address: coreAddress, functionName: "bind_evaluator", args: [evaluatorAddress, VERSION, codeHash], value: 0n, leaderOnly: false }));
     const bindReceipts = await waitFinal(client, bindHash);
-    manifest.binding = { tx: bindHash, evaluator_address: evaluatorAddress, version: VERSION, evaluator_code_hash: codeHash, ...bindReceipts };
-    manifest.steps.push("core_binding_finalized");
+    manifest.binding = { ...manifest.binding, tx: bindHash, evaluator_address: evaluatorAddress, version: VERSION, evaluator_code_hash: codeHash, ...bindReceipts };
+    appendStep(manifest, "core_binding_finalized");
+    await writeManifest(manifest);
 
     const finalBinding = JSON.parse(await read(client, coreAddress, "get_evaluator_binding"));
     const finalReady = await read(client, coreAddress, "get_production_ready");

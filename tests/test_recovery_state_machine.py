@@ -45,7 +45,7 @@ def _new(request):
     fake_address, _ = engine.deploy(FAKE, args=[core_address], sender=BUYER)
     engine.call_method(
         core_address, "bind_evaluator",
-        [type(core.bootstrapper)(fake_address), "tendercouncil.evaluator.v2", HASH],
+        [type(core.bootstrapper)(fake_address), "tendercouncil.evaluator.v2.1", HASH],
         sender=BUYER,
     )
     return engine, core_address, fake_address

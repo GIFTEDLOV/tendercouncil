@@ -1,0 +1,45 @@
+{
+  "created_at_utc": "2026-08-15T18:33:30.781213+00:00",
+  "mode": "DRY_RUN_NO_BROADCAST",
+  "network": "testnet-bradbury",
+  "chain_id": 4221,
+  "sender": "0xe0f17bef0587c3b66d2eb4bbe705dff821abdde7",
+  "ordered_steps": [
+    "preflight network/chain/sender and component parity",
+    "deploy Core and await finalized deployment",
+    "deploy Evaluator with finalized Core address",
+    "bind Evaluator once in Core and await finalized binding",
+    "verify Core binding address/version/exact evaluator artifact code hash"
+  ],
+  "components": [
+    {
+      "name": "core",
+      "source": "contracts\\tender_council_core.py",
+      "artifact": "artifacts\\tender_council_core_v21_deployable.py",
+      "source_sha256": "54acb8815411c3bbc0623a6587cdb4a29bc77a0a8b91b3c7022c4d77c6dbfbd2",
+      "artifact_sha256": "6228d9a14be5d8747ad7935795a86663ee5d599d741a07c6265b029f33eccb63",
+      "source_bytes": 54223,
+      "artifact_bytes": 40262,
+      "constructor_args": []
+    },
+    {
+      "name": "evaluator",
+      "source": "contracts\\tender_council_evaluator.py",
+      "artifact": "artifacts\\tender_council_evaluator_v21_deployable.py",
+      "source_sha256": "1956b3c984ec6310c4a4d6532e8bd8f456532b9c4e171dae82aa9ae8d7194e5d",
+      "artifact_sha256": "e2042a0176068c471abb993ec7a588d0bfcc41f96226f14aa1ec6dd49d74831b",
+      "source_bytes": 40165,
+      "artifact_bytes": 30524,
+      "constructor_args": [
+        "<CORE_ADDRESS>",
+        "tendercouncil.evaluator.v2.1"
+      ]
+    }
+  ],
+  "binding": {
+    "method": "bind_evaluator(evaluator_address, evaluator_version, evaluator_code_hash)",
+    "code_hash_definition": "sha256:<exact bytes of artifacts/tender_council_evaluator_v21_deployable.py>",
+    "one_time": true,
+    "core_authority": "Core bootstrapper only"
+  }
+}

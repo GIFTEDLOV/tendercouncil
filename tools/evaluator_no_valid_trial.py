@@ -61,21 +61,22 @@ def run(evaluator_path: Path, core_fixture_path: Path) -> None:
     snapshot_raw = json.dumps(snapshot, sort_keys=True, separators=(",", ":")).encode()
     snapshot_digest = digest(snapshot_raw)
     result = {
-        "status": "NO_VALID_BID", "deterministic_disqualified_bid_ids": [], "integrity_disqualified_bid_ids": [],
-        "semantic_candidate_ids": ["B0", "B1", "B2"], "semantic_disqualified_bid_ids": ["B0", "B1", "B2"],
-        "semantic_classifications": [{"bid_id": bid, "mandatory_requirements_pass": False} for bid in ("B0", "B1", "B2")],
-        "valid_bid_ids": [], "disqualified_bid_ids": ["B0", "B1", "B2"], "scores": [],
-        "winner_bid_id": "", "winner_total_score": 0, "runner_up_bid_id": "", "runner_up_score": 0,
-        "confidence": "LOW", "rationale": "all candidates fail authentication",
+        "classifications": [
+            {"bid_id": bid, "mandatory_requirements_pass": False,
+             "technical": 0, "delivery": 0, "price": 0,
+             "capability": 0, "support": 0}
+            for bid in ("B0", "B1", "B2")
+        ],
+        "confidence": "LOW",
     }
     result_text = json.dumps(result, sort_keys=True, separators=(",", ":"))
     engine = SimEngine(StateStore(chain_id=4221, seed="semantic-all-fail"))
     engine.activate()
     for url, response in web.items():
         engine.vm.mock_web(url, response)
-    engine.vm.mock_llm("Required fields: status", result_text)
+    engine.vm.mock_llm("Output exactly this JSON object shape", result_text)
     core_address, _ = engine.deploy(str(core_fixture_path), args=[snapshot_raw.decode(), snapshot_digest], sender=BUYER)
-    evaluator_address, _ = engine.deploy(str(evaluator_path), args=[core_address, "tendercouncil.evaluator.v2"], sender=BUYER)
+    evaluator_address, _ = engine.deploy(str(evaluator_path), args=[core_address, "tendercouncil.evaluator.v2.1"], sender=BUYER)
     engine.call_method(evaluator_address, "start_evaluation_job", ["semantic-all-fail", 1, snapshot_digest], sender=core_address)
     record = json.loads(engine.call_method(evaluator_address, "get_evaluation_result", ["semantic-all-fail", 1]))
     if record["status"] != "NO_VALID_BID" or record["semantic_candidate_ids"] != ["B0", "B1", "B2"] or record["semantic_disqualified_bid_ids"] != ["B0", "B1", "B2"] or record["valid_bid_ids"]:

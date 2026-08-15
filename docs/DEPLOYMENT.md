@@ -9,7 +9,7 @@ The production pair is deployed in this order:
 
 1. `TenderCouncilCore` unconfigured.
 2. Wait for finalized Core deployment and record its address.
-3. `TenderCouncilEvaluator(core_address, tendercouncil.evaluator.v2)`.
+3. `TenderCouncilEvaluator(core_address, tendercouncil.evaluator.v2.1)`.
 4. Wait for finalized Evaluator deployment.
 5. One-time Core `bind_evaluator(address, version, evaluator_code_hash)`, where
    the hash is the exact SHA-256 of the generated Evaluator deployment artifact.
@@ -30,8 +30,8 @@ Canonical sources:
 
 Generated artifacts:
 
-- `artifacts/tender_council_core_deployable.py`
-- `artifacts/tender_council_evaluator_deployable.py`
+- `artifacts/tender_council_core_v21_deployable.py`
+- `artifacts/tender_council_evaluator_v21_deployable.py`
 
 `tools/make_deployable.py` is the only generator. Parity is checked before
 deployment. `node tools/split_deployment_size_check.mjs` uses the installed

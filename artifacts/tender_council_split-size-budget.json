@@ -1,29 +1,54 @@
 {
-  "method": "artifact bytes plus conservative 1024-byte outer-encoding bound",
-  "target_outer_bytes": 42000,
+  "generated_at_utc": "2026-08-15T18:34:06.290Z",
+  "chain": {
+    "name": "Genlayer Bradbury Testnet",
+    "chain_id": 4221
+  },
   "preferred_target_outer_bytes": 40000,
-  "measured_network_boundary": {
-    "accepted_outer_bytes": 53316,
-    "failed_outer_bytes": 53348
+  "target_outer_bytes": 42000,
+  "measured_historical_boundary": {
+    "accepted": 53316,
+    "failed": 53348
   },
   "components": [
     {
-      "name": "core",
-      "source_bytes": 54219,
-      "artifact_bytes": 40258,
-      "conservative_outer_bytes": 41282,
-      "target_outer_bytes": 42000,
+      "path": "artifacts/tender_council_core_v21_deployable.py",
+      "constructor_args": [],
+      "source_utf8_bytes": 40262,
+      "app_data": {
+        "bytes": 40270,
+        "zero_bytes": 1,
+        "nonzero_bytes": 40269
+      },
+      "outer_deployment_data": {
+        "bytes": 40516,
+        "zero_bytes": 218,
+        "nonzero_bytes": 40298
+      },
       "preferred_target_outer_bytes": 40000,
+      "safety_target_outer_bytes": 42000,
       "within_preferred_target": false,
       "within_target": true
     },
     {
-      "name": "evaluator",
-      "source_bytes": 41852,
-      "artifact_bytes": 31952,
-      "conservative_outer_bytes": 32976,
-      "target_outer_bytes": 42000,
+      "path": "artifacts/tender_council_evaluator_v21_deployable.py",
+      "constructor_args": [
+        "0xe0f17bef0587c3b66d2eb4bbe705dff821abdde7",
+        "tendercouncil.evaluator.v2.1"
+      ],
+      "source_utf8_bytes": 30524,
+      "app_data": {
+        "bytes": 30614,
+        "zero_bytes": 1,
+        "nonzero_bytes": 30613
+      },
+      "outer_deployment_data": {
+        "bytes": 30852,
+        "zero_bytes": 210,
+        "nonzero_bytes": 30642
+      },
       "preferred_target_outer_bytes": 40000,
+      "safety_target_outer_bytes": 42000,
       "within_preferred_target": true,
       "within_target": true
     }

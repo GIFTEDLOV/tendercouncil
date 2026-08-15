@@ -65,7 +65,7 @@ class SplitFakeEvaluator(gl.Contract):
     def emit_evaluation(self, tender_id, nonce, snapshot_digest, result_digest):
         result = json.loads(self.evaluation_result)
         CoreInterface(self.core_address).emit(on="finalized").receive_evaluation_result(
-            tender_id, nonce, snapshot_digest, "tendercouncil.evaluator.v2",
+            tender_id, nonce, snapshot_digest, "tendercouncil.evaluator.v2.1",
             result["status"], result.get("winner_bid_id", ""), result_digest,
         )
 

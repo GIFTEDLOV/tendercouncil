@@ -47,9 +47,9 @@ def test_core_is_unconfigured_until_one_time_binding(direct_vm, direct_deploy, d
     evaluator_address = _addr(bytes.fromhex("12" * 20), core)
     code_hash = "sha256:" + "b" * 64
     direct_vm.sender = direct_vm.origin
-    core.bind_evaluator(evaluator_address, "tendercouncil.evaluator.v2", code_hash)
+    core.bind_evaluator(evaluator_address, "tendercouncil.evaluator.v2.1", code_hash)
     with direct_vm.expect_revert("already permanently bound"):
-        core.bind_evaluator(evaluator_address, "tendercouncil.evaluator.v2", code_hash)
+        core.bind_evaluator(evaluator_address, "tendercouncil.evaluator.v2.1", code_hash)
     assert core.get_production_ready() is True
     binding = core.get_evaluator_binding()
     assert "12" * 20 in binding
@@ -63,7 +63,7 @@ def test_core_snapshot_is_canonical_and_evaluation_is_locked_until_callback(
     core = direct_deploy(CORE)
     evaluator_address = _addr(bytes.fromhex("34" * 20), core)
     direct_vm.sender = direct_vm.origin
-    core.bind_evaluator(evaluator_address, "tendercouncil.evaluator.v2", "sha256:" + "c" * 64)
+    core.bind_evaluator(evaluator_address, "tendercouncil.evaluator.v2.1", "sha256:" + "c" * 64)
     _create(core, direct_vm, direct_bob)
     direct_vm.deal(direct_vm._contract_address, BUDGET_WEI)
     direct_vm.sender = direct_bob
@@ -80,7 +80,7 @@ def test_core_snapshot_is_canonical_and_evaluation_is_locked_until_callback(
     with direct_vm.expect_revert("caller is not the bound evaluator"):
         core.receive_evaluation_result(
             "split-tender", 1, tender.closed_snapshot_digest,
-            "tendercouncil.evaluator.v2", "NO_VALID_BID", "", ZERO_HASH,
+            "tendercouncil.evaluator.v2.1", "NO_VALID_BID", "", ZERO_HASH,
         )
 
 
@@ -90,7 +90,7 @@ def test_core_binds_immutable_commercial_terms_and_rejects_manual_award(
     direct_vm.warp("2026-01-01T00:00:00Z")
     core = direct_deploy(CORE)
     direct_vm.sender = direct_vm.origin
-    core.bind_evaluator(_addr(bytes.fromhex("56" * 20), core), "tendercouncil.evaluator.v2", "sha256:" + "d" * 64)
+    core.bind_evaluator(_addr(bytes.fromhex("56" * 20), core), "tendercouncil.evaluator.v2.1", "sha256:" + "d" * 64)
     _create(core, direct_vm, direct_bob, "manual-award")
     direct_vm.deal(direct_vm._contract_address, BUDGET_WEI)
     direct_vm.sender = direct_bob
@@ -102,9 +102,9 @@ def test_core_binds_immutable_commercial_terms_and_rejects_manual_award(
 
 def test_evaluator_rejects_non_core_job_sender(direct_vm, direct_deploy):
     core_address = "0x" + "12" * 20
-    evaluator = direct_deploy(EVALUATOR, core_address, "tendercouncil.evaluator.v2")
+    evaluator = direct_deploy(EVALUATOR, core_address, "tendercouncil.evaluator.v2.1")
     assert str(evaluator.get_core_address()).lower() == core_address
-    assert evaluator.get_evaluator_version() == "tendercouncil.evaluator.v2"
+    assert evaluator.get_evaluator_version() == "tendercouncil.evaluator.v2.1"
     with direct_vm.expect_revert("only the bound Core may call evaluator"):
         evaluator.start_evaluation_job("forged", 1, ZERO_HASH)
     assert not hasattr(evaluator, "settle_award")
