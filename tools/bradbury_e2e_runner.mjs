@@ -69,13 +69,38 @@ async function retryRead(name, operation) {
   return withReadRetry(operation, { operation: name, logger: retryLog, isTransient: (error) => TRANSIENT.test(String(error?.message || error)) });
 }
 
+// GenVM surfaces a contract UserError as a Go byte-slice dump
+// (`ReturnData:[]uint8{0x74, 0x65, ...}`), never as decoded text, so the
+// "<record> does not exist" phrase is not readable in any error string.
+// Decode those blocks so absence stays distinguishable from a real fault.
+function decodeVmBytes(text) {
+  let decoded = "";
+  const block = /\[\]uint8\{([^}]*)\}/g;
+  let match;
+  while ((match = block.exec(text)) !== null) {
+    for (const part of match[1].split(",")) {
+      const byte = part.trim();
+      if (/^0x[0-9a-fA-F]{1,2}$/.test(byte)) {
+        const code = parseInt(byte, 16);
+        decoded += code >= 0x20 && code < 0x7f ? String.fromCharCode(code) : " ";
+      }
+    }
+    decoded += " ";
+  }
+  return decoded;
+}
+
 function recordMissing(error, functionName) {
-  const message = String(error?.shortMessage || error?.message || error);
+  // shortMessage alone is a generic viem string; the payload only ever appears
+  // in the full message, so every layer has to be considered.
+  const joined = [error?.shortMessage, error?.message, String(error)]
+    .filter(Boolean).map(String).join(" ");
+  const haystack = `${joined} ${decodeVmBytes(joined)}`;
   return ({
     get_tender: /tender does not exist/i,
     get_bid: /bid does not exist/i,
     get_challenge: /challenge does not exist/i,
-  })[functionName]?.test(message) || false;
+  })[functionName]?.test(haystack) || false;
 }
 
 async function readContract(client, address, functionName, args = []) {
