@@ -1,0 +1,64 @@
+{
+  "e2e_status": "POST_SUBMISSION_OPTIONAL",
+  "note": "Canonical v2.1 E2E was safely parked in deadline mode. E2E completion is NOT part of the submission gate and does not affect READY_TO_SUBMIT.",
+  "parked_at_utc": "2026-08-16T07:51:19.794765Z",
+  "journal_file": ".local/bradbury-journal/testnet-bradbury-0x5adba50ce6c6ffba738f212ba12fc3c78b2664cd-analytics-dashboard-2026-final-v2.jsonl",
+  "journal_preserved": true,
+  "tender_id": "analytics-dashboard-2026-final-v2",
+  "core": "0x5ADbA50CE6c6fFBA738f212ba12fC3C78B2664cd",
+  "evaluator": "0x023AB3434761715a531884Ca0852aC14beE03acE",
+  "reached_state": "tender OPEN (escrow funded); no bids submitted",
+  "in_flight_reconciled": {
+    "operation": "open_tender",
+    "tx": "0xa484e4fbbf7361cbbfb592ab4678e44c636f438378df5d816de4ecfb46591054",
+    "observed": "ACCEPTED / AGREE / FINISHED_WITH_RETURN / no DV (finalizing)",
+    "next_lifecycle_write_issued": false
+  },
+  "escrow_wei": "80000000000000000",
+  "escrow_note": "Buyer's own escrow locked in Core; recoverable post-submission by completing or cancelling the tender lifecycle. Independent of production readiness.",
+  "production_ready_unaffected": true,
+  "journal_ops": [
+    {
+      "operation": "fund_bidder",
+      "object_id": "0xc8732d516ad35cb7a137548878358856dbd9d8f2",
+      "status": "FINALIZED",
+      "tx_hash": null
+    },
+    {
+      "operation": "fund_bidder",
+      "object_id": "0x4cb46003f11755fecffcfe119824c420d3dc059b",
+      "status": "FINALIZED",
+      "tx_hash": null
+    },
+    {
+      "operation": "fund_bidder",
+      "object_id": "0xc0c60a43fb1a893b12cb188ff822ee93878760fe",
+      "status": "FINALIZED",
+      "tx_hash": null
+    },
+    {
+      "operation": "fund_bidder",
+      "object_id": "0x452f17798c5717302ffb723fd53bde63d4cbe1cb",
+      "status": "FINALIZED",
+      "tx_hash": null
+    },
+    {
+      "operation": "fund_bidder",
+      "object_id": "0xa8a4ee51a295c0f880487eca14ed89f4637a21b5",
+      "status": "FINALIZED",
+      "tx_hash": null
+    },
+    {
+      "operation": "create_tender",
+      "object_id": "analytics-dashboard-2026-final-v2",
+      "status": "FINALIZED",
+      "tx_hash": "0x9861fb61ab38215aa4e6234c533e5dac10bc9fd66c63265aecb5c93c91524737"
+    },
+    {
+      "operation": "open_tender",
+      "object_id": "analytics-dashboard-2026-final-v2",
+      "status": "BROADCAST",
+      "tx_hash": "0xa484e4fbbf7361cbbfb592ab4678e44c636f438378df5d816de4ecfb46591054"
+    }
+  ]
+}
