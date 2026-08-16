@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "pilot_id": "PILOT2_20260816T184818Z",
+  "tender_id": "TENDER_PILOT_V21_P2_20260816T184818Z",
+  "network": "testnet-bradbury",
+  "chain_id": 4221,
+  "core": "0x5ADbA50CE6c6fFBA738f212ba12fC3C78B2664cd",
+  "evaluator": "0x023AB3434761715a531884Ca0852aC14beE03acE",
+  "evaluator_version": "tendercouncil.evaluator.v2.1",
+  "pilot_fixture_commit": "837565d9f0b4633f3ae111197d839f3790f164ca",
+  "expectation_commit": "dbe77d6fff8215973a90dc0ac0df2414dc13cbac",
+  "actors": {
+    "buyer": "0xe0f17BEf0587c3b66D2eB4BBE705dFf821AbDde7",
+    "bidder_a": "0xC8732D516AD35CB7A137548878358856dBD9D8f2",
+    "bidder_b": "0x4cB46003f11755feCfFCfe119824C420d3dc059B"
+  },
+  "deadline_policy": {
+    "window_seconds": 86400,
+    "bid_a_minimum_remaining_seconds": 43200,
+    "bid_b_minimum_remaining_seconds": 36000
+  },
+  "events": [],
+  "errors": []
+}
