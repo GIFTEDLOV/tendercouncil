@@ -22,7 +22,7 @@ That combination is the project-specific contribution documented below.
 
 ## 1. Official GenLayer use cases
 
-GenLayer explicitly identifies judgment-dependent workflows as appropriate Intelligent Contract use cases. Its current builder guidance names **performance/milestone adjudication**, **dispute workflows**, and **rule/policy verification** as good fits when an on-chain consequence depends on evidence or natural-language judgment and validators can independently inspect the relevant material.
+GenLayer explicitly identifies judgment-dependent workflows as appropriate Intelligent Contract use cases. Its current builder guidance names **dispute or milestone workflows**, **rule or policy verification**, and **milestone/deliverable adjudication** as good fits when an on-chain consequence depends on evidence or natural-language judgment and validators can independently inspect the relevant material.
 
 Primary sources:
 

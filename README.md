@@ -139,6 +139,8 @@ and bounded semantic comparison. Validator agreement compares decision-critical
 sets and identities exactly, with only the deployed two-point score tolerance.
 See [docs/CONSENSUS-NOTES.md](docs/CONSENSUS-NOTES.md) and
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+For ecosystem positioning and overlap analysis, see
+[docs/OVERLAP-RESEARCH.md](docs/OVERLAP-RESEARCH.md).
 
 ## Provenance and historical records
 
