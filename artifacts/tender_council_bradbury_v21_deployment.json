@@ -621,7 +621,8 @@
       "statusName": "FINALIZED",
       "resultName": "AGREE",
       "txExecutionResultName": "FINISHED_WITH_RETURN"
-    }
+    },
+    "status": "FINALIZED"
   },
   "final_readback": {
     "get_production_ready": true,

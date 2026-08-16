@@ -41,6 +41,17 @@ const BID_ROWS = [
   ["e", "bidder_e", 69_000_000_000_000_000n, 45, 120],
 ];
 const TRANSIENT = /fetch failed|ENOTFOUND|ECONNRESET|ECONNREFUSED|ETIMEDOUT|timeout|network|429|500|502|503|504|socket|connection/i;
+// The first corrected evaluation is the real external-provider production gate.
+// When this gate is set, the runner never auto-retries or expires a failed first
+// evaluation attempt: it captures the child + callback evidence and STOPS so the
+// outcome can be inspected before any retry is deliberately consumed.
+const STOP_AFTER_FIRST_EVALUATION = process.env.TENDERCOUNCIL_STOP_AFTER_FIRST_EVALUATION === "1";
+
+// Distinctive marker so callers can tell a deliberate evaluation-gate stop from
+// an unexpected failure.
+class EvaluationGateStop extends Error {
+  constructor(message, detail) { super(message); this.name = "EvaluationGateStop"; this.detail = detail; }
+}
 
 
 function safe(value) {
@@ -417,6 +428,17 @@ async function driveEvaluation({ journal, buyer, readClient, core, manifest }) {
       continue;
     }
     if (tender.status === "EVALUATION_RETRYABLE") {
+      if (STOP_AFTER_FIRST_EVALUATION) {
+        const nonce = Number(tender.evaluation_nonce);
+        const operation = nonce === 1 ? "start_evaluation" : "retry_evaluation";
+        const entry = await journal.get(operation, `${TENDER_ID}#${nonce}`);
+        const jobs = await captureAsyncChildren(readClient, entry?.tx_hash, manifest, `evaluation_attempt_${nonce}`, manifest.release.evaluator);
+        if (jobs?.[0]) await captureAsyncChildren(readClient, jobs[0].hash, manifest, `evaluation_callback_${nonce}`, core);
+        throw new EvaluationGateStop(
+          `first corrected evaluation did not award: tender is EVALUATION_RETRYABLE at nonce ${nonce}; not consuming a retry`,
+          { status: tender.status, evaluation_nonce: nonce, provisional_winner: tender.provisional_winner },
+        );
+      }
       const nextNonce = Number(tender.evaluation_nonce) + 1;
       await journaledContractWrite({
         journal, client: buyer, core, operation: "retry_evaluation",
@@ -440,6 +462,12 @@ async function driveEvaluation({ journal, buyer, readClient, core, manifest }) {
       if (now <= Number(tender.evaluation_timeout_at)) {
         await sleep(30_000);
         continue;
+      }
+      if (STOP_AFTER_FIRST_EVALUATION) {
+        throw new EvaluationGateStop(
+          `first corrected evaluation attempt ${nonce} did not produce a callback before its on-chain timeout; not expiring or retrying`,
+          { status: tender.status, evaluation_nonce: nonce, evaluation_timeout_at: Number(tender.evaluation_timeout_at), chain_time: now },
+        );
       }
       await journaledContractWrite({
         journal, client: buyer, core, operation: "expire_evaluation_attempt",
@@ -638,7 +666,45 @@ export async function runBradburyE2E() {
     manifest.snapshot = { canonical_json: snapshot, digest: closed.closed_snapshot_digest };
 
     const provisional = await driveEvaluation({ journal, buyer, readClient, core, manifest });
-    if (provisional.provisional_winner !== makeTenderScopedBidId(TENDER_ID, "b")) throw new Error("unexpected provisional winner");
+    const expectedWinner = makeTenderScopedBidId(TENDER_ID, "b");
+    if (provisional.provisional_winner !== expectedWinner) throw new Error(`unexpected provisional winner: ${provisional.provisional_winner}`);
+
+    // Real-provider evaluation gate: verify the exact bid partitions produced by
+    // the first corrected evaluation. Deterministic exclusions are D (over budget)
+    // and E (over max delivery); semantic candidates are A, B, C; winner is B.
+    const evaluationNonce = Number(provisional.evaluation_nonce);
+    const resultPayload = await readContract(readClient, evaluator, "get_evaluation_result", [TENDER_ID, evaluationNonce]);
+    const result = JSON.parse(resultPayload);
+    const toIdSet = (suffixes) => new Set(suffixes.map((s) => makeTenderScopedBidId(TENDER_ID, s)));
+    const setsEqual = (a, b) => a.size === b.size && [...a].every((v) => b.has(v));
+    const deterministic = new Set(result.deterministic_disqualified_bid_ids || []);
+    const semanticCandidates = new Set(result.semantic_candidate_ids || []);
+    const expectedDeterministic = toIdSet(["d", "e"]);
+    const expectedCandidates = toIdSet(["a", "b", "c"]);
+    if (result.status !== "COMPARATIVE") throw new Error(`evaluation result status is not COMPARATIVE: ${result.status}`);
+    if (result.winner_bid_id !== expectedWinner) throw new Error(`evaluation result winner mismatch: ${result.winner_bid_id}`);
+    if (!setsEqual(deterministic, expectedDeterministic)) throw new Error(`deterministic exclusions mismatch: ${[...deterministic].join(",")}`);
+    if (!setsEqual(semanticCandidates, expectedCandidates)) throw new Error(`semantic candidate set mismatch: ${[...semanticCandidates].join(",")}`);
+    manifest.evaluation_gate = {
+      at_utc: new Date().toISOString(),
+      evaluation_nonce: evaluationNonce,
+      core_status: provisional.status,
+      provisional_winner: provisional.provisional_winner,
+      deterministic_exclusions: [...deterministic].sort(),
+      semantic_candidates: [...semanticCandidates].sort(),
+      semantic_disqualified: (result.semantic_disqualified_bid_ids || []).slice().sort(),
+      confidence: result.confidence,
+      evaluation_result_digest: provisional.evaluation_result_digest,
+      evaluator_child: manifest.async_messages[`evaluation_attempt_${evaluationNonce}`] || null,
+      evaluation_callback: manifest.async_messages[`evaluation_callback_${evaluationNonce}`] || null,
+    };
+    await writeEvidence(manifest);
+    console.log(`EVALUATION_GATE=PASS winner=${provisional.provisional_winner} deterministic_exclusions=${[...deterministic].sort().join(",")} semantic_candidates=${[...semanticCandidates].sort().join(",")}`);
+    if (STOP_AFTER_FIRST_EVALUATION) {
+      console.log(`tendercouncil_v21_e2e=PROVISIONAL_AWARD_GATE_PASS evidence=${EVIDENCE_PATH}`);
+      return;
+    }
+
     manifest.transactions.start_response_window = await journaledContractWrite({
       journal, client: buyer, core, operation: "start_response_window", objectId: TENDER_ID,
       intent: { tender_id: TENDER_ID, seconds: RESPONSE_WINDOW }, args: [TENDER_ID],
@@ -709,6 +775,13 @@ export async function runBradburyE2E() {
     await writeEvidence(manifest);
     console.log(`tendercouncil_v2_e2e=SETTLED evidence=${EVIDENCE_PATH}`);
   } catch (error) {
+    if (error instanceof EvaluationGateStop) {
+      manifest.evaluation_gate_stop = { at_utc: new Date().toISOString(), reason: error.message, detail: error.detail || null };
+      await writeEvidence(manifest);
+      console.error(`EVALUATION_GATE=STOP ${error.message}`);
+      console.error(`DO NOT auto-retry; inspect evidence=${EVIDENCE_PATH}`);
+      throw error;
+    }
     manifest.failures.push({ at_utc: new Date().toISOString(), error: String(error?.stack || error) });
     await writeEvidence(manifest);
     throw error;
