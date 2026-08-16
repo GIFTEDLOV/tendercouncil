@@ -1,0 +1,1 @@
+{"schema_version":"tendercouncil.brief.v1","title":"Analytics Dashboard Development","requirements":["authentication","CSV export","responsive/mobile support","dashboard/chart functionality"],"constraints":{"max_budget_gen":"8","max_delivery_days":30,"min_support_days":90}}
