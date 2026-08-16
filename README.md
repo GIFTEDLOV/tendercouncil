@@ -18,6 +18,48 @@ evidence-backed procurement awards. Core owns policy, escrow, lifecycle,
 challenge admission, and settlement. Evaluator authenticates committed content,
 performs integrity/schema checks, and supplies the bounded comparative judgment.
 
+## Architecture in 30 seconds
+
+Core owns money and lifecycle. The permanently bound Evaluator owns no funds and
+returns only a bounded comparative judgment over Core's frozen canonical bid
+snapshot; Core independently validates the result before settlement.
+
+```text
+Buyer / Bidders
+      |
+      v
++-------------+
+|    CORE     |  money + state
++------+------+
+       | frozen canonical snapshot
+       v
++-------------+
+|  EVALUATOR  |  semantic comparison
++------+------+
+       | bounded result + digest
+       v
++-------------+
+|    CORE     |  validates + settles
++-------------+
+```
+
+The four phases are **CREATE** (fund, open, bid), **FREEZE** (close the
+canonical snapshot), **DECIDE** (evaluate, provisional award, response/review),
+and **SETTLE** (final award, winner payment, buyer remainder).
+
+## Verified live procurement
+
+The single authorized post-submission Bradbury pilot attempt is preserved in
+[`docs/pilot/FINALIZED-BRADBURY-PROCUREMENT.md`](docs/pilot/FINALIZED-BRADBURY-PROCUREMENT.md)
+and its append-only reconciliation journal is
+[`artifacts/tender_council_bradbury_v21_finalized_pilot_journal.json`](artifacts/tender_council_bradbury_v21_finalized_pilot_journal.json).
+Creation and opening finalized, but Bradbury finality consumed the pilot's
+one-hour deadline before the first bid could be accepted. It is therefore
+explicitly **not** claimed as a completed `SETTLED` proof.
+
+For a five-to-ten-minute explanation of the system, see the
+[reviewer guide](docs/REVIEWER-GUIDE.md).
+
 ## Production status
 
 | Item | Value |
@@ -58,7 +100,31 @@ views and `writeContract({ account, address, functionName, args, value,
 leaderOnly: false })` for writes. The evaluator callback methods are public for
 cross-contract delivery but are not application entry points.
 
-### Core views
+### Public API classification
+
+**APPLICATION ENTRY POINTS** — `create_tender`, `open_tender`, `submit_bid`,
+`close_tender`, `start_evaluation`, `start_response_window`,
+`submit_challenge`, `advance_after_response`, `settle_award`,
+`confirm_settlement`, and `confirm_refund` are the normal buyer, bidder, or
+integrator calls.
+
+**PROTOCOL CALLBACKS** — `receive_evaluation_result`,
+`receive_evaluation_failure`, `receive_review_result`,
+`receive_review_failure`, `start_evaluation_job`, and `start_review_job` are
+cross-contract delivery methods, not ordinary application entry points.
+
+**RECOVERY / TIMEOUT** — `expire_evaluation_attempt`, `retry_evaluation`,
+`expire_review_attempt`, `retry_review`, `cancel_tender`,
+`refund_no_valid_bid`, `confirm_no_valid_refund`, and
+`refund_failed_evaluation` are bounded recovery or terminal refund calls.
+
+**READ-ONLY INTEGRATION** — readiness, binding, balance, tender, bid, snapshot,
+evaluation, review, settlement-accounting, and constructor readbacks are views.
+
+The complete API tables below retain every public method and its exact
+preconditions.
+
+### READ-ONLY INTEGRATION — Core views
 
 | Method | Type | Purpose, preconditions, and result/state behavior |
 | --- | --- | --- |

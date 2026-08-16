@@ -73,3 +73,17 @@ authorized by this document.
   operation explicitly requires it.
 - Release-facing claims must match the current source, manifest, and
   `MANIFEST.sha256`.
+
+## Canonical post-submission pilot attempt
+
+The single authorized post-submission pilot attempt is recorded in
+[`docs/pilot/FINALIZED-BRADBURY-PROCUREMENT.md`](pilot/FINALIZED-BRADBURY-PROCUREMENT.md)
+and its reconciliation journal is
+`artifacts/tender_council_bradbury_v21_finalized_pilot_journal.json`. It is
+distinct from the historical parked five-bid E2E and does not replace or erase
+that evidence. The attempt finalized tender creation and opening, but its first
+bid was broadcast after the immutable bidding deadline because Bradbury
+finality latency exceeded the one-hour pilot deadline. The finalized failed bid
+trace and the unchanged `OPEN` state are preserved; no second pilot was
+started, no challenge branch was run, and no comparative or settlement claim
+is made.
