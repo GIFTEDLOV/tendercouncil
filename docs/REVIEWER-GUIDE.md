@@ -65,7 +65,7 @@ The lifecycle has four phases:
    refund, confirms the second delta, and reaches `SETTLED`.
 
 The repository's canonical post-submission pilot attempt is documented in
-[`docs/pilot/FINALIZED-BRADBURY-PROCUREMENT.md`](pilot/FINALIZED-BRADBURY-PROCUREMENT.md).
+[`docs/pilot/BRADBURY-PROCUREMENT-PILOT-ATTEMPT-1.md`](pilot/BRADBURY-PROCUREMENT-PILOT-ATTEMPT-1.md).
 It currently records a blocked attempt rather than claiming a completed live
 procurement: Bradbury finality consumed its one-hour bid deadline before the
 first bid could be accepted. The historical parked E2E remains separate.

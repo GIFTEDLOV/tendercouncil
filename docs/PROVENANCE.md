@@ -74,10 +74,10 @@ authorized by this document.
 - Release-facing claims must match the current source, manifest, and
   `MANIFEST.sha256`.
 
-## Canonical post-submission pilot attempt
+## Canonical post-submission pilot attempt 1
 
-The single authorized post-submission pilot attempt is recorded in
-[`docs/pilot/FINALIZED-BRADBURY-PROCUREMENT.md`](pilot/FINALIZED-BRADBURY-PROCUREMENT.md)
+The first authorized post-submission pilot attempt is recorded in
+[`docs/pilot/BRADBURY-PROCUREMENT-PILOT-ATTEMPT-1.md`](pilot/BRADBURY-PROCUREMENT-PILOT-ATTEMPT-1.md)
 and its reconciliation journal is
 `artifacts/tender_council_bradbury_v21_finalized_pilot_journal.json`. It is
 distinct from the historical parked five-bid E2E and does not replace or erase

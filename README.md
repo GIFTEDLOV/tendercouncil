@@ -47,15 +47,21 @@ The four phases are **CREATE** (fund, open, bid), **FREEZE** (close the
 canonical snapshot), **DECIDE** (evaluate, provisional award, response/review),
 and **SETTLE** (final award, winner payment, buyer remainder).
 
-## Verified live procurement
+## Live procurement pilot status
 
-The single authorized post-submission Bradbury pilot attempt is preserved in
-[`docs/pilot/FINALIZED-BRADBURY-PROCUREMENT.md`](docs/pilot/FINALIZED-BRADBURY-PROCUREMENT.md)
-and its append-only reconciliation journal is
+Attempt 1 is preserved as
+[`docs/pilot/BRADBURY-PROCUREMENT-PILOT-ATTEMPT-1.md`](docs/pilot/BRADBURY-PROCUREMENT-PILOT-ATTEMPT-1.md)
+with status **BLOCKED BEFORE COMPARATIVE EVALUATION**: Bradbury finality
+consumed its one-hour immutable bidding deadline before Bid A could be
+accepted. Its append-only reconciliation journal is
 [`artifacts/tender_council_bradbury_v21_finalized_pilot_journal.json`](artifacts/tender_council_bradbury_v21_finalized_pilot_journal.json).
-Creation and opening finalized, but Bradbury finality consumed the pilot's
-one-hour deadline before the first bid could be accepted. It is therefore
-explicitly **not** claimed as a completed `SETTLED` proof.
+
+Pilot 2 Phase A is tracked in
+[`docs/pilot/BRADBURY-PROCUREMENT-PILOT-ATTEMPT-2.md`](docs/pilot/BRADBURY-PROCUREMENT-PILOT-ATTEMPT-2.md).
+Once both bids are finalized and stored, this phase intentionally stops before
+the immutable deadline, close, evaluation, award, and settlement. The reserved
+filename `docs/pilot/FINALIZED-BRADBURY-PROCUREMENT.md` is not used until an
+actually successful pilot reaches `SETTLED`.
 
 For a five-to-ten-minute explanation of the system, see the
 [reviewer guide](docs/REVIEWER-GUIDE.md).
