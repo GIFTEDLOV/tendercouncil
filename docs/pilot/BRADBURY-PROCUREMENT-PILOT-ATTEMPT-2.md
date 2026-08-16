@@ -2,13 +2,11 @@
 
 ## Status
 
-**IN PROGRESS — BID A FINALITY UNRESOLVED; PHASE A INCOMPLETE**
+**IN PROGRESS — PRE-DEADLINE PHASE COMPLETE**
 
-Pilot 2 was deliberately stopped before Bid B because the exact Bid A
-transaction remained `ACCEPTED` rather than `FINALIZED` when the local bounded
-session ended. A read-only check observed the Bid A record stored, but that
-does not satisfy the required finalized-transaction gate. Bid B was not
-broadcast.
+Pilot 2 creation, opening, and both bid submissions are now finalized and
+stored. The runner stopped immediately after the pre-deadline gate completed.
+The later lifecycle remains intentionally unattempted.
 
 No close, evaluation, response, award, settlement, refund, or Attempt-1
 recovery write has been attempted.
@@ -51,20 +49,19 @@ finality was unresolved first.
 | --- | --- | --- | --- | --- |
 | Create funded tender | Buyer | `0x191ead5b94459a222932212eb1f5fc10b70c8d266347c9338e8fb1e44f2b75a4` | FINALIZED / AGREE / FINISHED_WITH_RETURN | `DRAFT`, escrow stored |
 | Open tender | Buyer | `0x7b109921eb8669966e39b172a903be53342a114a1f73a29fbbdba66dde4afb86` | FINALIZED / AGREE / FINISHED_WITH_RETURN | `OPEN` |
-| Submit Bid A | Bidder A | `0x2e5d3752ad6523484118a6319a289c1902bec3508c16e9c44cc31a81eee1abe2` | ACCEPTED / AGREE / FINISHED_WITH_RETURN; not FINALIZED | Read-only check observed Bid A stored |
-| Submit Bid B | Bidder B | NOT RUN | NOT RUN | No Bid B write |
+| Submit Bid A | Bidder A | `0x2e5d3752ad6523484118a6319a289c1902bec3508c16e9c44cc31a81eee1abe2` | FINALIZED / AGREE / FINISHED_WITH_RETURN | Bid A stored and verified |
+| Submit Bid B | Bidder B | `0x4b18d910b49ca2e61c225a09521adbd43131faa3d0f6952bc609141b84ffc88f` | FINALIZED / AGREE / FINISHED_WITH_RETURN | Bid B stored and verified |
 | Close | Buyer | NOT RUN | NOT RUN | No snapshot |
 | Evaluation onward | — | NOT RUN | NOT RUN | No comparative or settlement path |
 
-Bid A was broadcast once and its hash is preserved in the durable operation
-journal. The local command wrapper timed out after its bounded one-hour run
-while the transaction was still `ACCEPTED`; this is not treated as failure.
-The next action must reconcile this exact hash and require `FINALIZED` before
-any Bid B write.
+Both bid hashes are preserved in the durable operation journal. An earlier
+bounded local session ended while Bid A was still `ACCEPTED`; the next resume
+reconciled that exact hash to `FINALIZED` before broadcasting Bid B. No hash was
+rebroadcast.
 
-## Stored Bid A observation
+## Stored bid observations
 
-The read-only observation after the stop found:
+The finalized readback found:
 
 - tender: `TENDER_PILOT_V21_P2_20260816T184818Z`;
 - bidder: Bidder A;
@@ -72,12 +69,13 @@ The read-only observation after the stop found:
 - delivery: `20` days;
 - support: `180` days;
 - proposal and evidence commitments: exact expected immutable values;
+- Bid B: valid stored record with quote `39000000000000000` wei, delivery 25
+  days, support 120 days, and exact expected proposal/evidence commitments;
 - tender state: `OPEN`;
 - financial outflow pending: `false`;
 - Core balance: `180000000000000000` wei.
 
-The record is useful evidence, but the Pilot 2 Phase-A gate remains incomplete
-until the exact Bid A transaction is finalized.
+Both `BID_A_STORED` and `BID_B_STORED` are recorded in the journal.
 
 ## Precommitted expectation
 
@@ -91,8 +89,9 @@ Bid-A payout was `32000000000000000` wei; expected remainder was
 
 The append-only/reconciliation-oriented journal is
 `artifacts/tender_council_bradbury_v21_pilot2_journal.json`. It preserves the
-initial local reconciliation errors, exact create/open/Bid-A hashes, poll
-observations, the unresolved stop, and the read-only Bid-A storage observation.
+initial local reconciliation errors, exact create/open/Bid-A/Bid-B hashes,
+poll observations, the temporary unresolved Bid-A stop, and the final
+pre-deadline completion record.
 
 Attempt 1 remains separately preserved as
 `TENDER_PILOT_V21_20260816T164802Z`, `OPEN`, with its original

@@ -94,7 +94,6 @@ Pilot 2 Phase A is recorded in
 [`docs/pilot/BRADBURY-PROCUREMENT-PILOT-ATTEMPT-2.md`](pilot/BRADBURY-PROCUREMENT-PILOT-ATTEMPT-2.md)
 with journal
 `artifacts/tender_council_bradbury_v21_pilot2_journal.json`. Its fresh tender
-was created and opened with a 24-hour deadline. Bid A was broadcast once and
-remained unresolved at `ACCEPTED` when the bounded local session ended; a
-read-only observation found its record stored. Bid B was not broadcast, and no
-close, evaluation, settlement, or Attempt-1 recovery write was run.
+was created and opened with a 24-hour deadline. Both Bid A and Bid B were
+finalized and stored after exact-hash reconciliation. The phase stopped before
+close, evaluation, settlement, or Attempt-1 recovery writes.
