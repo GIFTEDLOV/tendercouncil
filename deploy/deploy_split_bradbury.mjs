@@ -13,6 +13,24 @@ import crypto from "node:crypto";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "node:path";
 
+// The pinned GenLayer SDK's explicit calldata Address wrapper. bind_evaluator's
+// first parameter is typed `Address` in Core storage, so a plain JS address
+// string reaches GenVM as a Python `str` and fails on `.as_bytes`. Every
+// address argument crossing into a contract call MUST be wrapped with
+// CalldataAddress(hexToBytes(...)); passing a raw string is the historical
+// regression this deployer must never reintroduce.
+const SDK_ROOT = "C:/Users/DELL/AppData/Roaming/npm/node_modules/genlayer/node_modules/genlayer-js/dist";
+const { CalldataAddress } = await import(pathToFileURL(`${SDK_ROOT}/chunk-EY35NPSE.js`));
+const { hexToBytes } = await import(pathToFileURL("C:/Users/DELL/AppData/Roaming/npm/node_modules/genlayer/node_modules/viem/_esm/index.js"));
+
+/** Wrap an EVM hex address as an explicit SDK calldata Address argument. */
+function calldataAddress(address) {
+  if (typeof address !== "string" || !/^0x[0-9a-fA-F]{40}$/.test(address)) {
+    throw new Error(`refusing to encode a non-address value as a calldata Address: ${String(address)}`);
+  }
+  return new CalldataAddress(hexToBytes(address));
+}
+
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const VERSION = "tendercouncil.evaluator.v2.1";
 const NETWORK = "testnet-bradbury";
@@ -245,7 +263,10 @@ export default async function deploySplitBradbury(client) {
     await writeManifest(manifest);
 
     const codeHash = `sha256:${hashes.deployable_evaluator_artifact_sha256}`;
-    const bindHash = await broadcastOrResume(manifest, "binding", "tx", () => client.writeContract({ address: coreAddress, functionName: "bind_evaluator", args: [evaluatorAddress, VERSION, codeHash], value: 0n, leaderOnly: false }));
+    // Explicit calldata Address encoding — never pass evaluatorAddress as a raw
+    // JS string here (see the CalldataAddress note at the top of this file).
+    const evaluatorArgument = calldataAddress(evaluatorAddress);
+    const bindHash = await broadcastOrResume(manifest, "binding", "tx", () => client.writeContract({ address: coreAddress, functionName: "bind_evaluator", args: [evaluatorArgument, VERSION, codeHash], value: 0n, leaderOnly: false }));
     const bindReceipts = await waitFinal(client, bindHash);
     manifest.binding = { ...manifest.binding, tx: bindHash, evaluator_address: evaluatorAddress, version: VERSION, evaluator_code_hash: codeHash, ...bindReceipts };
     appendStep(manifest, "core_binding_finalized");
