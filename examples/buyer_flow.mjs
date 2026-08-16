@@ -94,7 +94,7 @@ export const settleAwardCall = (tenderId) => call("settle_award", [tenderId]);
 export const confirmSettlementCall = (tenderId) => call("confirm_settlement", [tenderId]);
 export const confirmRefundCall = (tenderId) => call("confirm_refund", [tenderId]);
 
-export async function readBuyerState(client, tenderId) {
+export async function readBuyerState(client, tenderId, { includeEvaluatorResult = false } = {}) {
   const tender = await client.readContract({
     address: CORE,
     functionName: "get_tender",
@@ -110,7 +110,20 @@ export async function readBuyerState(client, tenderId) {
     functionName: "get_evaluation_context",
     args: [tenderId],
   });
-  return { tender, accounting: JSON.parse(accounting), evaluationContext: JSON.parse(evaluationContext) };
+  let evaluationResult = null;
+  if (includeEvaluatorResult && BigInt(tender.evaluation_nonce) > 0n) {
+    evaluationResult = await client.readContract({
+      address: EVALUATOR,
+      functionName: "get_evaluation_result",
+      args: [tenderId, BigInt(tender.evaluation_nonce)],
+    });
+  }
+  return {
+    tender,
+    accounting: JSON.parse(accounting),
+    evaluationContext: JSON.parse(evaluationContext),
+    evaluationResult,
+  };
 }
 
 // A real SDK write uses: await client.writeContract({ account, ...createTenderCall(params) }).
