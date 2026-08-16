@@ -1,79 +1,75 @@
 # TenderCouncil provenance
 
-Provenance is append-only in intent. Failed deployments and validator failures
-are retained rather than erased.
+Provenance is append-only in intent. Failed deployments, validator failures,
+and superseded releases are retained rather than erased.
 
 ## Repository anchor
 
 - Repository: `GIFTEDLOV/tendercouncil`
 - Branch: `main`
-- Initial audit HEAD: `d5c4f50bfa08495c57511e602e47a6fc28337606`
-- Current continuation HEAD: recorded by the release manifest after the live E2E completes.
+- Current production: Bradbury v2.1, Core/Evaluator finalized and bound
+- Authoritative manifest: `artifacts/tender_council_bradbury_v21_deployment.json`
+- Current release details: [docs/RELEASE.md](RELEASE.md)
+
+The manifest records the source and deployable hashes, deployment receipts,
+binding attempts, finalized binding readback, and `production_ready=true`.
 
 ## Existing evidence
 
-The four JSON files under `artifacts/` preserve deployment addresses,
+The JSON and Markdown files under `artifacts/` preserve deployment addresses,
 transaction IDs, validator votes, GenVM trace versions, and failure causes from
-Stage 0/1. Production evidence is append-only. The test runner now writes to
-`.local/gltest-artifacts/`; the installed test plugin recursively clears that
-ephemeral directory at startup and must never target `artifacts/`.
+the earlier stages. Historical evidence is not silently promoted to current
+release evidence. The test runner's ephemeral `.local/` output and runtime
+journals are not release-controlled manifest inputs.
 
-## Reconstructed 2026-08-13 diagnostic
+## Release history in brief
 
-`artifacts/tender_council_bradbury_e2e_failure_2026-08-13T150054150Z.json`
-is classified as `RECONSTRUCTED_AFTER_LOCAL_TEST_ARTIFACT_CLEAR`.
+The original monolith and earlier v1 pair are historical/superseded. The v2
+split work then added the Core/Evaluator trust boundary, immutable close
+snapshot, finalized-only callbacks, exact-byte integrity checks, bounded
+evaluation/review recovery, and deterministic settlement accounting.
 
-- Reconstructed SHA-256: `4b42ecd5e0ceb5da9f24cb31634b6ce36678bbd4267a47e01f2fc773a0a381e7`
-- Known historical original SHA-256: `d2ebc3efe53fe9b369b11154c1b65e3f6403f5c707ed53f8f49363f2f2b3bfdf`
-- Exact parity: not proven. The installed `genlayer-test` pytest plugin
-  recursively cleared the configured `artifacts/` directory. Tracked evidence
-  was restored byte-for-byte from Git, but this untracked diagnostic had no Git
-  blob to restore. It was reconstructed from previously captured output.
-- Authority: historical and non-authoritative. It must not be used as the sole
-  proof of any chain fact or represented as the lost original.
-- Independent facts: the old Core/Evaluator addresses, tender states, escrow
-  totals, bid parent IDs, evaluation transaction, failed Evaluator child,
-  validator votes, trace outputs, and callback absence were independently read
-  again from Bradbury during the 2026-08-14 forensic audit. Fresh canonical
-  machine-readable evidence is required before any future release.
+The first corrected split pair exposed a snapshot-shape mismatch before web/LLM
+evaluation. That failure remains in its timestamped artifact. The current v2.1
+source and generated artifacts correct the boundary, reduce the model output to
+bounded semantic judgments, enforce exact result partitions, and bind the
+finalized Evaluator artifact hash once in Core. The first binding address
+encoding failure and the successful `CalldataAddress` recovery are both kept in
+the current deployment manifest.
 
-## Current changes
+## Current production evidence
 
-The 2026-08-14 v2 remediation is local-only. It adds list-shaped nondeterministic
-calldata, bounded model envelopes, nonce/deadline recovery from failed evaluator
-children, deterministic uphold of an already valid winner after bounded review
-failure, tender-scoped runner reconciliation, and a durable append-only
-operation journal. The generated v2 Core/Evaluator artifacts pass the local
-42 KB size boundary, but no v2 contract, binding, tender, bid, or other live
-transaction exists. The local exact-artifact five-validator proof exercises
-comparative evaluation, Core callback consumption, `NO_VALID_BID`, malformed
-evaluation and review handling, retries, review, and stale/duplicate callback
-rejection. The exact Bradbury
-`eth_estimateGas` probes pass without signing or broadcasting. `NEW LIVE E2E
-ALLOWED` remains false pending review, CI, and an immutable clean-worktree HEAD.
+The v2.1 Core and Evaluator deployments are finalized on Bradbury chain `4221`.
+The binding transaction is
+`0x186e412e4132763dc5b437a23944b30a5bffa5cd751c872b6e25ad5631c4acbf`; its
+manifest readback records the bound Evaluator address, version,
+`sha256:e2042a0176068c471abb993ec7a588d0bfcc41f96226f14aa1ec6dd49d74831b`,
+and `get_production_ready=true`.
 
-This continuation adds runtime due diligence, a threat model, the exact-byte
-SHA-256 and evaluator-boundary hardening, public funded production tenders,
-comparative evaluation, bounded challenges, finalized-safe settlement states,
-mutation checks, and release tooling. The finalized two-contract pair is
-preserved in `artifacts/tender_council_bradbury_deployment.json` as
-`FINALIZED_DEPLOYMENT_PROOF_SUPERSEDED_BEFORE_E2E`. A post-deployment semantic
-and challenge audit found defects before any tender was funded; no participant
-funds were exposed and no settlement occurred. The pair is immutable historical
-evidence and must not be rebound or used for the replacement E2E. Earlier
-production Bradbury deployment attempts remain in
-`artifacts/bradbury-production-deployment-*.json`; no frontend has been
-started. This continuation adds exact GEN-wei escrow/payout/refund accounting,
-serialized Core outflows for multi-tender balance verification, execution-level
-all-semantic-fail `NO_VALID_BID`, exact integrity-set enforcement, and
-deterministic invalid-challenge `UPHOLD` handling. The first replacement pair
-is finalized and permanently bound in its separate historical deployment
-manifest, but its funded E2E exposed a snapshot-shape contract defect before
-web/LLM evaluation. That pair and the failed tender are preserved in append-only
-failure artifacts; no payout, refund, or settlement occurred. The corrected pair
-is finalized and permanently bound in
-`artifacts/tender_council_bradbury_corrected_deployment.json`. Its funded
-canonical tender and five finalized immutable bids are the active E2E proof;
-new close, evaluation, challenge, review, payout, refund, and settlement
-evidence is appended only after each corresponding transaction reaches the
-required finalized/readback state.
+These facts prove deployment/binding readiness. They do not assert that an
+external proposal/evidence URL or model provider will be available for every
+future tender.
+
+## Parked canonical E2E
+
+The canonical five-bid lifecycle is recorded in
+`artifacts/tender_council_bradbury_v21_e2e_parked.json` with:
+
+```text
+E2E_STATUS = POST_SUBMISSION_OPTIONAL
+```
+
+Its journal is preserved. The parked run is not a release blocker, is not a
+defect in the production binding, and is not required for this repository
+completion. No new close/evaluation/challenge/review/settlement operation is
+authorized by this document.
+
+## Evidence preservation rules
+
+- Do not overwrite timestamped failure artifacts.
+- Keep historical addresses and versions labeled historical/superseded.
+- Do not treat reconstructed diagnostics as sole proof of a chain fact.
+- Keep the parked E2E journal untouched unless a separately authorized E2E
+  operation explicitly requires it.
+- Release-facing claims must match the current source, manifest, and
+  `MANIFEST.sha256`.

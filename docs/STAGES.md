@@ -1,34 +1,32 @@
 # TenderCouncil delivery stages
 
-## Current inventory — 2026-08-10
+## Current inventory — 2026-08-16
 
 | Area | Status | Evidence |
 |---|---|---|
-| Repository isolation/provenance | DONE | Dedicated TenderCouncil repository and preserved artifacts |
-| Stage 1 monolith foundation | DONE / superseded | `contracts/tender_council_production.py` |
-| Two-contract architecture | IMPLEMENTED locally | Core, Evaluator, typed interfaces, one-time binding |
-| Closed snapshot digest | IMPLEMENTED locally | Canonical sorted-key JSON and Core digest |
-| Cross-contract correlation | IMPLEMENTED locally | Finalized message path and nonce/digest guards |
-| Evidence integrity/schema | IMPLEMENTED locally | Evaluator exact-byte hash and bounded manifest/evidence validation |
-| Response/challenge/review | IMPLEMENTED locally | One bounded review round and external challenge hash boundary |
-| Finalized settlement/refunds | IMPLEMENTED locally | Winner-price wei payout, remainder refund, serialized outflow lock, pending confirmation, balance delta |
-| Generated v2 artifacts/size gate | GREEN locally | Exact encoded Core 40,292 bytes and Evaluator 32,292 bytes; both below the 42 KB fail-closed boundary |
-| Direct tests | IMPLEMENTED locally | Existing direct suite plus real all-semantic-fail and financial simulator trials |
-| Mutation/security tests | IMPLEMENTED locally | Original suite plus split, semantic NO_VALID_BID, challenge, integrity, payout, and outflow-lock mutants |
-| Five-validator GenVM simulation | GREEN locally | Generated Core + Evaluator finalize 5/5 AGREE through evaluation/callback, `NO_VALID_BID`, malformed evaluation/retry, review/callback, malformed review/retry, and stale/duplicate rejection; pinned calldata agrees at every captured boundary |
-| Bradbury exact estimate gate | GREEN / NO BROADCAST | Core `0x1ea6b25`, Evaluator `0x18b01b8`; both RPC estimates returned HTTP 200 without signing |
-| Historical v1 pair/funded tenders | PRESERVED / BLOCKED | Existing Core/Evaluator and tenders are immutable evidence and must not receive new transactions |
-| Bradbury v2 deployment/binding | NOT STARTED | No v2 Core or Evaluator has been deployed |
-| Bradbury v2 canonical E2E | NOT ALLOWED | No v2 tender exists; pre-broadcast and multi-validator gates remain closed |
-| Final UI | STOPPED | UI stop gate remains closed |
+| Repository isolation/provenance | DONE | Dedicated repository and preserved artifacts |
+| Stage 1 monolith foundation | DONE / historical and superseded | `contracts/tender_council_production.py` |
+| Two-contract architecture | FINALIZED | `TenderCouncilCore` plus bound `TenderCouncilEvaluator` |
+| Closed snapshot digest | FINALIZED | `tendercouncil.snapshot.v1`, canonical sorted-key JSON |
+| Cross-contract correlation | FINALIZED | Finalized-only messages and nonce/digest guards |
+| Evidence integrity/schema | FINALIZED | Exact-byte SHA-256 and bounded v2.1 manifest/evidence validation |
+| Response/challenge/review | FINALIZED | One bounded review round and external challenge hash boundary |
+| Finalized settlement/refunds | FINALIZED | Winner-price payout, remainder/full refunds, serialized outflow lock |
+| Generated v2.1 artifacts/size gate | GREEN | Recorded in the v2.1 deployment and size manifests |
+| Local tests and security verification | RECORDED | CI workflow, probes, direct tests, and mutation tools |
+| Bradbury Core deployment | FINALIZED | `0x5ADbA50CE6c6fFBA738f212ba12fC3C78B2664cd` |
+| Bradbury Evaluator deployment | FINALIZED | `0x023AB3434761715a531884Ca0852aC14beE03acE` |
+| Core/Evaluator binding | FINALIZED | `production_ready=true`, binding tx in release manifest |
+| Canonical five-bid E2E | POST_SUBMISSION_OPTIONAL / PARKED | `E2E_STATUS = POST_SUBMISSION_OPTIONAL` |
+| Frontend | OPTIONAL | No frontend is required for the contract release |
 
-## Locked next gates
+## Release status
 
-1. Review the exact v2 sources, artifacts, hashes, proof artifacts, and CI.
-2. Commit the reviewed tree so the clean-worktree release preflight can bind an
-   immutable HEAD to the generated artifacts.
-3. Explicitly open the v2 deployment gate; deploy and bind a new pair only.
-4. Reconcile the durable journal before every later E2E write.
+`RELEASE BLOCKERS = none`. The submitted v2.1 deployment remains the current
+release. The parked E2E is preserved post-submission validation, not an
+unresolved release gate or a defect. This repository polish does not resume it,
+create another tender, or broadcast another transaction.
 
-The UI cannot begin until the complete backend/security/Bradbury stop gate is
-explicitly opened.
+The authoritative release details are in [docs/RELEASE.md](RELEASE.md). The
+historical deployment and E2E records remain append-only provenance and must
+not be selected as current addresses.

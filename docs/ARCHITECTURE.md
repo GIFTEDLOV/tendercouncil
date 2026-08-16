@@ -144,10 +144,10 @@ alternatives are `NO_VALID_BID` and finalized `CANCELLED`.
 
 ## Deployment size
 
-Generated artifacts are mechanically derived from canonical sources. The local
-encoded Bradbury measurements are recorded in
-`artifacts/tender_council_split-size-budget.json`; 40,000 outer bytes remains
-the preferred target. The fail-closed local fallback is 42,000 conservative
-outer bytes, still materially below the measured 53,316-byte Bradbury success
-boundary and subject to the exact no-broadcast RPC estimate. The prior
-monolith is not a deployment fallback.
+Generated artifacts are mechanically derived from canonical sources. The v2.1
+size evidence is recorded in `artifacts/tender_council_v21_size-budget.json`:
+Core is 40,262 artifact bytes plus a conservative 1,024-byte outer bound, and
+Evaluator is 30,524 artifact bytes plus the same bound. The 40,000 outer-byte
+value remains the preferred engineering target; the fail-closed local fallback
+is 42,000 conservative outer bytes. The prior monolith is not a deployment
+fallback.

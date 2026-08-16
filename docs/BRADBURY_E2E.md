@@ -1,5 +1,16 @@
 # Bradbury E2E evidence
 
+The current production release is the finalized and bound v2.1 pair:
+
+- Core: `0x5ADbA50CE6c6fFBA738f212ba12fC3C78B2664cd`
+- Evaluator: `0x023AB3434761715a531884Ca0852aC14beE03acE`
+- chain: `4221`
+- status: `production_ready=true`
+
+This file keeps earlier E2E attempts as historical evidence and records the
+current canonical run as `E2E_STATUS = POST_SUBMISSION_OPTIONAL`. The E2E is
+not required for the release and this document does not authorize new writes.
+
 This document records the controlled production proof. Failed and transient
 attempts remain under `artifacts/`.
 
@@ -14,10 +25,11 @@ only. They are not authorized for any new transaction:
 - evaluator version: `tendercouncil.evaluator.v1`
 - response-window demo policy: `7200` seconds
 
-Its funded tenders, bids, failed child, and escrow state remain untouched. No
-v2 Core or Evaluator has been deployed and no v2 tender exists. The v2 runner
-uses `analytics-dashboard-2026-final-v2`, requires a separate finalized v2
-deployment manifest, and explicitly rejects both historical addresses.
+Its funded tenders, bids, failed child, and escrow state remain untouched. The
+old statement in earlier run notes that no v2 pair existed is historical to
+that checkpoint. The current v2.1 pair is separately documented in the
+finalized deployment manifest, and the parked canonical run is recorded in
+`artifacts/tender_council_bradbury_v21_e2e_parked.json`.
 
 The earlier corrected pair remains preserved as a separate failed E2E artifact
 and is not being reused:
@@ -52,5 +64,7 @@ These are preserved as provenance and are classified as RPC observability or
 E2E tooling failures, not contract execution failures. No duplicate deployment
 or duplicate bid was broadcast during recovery.
 
-The superseded finalized pairs remain historical evidence only. `NEW LIVE E2E
-ALLOWED` is not reached; the UI and live-transaction stop gates remain closed.
+The superseded finalized pairs remain historical evidence only. The canonical
+v2.1 run is parked after its recorded open state; `E2E_STATUS =
+POST_SUBMISSION_OPTIONAL`. No new live E2E, tender, or transaction is required
+for the release.

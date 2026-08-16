@@ -1,5 +1,9 @@
 # Bradbury deployment-envelope diagnostic
 
+> **Historical checkpoint (2026-08-10).** This diagnostic predates the
+> finalized v2.1 production deployment. Its no-deployment findings describe
+> that checkpoint only; current release status is in `docs/RELEASE.md`.
+
 Checked 2026-08-10 from TenderCouncil main at
 230ecd0fd2df0249f3b251d8f489bf225129210c. No transaction was signed or
 broadcast. Full request records are in:
@@ -147,8 +151,10 @@ readable and 29-31 KB deployable for Core, and 29-30 KB readable and 25-27 KB
 deployable for Evaluator. Each generated component must be measured
 independently before any Bradbury attempt.
 
-## Decision
+## Decision at this historical checkpoint
 
-No new Bradbury deployment was broadcast. The monolith gate is closed, the
-split design is justified subject to callback/finality tests and independent
-size probes, and the UI stop gate remains closed.
+No new Bradbury deployment was broadcast at this checkpoint. The monolith gate
+was closed and the split design was left subject to callback/finality tests and
+independent size probes. The later v2.1 finalized deployment supersedes this
+checkpoint; the canonical E2E is now separately parked as post-submission
+optional validation.

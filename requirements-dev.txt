@@ -1,0 +1,2 @@
+# Development and CI toolchain verified by .github/workflows/ci.yml.
+-r requirements.txt

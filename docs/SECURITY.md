@@ -45,14 +45,18 @@ malformed-output paths now use bounded `gl.vm.UserError` failures, while the
 validator callback still fails closed. Direct and executable mutation probes
 cover malformed review output and correlation failures.
 
-## Not yet safe for production
+## Release posture
 
 - The preserved Stage 1 prototype remains owner-gated and retains its manual
-  award method; it is not the production deployment artifact.
-- The finalized pair is preserved as superseded stop-gate provenance, not as
-  replacement-release evidence. No tender was funded and no settlement was
-  attempted.
-- The replacement pair has passed exact read-only Bradbury estimates, but no
-  replacement deployment is authorized in this stage.
+  award method; it is not the current production deployment artifact.
+- The v2.1 Core/Evaluator pair is the finalized and permanently bound production
+  release. Its exact addresses, hashes, binding transaction, and readback are
+  in `docs/RELEASE.md` and the v2.1 deployment manifest.
+- The canonical five-bid E2E is `POST_SUBMISSION_OPTIONAL` and parked. It is not
+  a release blocker or a claim that the production binding is unsafe.
+- Historical pairs, funded historical tenders, and failed E2E children remain
+  immutable provenance and must not receive new transactions.
 
-The UI stop gate is therefore closed.
+No frontend is required for the contract release. Integrators should use Core's
+public API and follow the finalized/reconcile-before-retry rules in
+`docs/INTEGRATION.md`.
