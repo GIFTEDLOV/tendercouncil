@@ -58,8 +58,10 @@ accepted. Its append-only reconciliation journal is
 
 Pilot 2 Phase A is tracked in
 [`docs/pilot/BRADBURY-PROCUREMENT-PILOT-ATTEMPT-2.md`](docs/pilot/BRADBURY-PROCUREMENT-PILOT-ATTEMPT-2.md).
-Once both bids are finalized and stored, this phase intentionally stops before
-the immutable deadline, close, evaluation, award, and settlement. The reserved
+Pilot 2 creation and opening finalized. Bid A was broadcast once and is
+currently preserved as `ACCEPTED` while its exact transaction awaits finality;
+a read-only check observed its record stored. Bid B was not broadcast because
+the previous write remained unresolved. The reserved
 filename `docs/pilot/FINALIZED-BRADBURY-PROCUREMENT.md` is not used until an
 actually successful pilot reaches `SETTLED`.
 

@@ -87,3 +87,14 @@ finality latency exceeded the one-hour pilot deadline. The finalized failed bid
 trace and the unchanged `OPEN` state are preserved; no second pilot was
 started, no challenge branch was run, and no comparative or settlement claim
 is made.
+
+## Canonical post-submission pilot attempt 2 — Phase A
+
+Pilot 2 Phase A is recorded in
+[`docs/pilot/BRADBURY-PROCUREMENT-PILOT-ATTEMPT-2.md`](pilot/BRADBURY-PROCUREMENT-PILOT-ATTEMPT-2.md)
+with journal
+`artifacts/tender_council_bradbury_v21_pilot2_journal.json`. Its fresh tender
+was created and opened with a 24-hour deadline. Bid A was broadcast once and
+remained unresolved at `ACCEPTED` when the bounded local session ended; a
+read-only observation found its record stored. Bid B was not broadcast, and no
+close, evaluation, settlement, or Attempt-1 recovery write was run.

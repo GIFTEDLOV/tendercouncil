@@ -158,6 +158,10 @@ function tenderMatches(tender, expected, status = null) {
   if (status && tender.status !== status) throw new Error(`tender status ${tender.status} != ${status}`);
   return tender;
 }
+function reconcileTender(tender, expected, status) {
+  try { return { state: "EXACT", digest: digest(tender), value: tenderMatches(tender, expected, status) }; }
+  catch { return { state: "MISSING" }; }
+}
 function bidExpected(id, bidder, price, delivery, support, proposalUrl, proposalHash, evidenceId, evidenceUrl, evidenceHash) {
   return { bid_id: id, tender_id: TENDER_ID, bidder, price_wei: price.toString(), delivery_days: delivery, support_days: support, proposal_url: proposalUrl, proposal_sha256: proposalHash, evidence_commitments: `${evidenceId}|CAPABILITY|capability|1|${evidenceUrl}|${evidenceHash}`, schema_version: "tendercouncil.bid.v1" };
 }
@@ -190,7 +194,8 @@ async function sourceHash(relative) { return sha256Bytes(await fs.readFile(path.
 async function runWrite({ opJournal, pilot, client, readClient, operation, objectId, actor, args, value = 0n, reconcile, deadline }) {
   const before = await coreState(readClient);
   const margin = deadline === undefined ? null : await deadlineMargin(readClient, deadline);
-  const intent = { operation, object_id: objectId, actor, args: safe(args), arguments_digest: digest(args), value_wei: String(value), deadline_margin_before_seconds: margin?.remaining_seconds ?? null };
+  const persistedEntry = await opJournal.get(operation, objectId);
+  const intent = persistedEntry?.intent || { operation, object_id: objectId, actor, args: safe(args), arguments_digest: digest(args), value_wei: String(value) };
   await pilot.event({ kind: "WRITE_INTENT", ...intent, core_state_before: before });
   try {
     await executeJournaledWrite({
@@ -263,13 +268,13 @@ async function main() {
     if (!existingCreate) await pilot.event({ kind: "DEADLINE_SELECTED", pilot_id: PILOT2_ID, chain_time_at_selection: selectedDeadline - DEADLINE_WINDOW, bidding_deadline: selectedDeadline, bidding_deadline_utc: new Date(selectedDeadline * 1000).toISOString(), window_seconds: DEADLINE_WINDOW, safety_thresholds_seconds: { bid_a: BID_A_MIN_MARGIN, bid_b: BID_B_MIN_MARGIN } });
     const expectedTender = tenderExpected(buyerAccount.address, selectedDeadline);
     const createArgs = [TENDER_ID, expectedTender.title, expectedTender.brief_url, expectedTender.brief_sha256, BUDGET, expectedTender.max_delivery_days, expectedTender.min_support_days, selectedDeadline, RESPONSE_WINDOW, expectedTender.requirements, 35, 20, 20, 15, 10, expectedTender.evidence_policy];
-    await runWrite({ opJournal, pilot, client: buyer, readClient, operation: "create_tender", objectId: TENDER_ID, actor: buyerAccount.address, args: createArgs, value: BUDGET, deadline: selectedDeadline, reconcile: async () => { const outcome = await readRecord(readClient, CORE, "get_tender", [TENDER_ID]); if (outcome.kind === "MISSING") return { state: "MISSING" }; return { state: "EXACT", digest: digest(outcome.record), value: tenderMatches(outcome.record, expectedTender, "DRAFT") }; } });
+    await runWrite({ opJournal, pilot, client: buyer, readClient, operation: "create_tender", objectId: TENDER_ID, actor: buyerAccount.address, args: createArgs, value: BUDGET, deadline: selectedDeadline, reconcile: async () => { const outcome = await readRecord(readClient, CORE, "get_tender", [TENDER_ID]); return outcome.kind === "MISSING" ? { state: "MISSING" } : reconcileTender(outcome.record, expectedTender, "DRAFT"); } });
     const created = await readContract(readClient, CORE, "get_tender", [TENDER_ID]);
     tenderMatches(created, expectedTender, "DRAFT");
     const createMargin = await deadlineMargin(readClient, selectedDeadline);
     await pilot.event({ kind: "CREATE_READBACK", tender: created, accounting: JSON.parse(await readContract(readClient, CORE, "get_settlement_accounting", [TENDER_ID])), core_balance_wei: String(await readContract(readClient, CORE, "get_contract_balance")), deadline: selectedDeadline, deadline_utc: new Date(selectedDeadline * 1000).toISOString(), remaining_seconds: createMargin.remaining_seconds });
     if (createMargin.remaining_seconds < BID_A_MIN_MARGIN) throw new Error(`DEADLINE_SAFETY_MARGIN_FAILED after create: ${createMargin.remaining_seconds}`);
-    await runWrite({ opJournal, pilot, client: buyer, readClient, operation: "open_tender", objectId: TENDER_ID, actor: buyerAccount.address, args: [TENDER_ID], deadline: selectedDeadline, reconcile: async () => { const outcome = await readRecord(readClient, CORE, "get_tender", [TENDER_ID]); if (outcome.kind === "MISSING") return { state: "MISSING" }; return { state: "EXACT", digest: digest(outcome.record), value: tenderMatches(outcome.record, expectedTender, "OPEN") }; } });
+    await runWrite({ opJournal, pilot, client: buyer, readClient, operation: "open_tender", objectId: TENDER_ID, actor: buyerAccount.address, args: [TENDER_ID], deadline: selectedDeadline, reconcile: async () => { const outcome = await readRecord(readClient, CORE, "get_tender", [TENDER_ID]); return outcome.kind === "MISSING" ? { state: "MISSING" } : reconcileTender(outcome.record, expectedTender, "OPEN"); } });
     const opened = await readContract(readClient, CORE, "get_tender", [TENDER_ID]);
     tenderMatches(opened, expectedTender, "OPEN");
     const openMargin = await deadlineMargin(readClient, selectedDeadline);
